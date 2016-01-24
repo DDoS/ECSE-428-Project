@@ -71,11 +71,9 @@ node_modules
 ###########
 /cache
 /config
-/data
 /eclipse
 /natives
 /plugins
-/resources
 /update
 /updates
 config.yml

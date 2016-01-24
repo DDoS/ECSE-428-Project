@@ -2,7 +2,7 @@
 //  OpenShift sample Node application
 var express = require('express');
 var fs      = require('fs');
-
+var db      = require('./data/db');
 
 /**
  *  Define the sample application.
@@ -132,6 +132,10 @@ var SampleApp = function() {
 
         // Create the express server and routes.
         self.initializeServer();
+
+        // Initialize the DB
+        var database = new db.Database();
+        database.test();
     };
 
 
