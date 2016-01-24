@@ -1,22 +1,20 @@
 {
-  "name": "OpenShift-Sample-App",
-  "version": "1.0.0",
-  "description": "OpenShift Sample Application",
+  "name": "Project-Mayhem-App",
+  "version": "0.1.0",
+  "description": "Project Mayhem, a reddit-like debate platform",
   "keywords": [
     "OpenShift",
     "Node.js",
     "application",
-    "openshift"
+    "debate"
   ],
   "author": {
-    "name": "OpenShift",
-    "email": "ramr@example.org",
-    "url": "http://www.openshift.com/"
+    "name": "Project Mayhem",
   },
-  "homepage": "http://www.openshift.com/",
+  "homepage": "http://mayhem-ecse428.rhcloud.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/openshift/origin-server"
+    "url": "https://github.com/DDoS/ECSE-428-Project"
   },
   "engines": {
     "node": ">= 0.6.0",
