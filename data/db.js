@@ -30,9 +30,11 @@ var Database = function() {
                         'email VARCHAR(128) NOT NULL' +
                     ');' +
                     'CREATE TABLE IF NOT EXISTS ' + moderatorTable + ' (' +
-                        'username VARCHAR(64) NOT NULL PRIMARY KEY REFERENCES ' + userTable + ');' +
+                        'username VARCHAR(64) NOT NULL PRIMARY KEY REFERENCES ' + userTable +
+                    ');' +
                     'CREATE TABLE IF NOT EXISTS ' + adminTable + ' (' +
-                        'username VARCHAR(64) NOT NULL PRIMARY KEY REFERENCES ' + userTable + ');' +
+                        'username VARCHAR(64) NOT NULL PRIMARY KEY REFERENCES ' + userTable +
+                    ');' +
                     'CREATE TABLE IF NOT EXISTS ' + questionTable + ' (' +
                         'id BIGSERIAL PRIMARY KEY,' +
                         'title VARCHAR(256) NOT NULL,' +
