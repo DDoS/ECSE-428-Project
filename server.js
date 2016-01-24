@@ -133,9 +133,9 @@ var SampleApp = function() {
         // Create the express server and routes.
         self.initializeServer();
 
-        // Initialize the DB
-        var database = new db.Database();
-        database.test();
+        // Create and initialize the DB
+        self.database = new db.Database();
+        self.database.initialize();
     };
 
 
