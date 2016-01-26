@@ -1,5 +1,7 @@
 # ECSE-428-Project
 
+![Build status](https://travis-ci.org/DDoS/ECSE-428-Project.svg?branch=master)
+
 ## Project Mayhem
 
 Our course project is a Reddit-style online platform for users to submit yes or no questions. Users can select a side and post an argument in favour of their position. Questions and arguments can be upvoted and downvoted and are presented from most popular to least popular. After a certain period of time, users can no longer select a side or submit arguments, and the side that most users have selected is declared the winner.
