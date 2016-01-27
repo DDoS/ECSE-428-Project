@@ -4,20 +4,25 @@ const host = process.env.OPENSHIFT_POSTGRESQL_DB_HOST || process.env.PGHOST;
 const port = process.env.OPENSHIFT_POSTGRESQL_DB_PORT || process.env.PGPORT;
 const user = process.env.OPENSHIFT_POSTGRESQL_DB_USER || process.env.PGUSER;
 const password = process.env.OPENSHIFT_POSTGRESQL_DB_PASSWORD || process.env.PGPASSWORD;
-const db = 'mayhem';
-const url = 'postgres://' + user + (password === "undefined" ? '' : ':' + password) + '@' + host + ':' + port + '/' + db;
 
 const userTable = 'Users';
 const moderatorTable = 'Moderators';
 const adminTable = 'Admins'
 const questionTable = 'Questions';
 
-var Database = function() {
+var Database = function(dbName) {
+    var config = {
+        host: host,
+        port: port,
+        user: user,
+        password: password,
+        database: dbName
+    };
     var self = this;
 
     self.initialize = function() {
         // Create the user, moderator, admin and question tables if needed
-        pg.connect(url,
+        pg.connect(config,
             function(error, client, done) {
                 if (error) {
                   return console.error('Error creating query', error);

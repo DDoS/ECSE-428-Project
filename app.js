@@ -9,6 +9,8 @@ var db = require('./data/db');
 var routes = require('./routes/index');
 var users = require('./routes/users');
 
+const dbName = 'mayhem';
+
 var app = express();
 
 // view engine setup
@@ -57,7 +59,7 @@ app.use(function(err, req, res, next) {
 });
 
 // Create and initialize the DB
-app.database = new db.Database();
+app.database = new db.Database(dbName);
 app.database.initialize();
 
 module.exports = app;
