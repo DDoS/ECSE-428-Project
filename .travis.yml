@@ -4,3 +4,6 @@ node_js:
 
 before_script:
   - "psql -c 'create database mayhemTest;' -U postgres"
+
+notifications:
+  email: false
