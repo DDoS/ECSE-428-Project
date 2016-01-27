@@ -1,0 +1,9 @@
+language: node_js
+node_js:
+  - "5.4"
+
+before_script:
+  - "psql -c 'create database mayhemTest;' -U postgres"
+
+notifications:
+  email: false
