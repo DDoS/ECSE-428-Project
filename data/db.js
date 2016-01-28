@@ -22,12 +22,14 @@ var Database = function(dbName) {
     };
 
     self.initialize = function(initDone) {
+        console.log(config);
         // Create the user, moderator, admin and question tables if needed
         pg.connect(
             config,
             function(error, client, done) {
                 if (error) {
-                    throw new Error('Error creating query', error);
+                    console.error(error);
+                    throw new Error('Error creating query');
                 }
                 client.query(
                     'CREATE TABLE IF NOT EXISTS ' + userTable + '(' +
@@ -56,7 +58,8 @@ var Database = function(dbName) {
                     function(error, result) {
                         done();
                         if (error) {
-                            throw new Error('Could not create default tables', error);
+                            console.error(error);
+                            throw new Error('Could not create default tables');
                         }
                         initDone();
                     }
@@ -85,7 +88,8 @@ var Database = function(dbName) {
             config,
             function(error, client, done) {
                 if (error) {
-                    throw new Error('Error creating query', error);
+                    console.error(error);
+                    throw new Error('Error creating query');
                 }
                 client.query(
                     'INSERT INTO ' + userTable + ' VALUES (' +
@@ -95,7 +99,8 @@ var Database = function(dbName) {
                     function(error, result) {
                         done();
                         if (error) {
-                            throw new Error('Could not create user', error);
+                            console.error(error);
+                            throw new Error('Could not create user');
                         }
                         var user = new User(username, salt, password, email);
                         createDone(user);
@@ -110,7 +115,8 @@ var Database = function(dbName) {
             config,
             function(error, client, done) {
                 if (error) {
-                    throw new Error('Error creating query', error);
+                    console.error(error);
+                    throw new Error('Error creating query');
                 }
                 client.query(
                     'SELECT salt, password, email FROM ' + userTable + ' WHERE ' + ' username = $1;',
@@ -118,7 +124,8 @@ var Database = function(dbName) {
                     function(error, result) {
                         done();
                         if (error) {
-                            throw new Error('Could not create user', error);
+                            console.error(error);
+                            throw new Error('Could not create user');
                         }
                         var user;
                         if (result.rows.length <= 0) {
