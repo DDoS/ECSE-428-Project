@@ -60,6 +60,8 @@ app.use(function(err, req, res, next) {
 
 // Create and initialize the DB
 app.database = new db.Database(dbName);
-app.database.initialize();
+app.database.initialize(function() {
+    console.log("Database is ready");
+});
 
 module.exports = app;
