@@ -55,6 +55,72 @@ describe('Database', function() {
         });
 	});
 
+    describe('#createQuestion(title, text, submitter)', function() {
+        before(function(done) {
+            database.createUser('Bloke', 'badSecurity', 'bloke@shadymail.so', function(user) {
+                assert.equal('Bloke', user.username);
+                assert.equal('bloke@shadymail.so', user.email);
+                assert(user.authenticate('badSecurity'));
+                done();
+            });
+        });
+
+		it('Should insert a new row in the questions table and return a new question object', function(done) {
+            var beforeDate = new Date();
+            database.createQuestion(
+                'DAE Bernie Sanders?',
+                'FEEL THE BERN!\n' +
+                'EDIT 1: Holy cow, GOLD! Thanks so much!\n' +
+                'EDIT 2: A second gold!?!?! Eat your heart out Leonardo! Thanks!\n' +
+                'EDIT 3: I am blown away by all the gold. Thanks everyone!',
+                'Bloke',
+                function(question) {
+                    assert.equal('DAE Bernie Sanders?', question.title);
+                    assert.equal(
+                        'FEEL THE BERN!\n' +
+                        'EDIT 1: Holy cow, GOLD! Thanks so much!\n' +
+                        'EDIT 2: A second gold!?!?! Eat your heart out Leonardo! Thanks!\n' +
+                        'EDIT 3: I am blown away by all the gold. Thanks everyone!',
+                        question.text
+                    );
+                    assert(question.date >= beforeDate);
+                    assert(question.date <= new Date());
+                    assert.equal('Bloke', question.submitter);
+                    assert.equal(0, question.downVoteCount);
+                    assert.equal(0, question.upVoteCount);
+                    done();
+                }
+            );
+		});
+
+        it('Should not allow an empty title', function() {
+            assert.throws(
+                function() {
+                    database.createUser('', 'typical circlejerk', 'inappropriateUsername', function() { return undefined; });
+                },
+                Error, 'title is empty'
+            );
+        });
+
+        it('Should not allow an empty text', function() {
+            assert.throws(
+                function() {
+                    database.createUser('AYY LMAO', '', 'inappropriateUsername', function() { return undefined; });
+                },
+                Error, 'text is empty'
+            );
+        });
+
+        it('Should not allow an empty submitter', function() {
+            assert.throws(
+                function() {
+                    database.createUser('AYY LMAO', 'typical circlejerk', '', function() { return undefined; });
+                },
+                Error, 'submitter is empty'
+            );
+        });
+    });
+
     after(function(deleteDone) {
         // Delete the Users, Moderators, Admins and Questions tables
         database.rawQuery(function(error, client, done) {
@@ -66,7 +132,7 @@ describe('Database', function() {
                 function(error, result) {
                     done();
                     if (error) {
-                        throw new Error('Could not drop tables', error);
+                        throw new Error('Could not drop test tables', error);
                     }
                     deleteDone();
                 }

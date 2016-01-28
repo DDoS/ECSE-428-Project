@@ -22,7 +22,6 @@ var Database = function(dbName) {
     };
 
     self.initialize = function(initDone) {
-        console.log(config);
         // Create the user, moderator, admin and question tables if needed
         pg.connect(
             config,
@@ -48,10 +47,10 @@ var Database = function(dbName) {
                         'id BIGSERIAL PRIMARY KEY,' +
                         'title VARCHAR(256) NOT NULL,' +
                         'text VARCHAR(4096) NOT NULL,' +
-                        'date TIMESTAMP NOT NULL,' +
+                        'date TIMESTAMP DEFAULT now(),' +
                         'submitter VARCHAR(64) NOT NULL REFERENCES ' + userTable + ',' +
-                        'downVoteCount INTEGER NOT NULL CHECK (downVoteCount >= 0),' +
-                        'upVoteCount INTEGER NOT NULL CHECK (upVoteCount >= 0),' +
+                        'downVoteCount INTEGER DEFAULT 0 CHECK (downVoteCount >= 0),' +
+                        'upVoteCount INTEGER DEFAULT 0 CHECK (upVoteCount >= 0),' +
                         'conTableName VARCHAR(32),' +
                         'proTableName VARCHAR(32)' +
                     ');',
@@ -92,9 +91,7 @@ var Database = function(dbName) {
                     throw new Error('Error creating query');
                 }
                 client.query(
-                    'INSERT INTO ' + userTable + ' VALUES (' +
-                        '$1, $2, $3, $4' +
-                    ');',
+                    'INSERT INTO ' + userTable + ' VALUES ($1, $2, $3, $4);',
                     [username, salt, password, email],
                     function(error, result) {
                         done();
@@ -125,7 +122,7 @@ var Database = function(dbName) {
                         done();
                         if (error) {
                             console.error(error);
-                            throw new Error('Could not create user');
+                            throw new Error('Could not get user');
                         }
                         var user;
                         if (result.rows.length <= 0) {
@@ -134,6 +131,41 @@ var Database = function(dbName) {
                             user = new User(username, result.rows[0].salt, result.rows[0].password, result.rows[0].email);
                         }
                         getDone(user);
+                    }
+                );
+            }
+        );
+    }
+
+    self.createQuestion = function(title, text, submitter, createDone) {
+        if (stringEmpty(title)) {
+            throw new Error('title is empty');
+        }
+        if (stringEmpty(text)) {
+            throw new Error('text is empty');
+        }
+        if (stringEmpty(submitter)) {
+            throw new Error('submitter is empty');
+        }
+        pg.connect(
+            config,
+            function(error, client, done) {
+                if (error) {
+                    console.error(error);
+                    throw new Error('Error creating query');
+                }
+                client.query(
+                    'INSERT INTO ' + questionTable + ' (title, text, submitter) VALUES ($1, $2, $3)' +
+                    'RETURNING id, date;',
+                    [title, text, submitter],
+                    function(error, result) {
+                        done();
+                        if (error) {
+                            console.error(error);
+                            throw new Error('Could not create question');
+                        }
+                        var question = new Question(result.rows[0].id, title, text, result.rows[0].date, submitter, 0, 0);
+                        createDone(question);
                     }
                 );
             }
@@ -159,9 +191,22 @@ var User = function(username, salt, password, email) {
 
 }
 
+var Question = function(id, title, text, date, submitter, downVoteCount, upVoteCount) {
+    var self = this;
+    self.title = title;
+    self.text = text;
+    self.date = date;
+    self.submitter = submitter;
+    self.downVoteCount = downVoteCount;
+    self.upVoteCount = upVoteCount;
+    var conTableName = 'tableCon_' + id;
+    var proTableName = 'tablePro_' + id;
+}
+
 function stringEmpty(string) {
     return !string || string.trim().length === 0;
 }
 
 module.exports.Database = Database;
 module.exports.User = User;
+module.exports.Question = Question;
