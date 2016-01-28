@@ -11,9 +11,9 @@ describe('Database', function() {
         database.initialize(done);
     });
 
-	describe('#createUser(username, password, email)', function() {
-		it('Should insert a new row in the user table and return a new user object', function(done) {
-			database.createUser('Guy', 'shittyPassword12', 'dude@webmail.com', function(user) {
+    describe('#createUser(username, password, email)', function() {
+        it('Should insert a new row in the user table and return a new user object', function(done) {
+            database.createUser('Guy', 'shittyPassword12', 'dude@webmail.com', function(user) {
                 assert.equal('Guy', user.username);
                 assert.equal('dude@webmail.com', user.email);
                 assert(user.authenticate('shittyPassword12'));
@@ -21,11 +21,11 @@ describe('Database', function() {
                 database.getUser('Guy', function(getUser) {
                     assert.equal('Guy', getUser.username);
                     assert.equal('dude@webmail.com', getUser.email);
-                    //assert(getUser.authenticate('shittyPassword12'));
+                    assert(getUser.authenticate('shittyPassword12'));
                     done();
                 });
             });
-		});
+        });
 
         it('Should not allow an empty username', function() {
             assert.throws(
@@ -53,7 +53,7 @@ describe('Database', function() {
                 Error, 'email is empty'
             );
         });
-	});
+    });
 
     describe('#createQuestion(title, text, submitter)', function() {
         before(function(done) {
@@ -65,7 +65,7 @@ describe('Database', function() {
             });
         });
 
-		it('Should insert a new row in the questions table and return a new question object', function(done) {
+        it('Should insert a new row in the questions table and return a new question object', function(done) {
             var beforeDate = new Date();
             database.createQuestion(
                 'DAE Bernie Sanders?',
@@ -91,7 +91,7 @@ describe('Database', function() {
                     done();
                 }
             );
-		});
+        });
 
         it('Should not allow an empty title', function() {
             assert.throws(
