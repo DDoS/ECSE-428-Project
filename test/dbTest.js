@@ -17,11 +17,13 @@ describe('Database', function() {
                 assert.equal('Guy', user.username);
                 assert.equal('dude@webmail.com', user.email);
                 assert(user.authenticate('shittyPassword12'));
+                assert(!user.authenticate('notMyPassword'));
                 // Check is user is indeed in the db
                 database.getUser('Guy', function(getUser) {
                     assert.equal('Guy', getUser.username);
                     assert.equal('dude@webmail.com', getUser.email);
                     assert(getUser.authenticate('shittyPassword12'));
+                    assert(!getUser.authenticate('notMyPassword'));
                     done();
                 });
             });
@@ -61,6 +63,7 @@ describe('Database', function() {
                 assert.equal('Bloke', user.username);
                 assert.equal('bloke@shadymail.so', user.email);
                 assert(user.authenticate('badSecurity'));
+                assert(!user.authenticate('badSecuritz'));
                 done();
             });
         });
