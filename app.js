@@ -5,6 +5,9 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var db = require('./data/db');
+var flash = require('express-flash');
+var expressValidator = require('express-validator');
+var session = require('express-session');
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
@@ -23,6 +26,13 @@ app.use(favicon());
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
+app.use(expressValidator());
+app.use(session({
+    resave: true,
+    saveUninitialized: true,
+    secret: "FUCK YOU"
+}));
+app.use(flash());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -67,5 +77,7 @@ app.database = new db.Database(dbName);
 app.database.initialize(function() {
     console.log("Database is ready");
 });
+
+app.set('db', app.database);
 
 module.exports = app;
