@@ -189,6 +189,15 @@ describe('Database', function() {
                 done();
             });
         });
+
+        it('Should not allow since dates in the future', function() {
+            assert.throws(
+                function() {
+                    database.getNewQuestions(new Date('2018-01-01'), undefined, function() {});
+                },
+                Error, 'Since date is in the future'
+            );
+        });
     });
 
     after(function(deleteDone) {

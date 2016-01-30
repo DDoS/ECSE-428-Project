@@ -1,7 +1,7 @@
 var pg = require('pg');
 var crypto = require('crypto');
 
-const SMALLEST_DATE = new Date("1900-01-01");
+const SMALLEST_DATE = new Date('1900-01-01');
 
 const host = process.env.OPENSHIFT_POSTGRESQL_DB_HOST || process.env.PGHOST;
 const port = process.env.OPENSHIFT_POSTGRESQL_DB_PORT || process.env.PGPORT;
