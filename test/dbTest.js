@@ -18,7 +18,7 @@ describe('Database', function() {
                 assert.equal('dude@webmail.com', user.email);
                 assert(user.authenticate('shittyPassword12'));
                 assert(!user.authenticate('notMyPassword'));
-                // Check is user is indeed in the db
+                // Check if the user is indeed in the db
                 database.getUser('Guy', function(getUser) {
                     assert.equal('Guy', getUser.username);
                     assert.equal('dude@webmail.com', getUser.email);
@@ -73,17 +73,18 @@ describe('Database', function() {
             database.createQuestion(
                 'DAE Bernie Sanders?',
                 'FEEL THE BERN!\n' +
-                'EDIT 1: Holy cow, GOLD! Thanks so much!\n' +
-                'EDIT 2: A second gold!?!?! Eat your heart out Leonardo! Thanks!\n' +
-                'EDIT 3: I am blown away by all the gold. Thanks everyone!',
+                    'EDIT 1: Holy cow, GOLD! Thanks so much!\n' +
+                    'EDIT 2: A second gold!?!?! Eat your heart out Leonardo! Thanks!\n' +
+                    'EDIT 3: I am blown away by all the gold. Thanks everyone!',
                 'Bloke',
                 function(question) {
+                    assert.equal(1, question.id);
                     assert.equal('DAE Bernie Sanders?', question.title);
                     assert.equal(
                         'FEEL THE BERN!\n' +
-                        'EDIT 1: Holy cow, GOLD! Thanks so much!\n' +
-                        'EDIT 2: A second gold!?!?! Eat your heart out Leonardo! Thanks!\n' +
-                        'EDIT 3: I am blown away by all the gold. Thanks everyone!',
+                            'EDIT 1: Holy cow, GOLD! Thanks so much!\n' +
+                            'EDIT 2: A second gold!?!?! Eat your heart out Leonardo! Thanks!\n' +
+                            'EDIT 3: I am blown away by all the gold. Thanks everyone!',
                         question.text
                     );
                     assert(question.date >= beforeDate);
@@ -91,7 +92,17 @@ describe('Database', function() {
                     assert.equal('Bloke', question.submitter);
                     assert.equal(0, question.downVoteCount);
                     assert.equal(0, question.upVoteCount);
-                    done();
+                    // Check if the question is indeed in the db
+                    database.getQuestion(question.id, function(getQuestion) {
+                        assert.equal(question.id, getQuestion.id);
+                        assert.equal(question.title, getQuestion.title);
+                        assert.equal(question.text, getQuestion.text);
+                        assert.equal(question.date.getTime(), getQuestion.date.getTime());
+                        assert.equal(question.submitter, getQuestion.submitter);
+                        assert.equal(question.downVoteCount, getQuestion.downVoteCount);
+                        assert.equal(question.upVoteCount, getQuestion.upVoteCount);
+                        done();
+                    });
                 }
             );
         });

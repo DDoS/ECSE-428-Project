@@ -8,6 +8,8 @@ var db = require('./data/db');
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
+var arguments = require('./routes/arguments');
+var questions = require('./routes/questions');
 
 const dbName = 'mayhem';
 
@@ -26,6 +28,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes);
 app.use('/users', users);
+app.use('/arguments',arguments);
+app.use('/questions',questions);
 
 /// catch 404 and forward to error handler
 app.use(function(req, res, next) {
