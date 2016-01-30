@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+var database = require('././data/db');
 
 router.get('/create', function(req, res) {
     res.render('questions/create', {
@@ -7,8 +8,5 @@ router.get('/create', function(req, res) {
     });
 });
 
-
-
-router.post('');
 module.exports = router;
 
