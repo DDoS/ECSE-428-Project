@@ -15,10 +15,10 @@ router.get('/create', function(req, res) {
 });
 
 router.post('/create', function(req, res, next) {
-  req.assert('username', 'User name is empty').notEmpty();
-  req.assert('email', 'Email is not valid').isEmail();
-  req.assert('password', 'Password must be at least 4 characters long').len(4);
-  req.assert('confirmPassword', 'Passwords do not match').equals(req.body.password);
+  req.assert('username', 'User name is empty.').notEmpty();
+  req.assert('email', 'Email is not valid.').isEmail();
+  req.assert('password', 'Password must be at least 4 characters long.').len(4);
+  req.assert('confirmPassword', 'Passwords do not match.').equals(req.body.password);
 
   var errors = req.validationErrors();
 
@@ -27,11 +27,17 @@ router.post('/create', function(req, res, next) {
     return res.redirect('/users/create');
   }
 
-  //@todo add verification to make sure username and email is not already taken
-
-  req.app.get('db').createUser(req.body.username, req.body.password, req.body.email, function(user) {
-    //console.log(user);
-    res.redirect('/users/login');
+  req.app.get('db').getUser(req.body.username, function(user){
+    if (user === undefined) { //if username is not already taken
+      req.app.get('db').createUser(req.body.username, req.body.password, req.body.email, function(user) {
+        //console.log(user);
+        req.flash('success', { msg: 'Account created successfully, please login.' });
+        res.redirect('/users/login');
+      });
+    } else { //username already taken
+      req.flash('errors', { msg: 'Account with that user name already exists.' });
+      return res.redirect('/users/create');
+    }
   });
 });
 
