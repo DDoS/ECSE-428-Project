@@ -17,6 +17,10 @@
           a(href='/topics') View Topics
         li(class=title=='Contact'?'active':undefined)
           a(href='/contact') Contact
+        li(class=title=='Argument'?'active':undefined)
+          a(href='/arguments/create') Create Argument
+        li(class=title == 'Argument' ? 'active' : undefined)
+          a(href='/questions/create') Post New Question
       ul.nav.navbar-nav.navbar-right
         if !user
           li(class=title=='Login'?'active':undefined)

@@ -8,7 +8,7 @@ const password = process.env.OPENSHIFT_POSTGRESQL_DB_PASSWORD || process.env.PGP
 
 const userTable = 'Users';
 const moderatorTable = 'Moderators';
-const adminTable = 'Admins'
+const adminTable = 'Admins';
 const questionTable = 'Questions';
 
 var Database = function(dbName) {
