@@ -11,7 +11,7 @@ describe('Database', function() {
         database.initialize(done);
     });
 
-    describe('#createUser(username, password, email)', function() {
+    describe('createUser(username, password, email, createDone)', function() {
         it('Should insert a new row in the user table and return a new user object', function(done) {
             database.createUser('Guy', 'shittyPassword12', 'dude@webmail.com', function(user) {
                 assert.equal('Guy', user.username);
@@ -32,7 +32,7 @@ describe('Database', function() {
         it('Should not allow an empty username', function() {
             assert.throws(
                 function() {
-                    database.createUser('', 'shittyPassword12', 'dude@webmail.com', function() { return undefined; });
+                    database.createUser('', 'shittyPassword12', 'dude@webmail.com', function() {});
                 },
                 Error, 'username is empty'
             );
@@ -41,7 +41,7 @@ describe('Database', function() {
         it('Should not allow an empty password', function() {
             assert.throws(
                 function() {
-                    database.createUser('Guy', '', 'dude@webmail.com', function() { return undefined; });
+                    database.createUser('Guy', '', 'dude@webmail.com', function() {});
                 },
                 Error, 'password is empty'
             );
@@ -50,14 +50,14 @@ describe('Database', function() {
         it('Should not allow an empty email', function() {
             assert.throws(
                 function() {
-                    database.createUser('Guy', 'shittyPassword12', '', function() { return undefined; });
+                    database.createUser('Guy', 'shittyPassword12', '', function() {});
                 },
                 Error, 'email is empty'
             );
         });
     });
 
-    describe('#createQuestion(title, text, submitter)', function() {
+    describe('createQuestion(title, text, submitter, createDone)', function() {
         before(function(done) {
             database.createUser('Bloke', 'badSecurity', 'bloke@shadymail.so', function(user) {
                 assert.equal('Bloke', user.username);
@@ -110,7 +110,7 @@ describe('Database', function() {
         it('Should not allow an empty title', function() {
             assert.throws(
                 function() {
-                    database.createUser('', 'typical circlejerk', 'inappropriateUsername', function() { return undefined; });
+                    database.createUser('', 'typical circlejerk', 'inappropriateUsername', function() {});
                 },
                 Error, 'title is empty'
             );
@@ -119,7 +119,7 @@ describe('Database', function() {
         it('Should not allow an empty text', function() {
             assert.throws(
                 function() {
-                    database.createUser('AYY LMAO', '', 'inappropriateUsername', function() { return undefined; });
+                    database.createUser('AYY LMAO', '', 'inappropriateUsername', function() {});
                 },
                 Error, 'text is empty'
             );
@@ -128,10 +128,66 @@ describe('Database', function() {
         it('Should not allow an empty submitter', function() {
             assert.throws(
                 function() {
-                    database.createUser('AYY LMAO', 'typical circlejerk', '', function() { return undefined; });
+                    database.createUser('AYY LMAO', 'typical circlejerk', '', function() {});
                 },
                 Error, 'submitter is empty'
             );
+        });
+    });
+
+    describe('getNewQuestions(since, limit, getDone)', function() {
+        var someDate = undefined;
+        var numberAfterThatDate = 0;
+
+        before(function(done) {
+            // Create a user to submit 100 questions
+            database.createUser('Spammer', 'annoying', 'fish@spam.io', function() {});
+            // Create those questions
+            questions = [];
+            var j = 0;
+            for (var i = 0; i < 100; i++) {
+                database.createQuestion('Title', 'Text', 'Spammer', function(question) {
+                    questions.push(question);
+                    if (++j >= 100) {
+                        // Find the date of the question in the middle
+                        someDate = questions[50].date;
+                        // Count the number of questions made after it
+                        questions.forEach(function(question, index, array) {
+                            if (question.date >= someDate) {
+                                numberAfterThatDate++;
+                            }
+                        });
+                        done();
+                    }
+                });
+            }
+        });
+
+        it('Should return at most 10 questions in descending date, when no date or limit is defined', function(done) {
+            database.getNewQuestions(undefined, undefined, function(questions) {
+                assert.equal(10, questions.length);
+                assert(isSorted(questions));
+                done();
+            });
+        });
+
+        it('Should return questions in descending date, up to a given limit, when no date is defined', function(done) {
+            database.getNewQuestions(undefined, 50, function(questions) {
+                assert.equal(50, questions.length);
+                assert(isSorted(questions));
+                done();
+            });
+        });
+
+        it('Should return questions in descending date, before the given date, up to a given limit', function(done) {
+            database.getNewQuestions(someDate, 100, function(questions) {
+                assert.equal(numberAfterThatDate, questions.length);
+                assert(isSorted(questions));
+                questions.forEach(function(question, index, array) {
+                    assert(question.date >= someDate);
+                });
+                done();
+            });
         });
     });
 
@@ -154,3 +210,9 @@ describe('Database', function() {
         });
     });
 });
+
+function isSorted(array) {
+    return array.every(function(value, index, array) {
+      return index === 0 || array[index - 1] <= value;
+    });
+}

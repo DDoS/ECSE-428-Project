@@ -1,6 +1,8 @@
 var pg = require('pg');
 var crypto = require('crypto');
 
+const SMALLEST_DATE = new Date("1900-01-01");
+
 const host = process.env.OPENSHIFT_POSTGRESQL_DB_HOST || process.env.PGHOST;
 const port = process.env.OPENSHIFT_POSTGRESQL_DB_PORT || process.env.PGPORT;
 const user = process.env.OPENSHIFT_POSTGRESQL_DB_USER || process.env.PGUSER;
@@ -201,6 +203,48 @@ var Database = function(dbName) {
                             );
                         }
                         getDone(question);
+                    }
+                );
+            }
+        );
+    }
+
+    self.getNewQuestions = function(since, limit, getDone) {
+        if (since === undefined) {
+            since = SMALLEST_DATE;
+        } else if (since > new Date()) {
+            throw Error("Since date is in the future");
+        }
+        if (limit === undefined) {
+            limit = 10;
+        }
+        pg.connect(
+            config,
+            function(error, client, done) {
+                if (error) {
+                    console.error(error);
+                    throw new Error('Error creating query');
+                }
+                client.query(
+                    'SELECT id, title, text, date, submitter, downVoteCount, upVoteCount ' +
+                        'FROM ' + questionTable + ' WHERE date >= $1 ' +
+                        'ORDER BY date DESC ' +
+                        'LIMIT $2;',
+                    [since, limit],
+                    function(error, result) {
+                        done();
+                        if (error) {
+                            console.error(error);
+                            throw new Error('Could not get questions');
+                        }
+                        var questions = [];
+                        result.rows.forEach(function(row, index, array) {
+                            questions.push(new Question(
+                                row.id, row.title, row.text, row.date,
+                                row.submitter, row.downvotecount, row.upvotecount
+                            ));
+                        });
+                        getDone(questions);
                     }
                 );
             }
