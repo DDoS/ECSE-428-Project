@@ -116,7 +116,7 @@ var Database = function(dbName) {
                     throw new Error('Error creating query');
                 }
                 client.query(
-                    'SELECT salt, password, email FROM ' + userTable + ' WHERE ' + ' username = $1;',
+                    'SELECT salt, password, email FROM ' + userTable + ' WHERE username = $1;',
                     [username],
                     function(error, result) {
                         done();
@@ -156,7 +156,7 @@ var Database = function(dbName) {
                 }
                 client.query(
                     'INSERT INTO ' + questionTable + ' (title, text, submitter) VALUES ($1, $2, $3)' +
-                    'RETURNING id, date;',
+                        'RETURNING id, date;',
                     [title, text, submitter],
                     function(error, result) {
                         done();
@@ -166,6 +166,41 @@ var Database = function(dbName) {
                         }
                         var question = new Question(result.rows[0].id, title, text, result.rows[0].date, submitter, 0, 0);
                         createDone(question);
+                    }
+                );
+            }
+        );
+    }
+
+    self.getQuestion = function(id, getDone) {
+        pg.connect(
+            config,
+            function(error, client, done) {
+                if (error) {
+                    console.error(error);
+                    throw new Error('Error creating query');
+                }
+                client.query(
+                    'SELECT title, text, date, submitter, downVoteCount, upVoteCount ' +
+                        'FROM ' + questionTable + ' WHERE id = $1;',
+                    [id],
+                    function(error, result) {
+                        done();
+                        if (error) {
+                            console.error(error);
+                            throw new Error('Could not get question');
+                        }
+                        var question;
+                        if (result.rows.length <= 0) {
+                            question = undefined;
+                        } else {
+                            question = new Question(
+                                id, result.rows[0].title, result.rows[0].text, result.rows[0].date,
+                                // column names aren't case sentitive, so vote counts are all lower case
+                                result.rows[0].submitter, result.rows[0].downvotecount, result.rows[0].upvotecount
+                            );
+                        }
+                        getDone(question);
                     }
                 );
             }
@@ -193,6 +228,7 @@ var User = function(username, salt, password, email) {
 
 var Question = function(id, title, text, date, submitter, downVoteCount, upVoteCount) {
     var self = this;
+    self.id = id;
     self.title = title;
     self.text = text;
     self.date = date;
