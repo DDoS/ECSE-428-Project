@@ -8,15 +8,15 @@ var flash = require('express-flash');
 var expressValidator = require('express-validator');
 var session = require('express-session');
 var passport = require('passport');
-var LocalStrategy = require('passport-local').Strategy;
+var dotenv = require('dotenv');
 var db = require('./data/db');
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var arguments = require('./routes/arguments');
 var questions = require('./routes/questions');
 
+dotenv.load({ path: '.env' });
 var passportConf = require('./config/passport');
-const dbName = 'mayhem';
 
 var app = express();
 
@@ -32,7 +32,7 @@ app.use(expressValidator());
 app.use(session({
     resave: true,
     saveUninitialized: true,
-    secret: "FUCK YOU"
+    secret: process.env.SESSION_SECRET
 }));
 app.use(flash());
 app.use(cookieParser());
@@ -81,7 +81,7 @@ app.use(function(err, req, res, next) {
 });
 
 // Create and initialize the DB
-app.database = new db.Database(dbName);
+app.database = new db.Database(process.env.DBNAME_PROD);
 app.database.initialize(function() {
     console.log("Database is ready");
 });

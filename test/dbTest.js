@@ -1,7 +1,9 @@
 var db = require('../data/db');
 var assert = require('assert');
+var dotenv = require('dotenv');
 
-const dbName = 'mayhemTest';
+dotenv.load({ path: '.env' });
+var dbName = process.env.DBNAME_TEST;
 
 describe('Database', function() {
     var database = new db.Database(dbName);

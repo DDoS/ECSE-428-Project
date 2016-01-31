@@ -1,8 +1,7 @@
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
-const dbName = 'mayhem';
 var db = require('../data/db');
-var database = new db.Database(dbName);
+var database = new db.Database(process.env.DBNAME_PROD);
 
 passport.serializeUser(function(user, done) {
     done(null, user.username);
