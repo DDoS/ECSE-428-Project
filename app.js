@@ -15,7 +15,7 @@ var users = require('./routes/users');
 var arguments = require('./routes/arguments');
 var questions = require('./routes/questions');
 
-dotenv.load({ path: '.env' });
+dotenv.load({ path: __dirname + '/.env' });
 var passportConf = require('./config/passport');
 
 var app = express();
