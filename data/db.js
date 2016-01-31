@@ -7,23 +7,24 @@ const host = process.env.OPENSHIFT_POSTGRESQL_DB_HOST || process.env.PGHOST;
 const port = process.env.OPENSHIFT_POSTGRESQL_DB_PORT || process.env.PGPORT;
 const user = process.env.OPENSHIFT_POSTGRESQL_DB_USER || process.env.PGUSER;
 const password = process.env.OPENSHIFT_POSTGRESQL_DB_PASSWORD || process.env.PGPASSWORD;
-const dbName = 'mayhem';
 
 const userTable = 'Users';
 const moderatorTable = 'Moderators';
 const adminTable = 'Admins';
 const questionTable = 'Questions';
 
-var config = {
-    host: host,
-    port: port,
-    user: user,
-    password: password,
-    database: dbName
-};
+var Database = function(dbName){
+    var self = this;
 
-var Database = {
-    initialize : function(initDone) {
+    var config = {
+        host: host,
+        port: port,
+        user: user,
+        password: password,
+        database: dbName
+    };
+
+    self.initialize = function(initDone) {
         // Create the user, moderator, admin and question tables if needed
         pg.connect(
             config,
@@ -67,9 +68,9 @@ var Database = {
                 );
             }
         );
-    },
+    };
 
-    createUser : function(username, passwordText, email, createDone) {
+    self.createUser = function(username, passwordText, email, createDone) {
         if (stringEmpty(username)) {
             throw new Error('username is empty');
         }
@@ -107,9 +108,9 @@ var Database = {
                 );
             }
         );
-    },
+    };
 
-    getUser : function(username, getDone) {
+    self.getUser = function(username, getDone) {
         pg.connect(
             config,
             function(error, client, done) {
@@ -137,9 +138,9 @@ var Database = {
                 );
             }
         );
-    },
+    };
 
-    createQuestion : function(title, text, submitter, createDone) {
+    self.createQuestion = function(title, text, submitter, createDone) {
         if (stringEmpty(title)) {
             throw new Error('title is empty');
         }
@@ -172,9 +173,9 @@ var Database = {
                 );
             }
         );
-    },
+    };
 
-    getQuestion : function(id, getDone) {
+    self.getQuestion = function(id, getDone) {
         pg.connect(
             config,
             function(error, client, done) {
@@ -207,9 +208,9 @@ var Database = {
                 );
             }
         );
-    },
+    };
 
-    getNewQuestions : function(since, limit, getDone) {
+    self.getNewQuestions = function(since, limit, getDone) {
         if (since === undefined) {
             since = SMALLEST_DATE;
         } else if (since > new Date()) {
@@ -249,10 +250,10 @@ var Database = {
                 );
             }
         );
-    },
+    };
 
     // For testing only
-    rawQuery : function(query) {
+    self.rawQuery = function(query) {
         pg.connect(config, query);
     }
 };

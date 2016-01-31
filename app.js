@@ -16,6 +16,7 @@ var arguments = require('./routes/arguments');
 var questions = require('./routes/questions');
 
 var passportConf = require('./config/passport');
+const dbName = 'mayhem';
 
 var app = express();
 
@@ -80,11 +81,10 @@ app.use(function(err, req, res, next) {
 });
 
 // Create and initialize the DB
-app.database = db.Database;
+app.database = new db.Database(dbName);
 app.database.initialize(function() {
     console.log("Database is ready");
 });
-
 app.set('db', app.database);
 
 module.exports = app;
