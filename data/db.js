@@ -7,23 +7,23 @@ const host = process.env.OPENSHIFT_POSTGRESQL_DB_HOST || process.env.PGHOST;
 const port = process.env.OPENSHIFT_POSTGRESQL_DB_PORT || process.env.PGPORT;
 const user = process.env.OPENSHIFT_POSTGRESQL_DB_USER || process.env.PGUSER;
 const password = process.env.OPENSHIFT_POSTGRESQL_DB_PASSWORD || process.env.PGPASSWORD;
+const dbName = 'mayhem';
 
 const userTable = 'Users';
 const moderatorTable = 'Moderators';
 const adminTable = 'Admins';
 const questionTable = 'Questions';
 
-var Database = function(dbName) {
-    var self = this;
-    var config = {
-        host: host,
-        port: port,
-        user: user,
-        password: password,
-        database: dbName
-    };
+var config = {
+    host: host,
+    port: port,
+    user: user,
+    password: password,
+    database: dbName
+};
 
-    self.initialize = function(initDone) {
+var Database = {
+    initialize : function(initDone) {
         // Create the user, moderator, admin and question tables if needed
         pg.connect(
             config,
@@ -67,9 +67,9 @@ var Database = function(dbName) {
                 );
             }
         );
-    }
+    },
 
-    self.createUser = function(username, passwordText, email, createDone) {
+    createUser : function(username, passwordText, email, createDone) {
         if (stringEmpty(username)) {
             throw new Error('username is empty');
         }
@@ -107,9 +107,9 @@ var Database = function(dbName) {
                 );
             }
         );
-    }
+    },
 
-    self.getUser = function(username, getDone) {
+    getUser : function(username, getDone) {
         pg.connect(
             config,
             function(error, client, done) {
@@ -137,9 +137,9 @@ var Database = function(dbName) {
                 );
             }
         );
-    }
+    },
 
-    self.createQuestion = function(title, text, submitter, createDone) {
+    createQuestion : function(title, text, submitter, createDone) {
         if (stringEmpty(title)) {
             throw new Error('title is empty');
         }
@@ -172,9 +172,9 @@ var Database = function(dbName) {
                 );
             }
         );
-    }
+    },
 
-    self.getQuestion = function(id, getDone) {
+    getQuestion : function(id, getDone) {
         pg.connect(
             config,
             function(error, client, done) {
@@ -207,9 +207,9 @@ var Database = function(dbName) {
                 );
             }
         );
-    }
+    },
 
-    self.getNewQuestions = function(since, limit, getDone) {
+    getNewQuestions : function(since, limit, getDone) {
         if (since === undefined) {
             since = SMALLEST_DATE;
         } else if (since > new Date()) {
@@ -249,13 +249,13 @@ var Database = function(dbName) {
                 );
             }
         );
-    }
+    },
 
     // For testing only
-    self.rawQuery = function(query) {
+    rawQuery : function(query) {
         pg.connect(config, query);
     }
-}
+};
 
 var User = function(username, salt, password, email) {
     var self = this;
@@ -268,7 +268,7 @@ var User = function(username, salt, password, email) {
         return attemptPassword === password;
     }
 
-}
+};
 
 var Question = function(id, title, text, date, submitter, downVoteCount, upVoteCount) {
     var self = this;
@@ -281,7 +281,7 @@ var Question = function(id, title, text, date, submitter, downVoteCount, upVoteC
     self.upVoteCount = upVoteCount;
     var conTableName = 'tableCon_' + id;
     var proTableName = 'tablePro_' + id;
-}
+};
 
 function stringEmpty(string) {
     return !string || string.trim().length === 0;

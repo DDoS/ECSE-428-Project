@@ -1,11 +1,40 @@
 var express = require('express');
+var passport = require('passport');
 var router = express.Router();
-var db = require('../data/db');
 
 router.get('/login', function(req, res) {
   res.render('users/login', {
     title: 'Login'
   });
+});
+
+router.post('/login', function(req, res, next) {
+  req.assert('username', 'Username cannot be empty.').notEmpty();
+  req.assert('password', 'Password cannot be blank.').notEmpty();
+
+  var errors = req.validationErrors();
+
+  if (errors) {
+    req.flash('errors', errors);
+    return res.redirect('/users/login');
+  }
+
+  passport.authenticate('local', function(err, user, info) {
+    if (err) {
+      return next(err);
+    }
+    if (!user) {
+      req.flash('errors', { msg: info.message });
+      return res.redirect('/users/login');
+    }
+    req.logIn(user, function(err) {
+      if (err) {
+        return next(err);
+      }
+      req.flash('success', { msg: 'Success! You are logged in.' });
+      res.redirect('/');
+    });
+  })(req, res, next);
 });
 
 router.get('/create', function(req, res) {
