@@ -19,8 +19,10 @@
           a(href='/contact') Contact
         li(class=title=='Argument'?'active':undefined)
           a(href='/arguments/create') Create Argument
-        li(class=title == 'Argument' ? 'active' : undefined)
-          a(href='/questions/create') Post New Question
+        if !user
+        else
+            li(class=title == 'Post New Question' ? 'active' : undefined)
+                a(href='/questions/create') Post New Question
       ul.nav.navbar-nav.navbar-right
         if !user
           li(class=title=='Login'?'active':undefined)
