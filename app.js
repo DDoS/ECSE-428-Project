@@ -4,18 +4,17 @@ var favicon = require('static-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var db = require('./data/db');
 var flash = require('express-flash');
 var expressValidator = require('express-validator');
 var session = require('express-session');
-var passport = require('passport');
-var LocalStrategy = require('passport-local').Strategy;
-var db = require('./data/db');
+
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var arguments = require('./routes/arguments');
 var questions = require('./routes/questions');
 
-var passportConf = require('./config/passport');
+const dbName = 'mayhem';
 
 var app = express();
 
@@ -36,12 +35,6 @@ app.use(session({
 app.use(flash());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(passport.initialize());
-app.use(passport.session());
-app.use(function(req, res, next) {
-    res.locals.user = req.user;
-    next();
-});
 
 app.use('/', routes);
 app.use('/users', users);
@@ -80,7 +73,7 @@ app.use(function(err, req, res, next) {
 });
 
 // Create and initialize the DB
-app.database = db.Database;
+app.database = new db.Database(dbName);
 app.database.initialize(function() {
     console.log("Database is ready");
 });
