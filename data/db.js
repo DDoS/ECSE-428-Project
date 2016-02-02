@@ -209,7 +209,7 @@ var Database = function(dbName){
         );
     };
 
-    self.getNewQuestions = function(since, limit, getDone) {
+    self.getNewQuestions = function(since, limit, offset, getDone) {
         if (since === undefined) {
             since = SMALLEST_DATE;
         } else if (since > new Date()) {
@@ -217,6 +217,9 @@ var Database = function(dbName){
         }
         if (limit === undefined) {
             limit = 10;
+        }
+        if (offset === undefined) {
+            offset = 0;
         }
         pg.connect(
             config,
@@ -229,8 +232,8 @@ var Database = function(dbName){
                     'SELECT id, title, text, date, submitter, downVoteCount, upVoteCount ' +
                         'FROM ' + questionTable + ' WHERE date >= $1 ' +
                         'ORDER BY date DESC ' +
-                        'LIMIT $2;',
-                    [since, limit],
+                        'LIMIT $2 OFFSET $3;',
+                    [since, limit, offset],
                     function(error, result) {
                         done();
                         if (error) {

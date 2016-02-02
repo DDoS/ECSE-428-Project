@@ -165,31 +165,61 @@ describe('Database', function() {
             }
         });
 
-        it('Should return at most 10 questions in descending date, when no date or limit is defined', function(done) {
-            database.getNewQuestions(undefined, undefined, function(questions) {
-                assert.equal(10, questions.length);
-                assert(isSorted(questions));
-                done();
-            });
+        it('Should return at most the 10 newest questions in descending date, when no date, limit or offset is defined',
+            function(done) {
+                database.getNewQuestions(undefined, undefined, undefined, function(questions) {
+                    assert.equal(10, questions.length);
+                    assert(isSorted(questions));
+                    done();
+                }
+            );
         });
 
-        it('Should return questions in descending date, up to a given limit, when no date is defined', function(done) {
-            database.getNewQuestions(undefined, 50, function(questions) {
-                assert.equal(50, questions.length);
-                assert(isSorted(questions));
-                done();
-            });
+        it('Should return the newest questions in descending date, up to a given limit, when no date or offset is defined',
+            function(done) {
+                database.getNewQuestions(undefined, 50, undefined, function(questions) {
+                    assert.equal(50, questions.length);
+                    assert(isSorted(questions));
+                    done();
+                }
+            );
         });
 
-        it('Should return questions in descending date, before the given date, up to a given limit', function(done) {
-            database.getNewQuestions(someDate, 100, function(questions) {
-                assert.equal(numberAfterThatDate, questions.length);
-                assert(isSorted(questions));
-                questions.forEach(function(question, index, array) {
-                    assert(question.date >= someDate);
-                });
-                done();
-            });
+        it('Should return the newest questions in descending date, before the given date, up to a given limit when no offset is given',
+            function(done) {
+                database.getNewQuestions(someDate, 100, undefined, function(questions) {
+                    assert.equal(numberAfterThatDate, questions.length);
+                    assert(isSorted(questions));
+                    questions.forEach(function(question, index, array) {
+                        assert(question.date >= someDate);
+                    });
+                    done();
+                }
+            );
+        });
+
+        it('Should return the newest questions in descending date, up to a given limit, starting at a given offset, when no date is defined',
+            function(done) {
+                database.getNewQuestions(undefined, 50, 0, function(questions) {
+                    // Get the first 50 questions
+                    assert.equal(50, questions.length);
+                    assert(isSorted(questions));
+                    // Get the other 50
+                    database.getNewQuestions(undefined, 50, 50, function(restOfQuestions) {
+                        assert.equal(50, restOfQuestions.length);
+                        // Append both question arrays
+                        questions.forEach(function(question, index, array) {
+                            array.push(restOfQuestions[index]);
+                        });
+                        assert(isSorted(questions));
+                        // Assert no duplicates, all questions have been returned once
+                        questions.sort().forEach(function(question, index, array) {
+                            assert(index == 0 || question != array[index - 1]);
+                        });
+                        done();
+                    });
+                }
+            );
         });
 
         it('Should not allow since dates in the future', function() {
