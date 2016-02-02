@@ -20,37 +20,42 @@ block content
         .form-group.col-lg-6
                 hr
     if questions
-        .form-group
-            each question in questions
-                .form-group
-                    .row
-                        .col-md-2
-                            label.control-label(for='number') Title
-                        .col-md-10
-                            li(style="list-style-type: none;")= question.title
-                    .row
-                        .col-md-2
-                            label.control-label(for='number') Posted Date
-                        .col-md-10
-                            li(style="list-style-type: none;")= question.date
-                    .row
-                        .col-md-12
-                            label.control-label(for='number') Description
-                            li(style="list-style-type: none;")= question.text
-                .form-group
-                    .row
-                        .col-md-6
-                            button.btn.btn-primary.col-sm-4(type='button')
-                                i.fa.fa-thumbs-up
-                                | Up Vote
-                                span.badge.pull-right 10
+        if questions.length == 0
+            .form-group
+                p
+                | No question found
+        else
+            .form-group
+                each question in questions
+                    .form-group
+                        .row
+                            .col-md-2
+                                label.control-label(for='number') Title
+                            .col-md-10
+                                li(style="list-style-type: none;")= question.title
+                        .row
+                            .col-md-2
+                                label.control-label(for='number') Posted Date
+                            .col-md-10
+                                li(style="list-style-type: none;")= question.date
+                        .row
+                            .col-md-12
+                                label.control-label(for='number') Description
+                                li(style="list-style-type: none;")= question.text
+                    .form-group
+                        .row
+                            .col-md-6
+                                button.btn.btn-primary.col-sm-4(type='button')
+                                    i.fa.fa-thumbs-up
+                                    | Up Vote
+                                    span.badge.pull-right 10
 
-                        .col-md-6
-                            button.btn.btn-danger.col-sm-4(type='button')
-                                i.fa.fa-thumbs-down
-                                | Down Vote
-                                span.badge.pull-right 7
-                    hr
+                            .col-md-6
+                                button.btn.btn-danger.col-sm-4(type='button')
+                                    i.fa.fa-thumbs-down
+                                    | Down Vote
+                                    span.badge.pull-right 7
+                        hr
 
 
 
