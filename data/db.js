@@ -54,8 +54,7 @@ var Database = function(dbName){
                         'submitter VARCHAR(64) NOT NULL REFERENCES ' + userTable + ',' +
                         'downVoteCount INTEGER DEFAULT 0 CHECK (downVoteCount >= 0),' +
                         'upVoteCount INTEGER DEFAULT 0 CHECK (upVoteCount >= 0),' +
-                        'conTableName VARCHAR(32),' +
-                        'proTableName VARCHAR(32)' +
+                        'argTableName VARCHAR(32)' +
                     ');',
                     function(error, result) {
                         done();
