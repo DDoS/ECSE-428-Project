@@ -47,7 +47,7 @@ router.post('/find', function(req, res){
         req.app.get('db').getNewQuestions(undefined, req.body.number, function (questions) {
             console.log(questions);
             res.render('questions/find', {
-                "questions": questions
+                title: 'View Question', "questions": questions
             });
         });
     }
