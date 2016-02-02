@@ -53,8 +53,7 @@ var Database = function(dbName){
                         'date TIMESTAMP DEFAULT now(),' +
                         'submitter VARCHAR(64) NOT NULL REFERENCES ' + userTable + ',' +
                         'downVoteCount INTEGER DEFAULT 0 CHECK (downVoteCount >= 0),' +
-                        'upVoteCount INTEGER DEFAULT 0 CHECK (upVoteCount >= 0),' +
-                        'argTableName VARCHAR(32)' +
+                        'upVoteCount INTEGER DEFAULT 0 CHECK (upVoteCount >= 0)' +
                     ');',
                     function(error, result) {
                         done();
@@ -161,13 +160,31 @@ var Database = function(dbName){
                         'RETURNING id, date;',
                     [title, text, submitter],
                     function(error, result) {
-                        done();
                         if (error) {
                             console.error(error);
                             throw new Error('Could not create question');
                         }
                         var question = new Question(result.rows[0].id, title, text, result.rows[0].date, submitter, 0, 0);
-                        createDone(question);
+                        // Also create the argument table for that question
+                        client.query(
+                            'CREATE TABLE IF NOT EXISTS ' + question.argTableName + ' (' +
+                                'id SERIAL PRIMARY KEY,' +
+                                'type BOOLEAN NOT NULL,' +
+                                'text VARCHAR(4096) NOT NULL,' +
+                                'date TIMESTAMP DEFAULT now(),' +
+                                'submitter VARCHAR(64) NOT NULL REFERENCES ' + userTable + ',' +
+                                'downVoteCount INTEGER DEFAULT 0 CHECK (downVoteCount >= 0),' +
+                                'upVoteCount INTEGER DEFAULT 0 CHECK (upVoteCount >= 0)' +
+                            ');',
+                            function(error, result) {
+                                done();
+                                if (error) {
+                                    console.error(error);
+                                    throw new Error('Could not create argument table');
+                                }
+                                createDone(question);
+                            }
+                        );
                     }
                 );
             }
@@ -254,10 +271,82 @@ var Database = function(dbName){
         );
     };
 
+    self.createArgument = function(question, type, text, submitter, createDone) {
+        if (question === undefined) {
+            throw new Error('question is undefined');
+        }
+        if (type !== ArgumentType.CON && type !== ArgumentType.PRO) {
+            throw new Error('argument type is neither pro or con');
+        }
+        if (stringEmpty(text)) {
+            throw new Error('text is empty');
+        }
+        if (stringEmpty(submitter)) {
+            throw new Error('submitter is empty');
+        }
+        pg.connect(
+            config,
+            function(error, client, done) {
+                if (error) {
+                    console.error(error);
+                    throw new Error('Error creating query');
+                }
+                client.query(
+                    'INSERT INTO ' + question.argTableName + ' (type, text, submitter) VALUES ($1, $2, $3)' +
+                        'RETURNING id, date;',
+                    [type, text, submitter],
+                    function(error, result) {
+                        done();
+                        if (error) {
+                            console.error(error);
+                            throw new Error('Could not create argument');
+                        }
+                        var argument = new Argument(result.rows[0].id, type, text, result.rows[0].date, submitter, 0, 0);
+                        createDone(argument);
+                    }
+                );
+            }
+        );
+    };
+
+    self.getArgument = function(question, id, getDone) {
+        pg.connect(
+            config,
+            function(error, client, done) {
+                if (error) {
+                    console.error(error);
+                    throw new Error('Error creating query');
+                }
+                client.query(
+                    'SELECT type, text, date, submitter, downVoteCount, upVoteCount ' +
+                        'FROM ' + question.argTableName + ' WHERE id = $1;',
+                    [id],
+                    function(error, result) {
+                        done();
+                        if (error) {
+                            console.error(error);
+                            throw new Error('Could not get argument');
+                        }
+                        var argument;
+                        if (result.rows.length <= 0) {
+                            argument = undefined;
+                        } else {
+                            argument = new Argument(
+                                id, result.rows[0].type, result.rows[0].text, result.rows[0].date,
+                                result.rows[0].submitter, result.rows[0].downvotecount, result.rows[0].upvotecount
+                            );
+                        }
+                        getDone(argument);
+                    }
+                );
+            }
+        );
+    };
+
     // For testing only
     self.rawQuery = function(query) {
         pg.connect(config, query);
-    }
+    };
 };
 
 var User = function(username, salt, password, email) {
@@ -269,7 +358,7 @@ var User = function(username, salt, password, email) {
         var hash = crypto.createHash('sha256');
         var attemptPassword = hash.update(passwordText).update(salt).digest('hex');
         return attemptPassword === password;
-    }
+    };
 
 };
 
@@ -282,9 +371,24 @@ var Question = function(id, title, text, date, submitter, downVoteCount, upVoteC
     self.submitter = submitter;
     self.downVoteCount = downVoteCount;
     self.upVoteCount = upVoteCount;
-    var conTableName = 'tableCon_' + id;
-    var proTableName = 'tablePro_' + id;
+    self.argTableName = 'argTable_' + id;
 };
+
+var ArgumentType = Object.freeze({
+        "CON": false,
+        "PRO": true
+});
+
+var Argument = function(id, type, text, date, submitter, downVoteCount, upVoteCount) {
+    var self = this;
+    self.id = id;
+    self.type = type;
+    self.text = text;
+    self.date = date;
+    self.submitter = submitter;
+    self.downVoteCount = downVoteCount;
+    self.upVoteCount = upVoteCount;
+}
 
 function stringEmpty(string) {
     return !string || string.trim().length === 0;
@@ -293,3 +397,5 @@ function stringEmpty(string) {
 module.exports.Database = Database;
 module.exports.User = User;
 module.exports.Question = Question;
+module.exports.ArgumentType = ArgumentType;
+module.exports.Argument = Argument;
