@@ -33,4 +33,25 @@ router.post('/create', function(req, res){
 
 });
 
+router.get('/find', function(req, res) {
+    res.render('questions/find', {
+        title: 'View Questions'
+    });
+});
+
+router.post('/find', function(req, res){
+    if (req.body.number == "") {
+        req.flash('errors', { msg: 'Please enter a valid number.' });
+        return res.redirect('/questions/find');
+    }else {
+        req.app.get('db').getNewQuestions(undefined, req.body.number, function (questions) {
+            console.log(questions);
+            res.render('questions/find', {
+                "questions": questions
+            });
+        });
+    }
+});
+
+
 module.exports = router;

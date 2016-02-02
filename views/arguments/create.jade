@@ -4,7 +4,6 @@ block content
     .page-header
         h3 Create Argument
 
-
     script.
         function auto_grow(element) {
             if (element.scrollHeight > 50) {
@@ -12,7 +11,6 @@ block content
                 element.style.height = (element.scrollHeight + 15) + "px";
             }
         }
-
 
     form.form-horizontal(method='POST')
         input(type='hidden', name='_csrf', value=_csrf)

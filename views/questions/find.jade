@@ -1,0 +1,56 @@
+extends ../layout
+
+block content
+
+
+    .page-header
+        h3 View Questions
+
+    form.form-horizontal(method='POST')
+        input(type='hidden', name='_csrf', value=_csrf)
+        .form-group
+            .col-sm-3
+                label.control-label(for='number') Number of Question
+            .col-sm-2
+                input.form-control(type='number', min=1, name='number', id='number', autofocus=false)
+            .col-sm-7
+                button.col-sm-3.btn.btn-success(type='submit')
+                    i.fa.fa-paper-plane
+                    | Find
+        .form-group.col-lg-6
+                hr
+    if questions
+        .form-group
+            each question in questions
+                .form-group
+                    .row
+                        .col-md-2
+                            label.control-label(for='number') Title
+                        .col-md-10
+                            li(style="list-style-type: none;")= question.title
+                    .row
+                        .col-md-2
+                            label.control-label(for='number') Posted Date
+                        .col-md-10
+                            li(style="list-style-type: none;")= question.date
+                    .row
+                        .col-md-12
+                            label.control-label(for='number') Description
+                            li(style="list-style-type: none;")= question.text
+                .form-group
+                    .row
+                        .col-md-6
+                            button.btn.btn-primary.col-sm-4(type='button')
+                                i.fa.fa-thumbs-up
+                                | Up Vote
+                                span.badge.pull-right 10
+
+                        .col-md-6
+                            button.btn.btn-danger.col-sm-4(type='button')
+                                i.fa.fa-thumbs-down
+                                | Down Vote
+                                span.badge.pull-right 7
+                    hr
+
+
+
