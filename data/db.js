@@ -343,6 +343,61 @@ var Database = function(dbName){
         );
     };
 
+    self.getNewArguments = function(question, type, since, limit, offset, getDone) {
+        if (question === undefined) {
+            throw new Error('question is undefined');
+        }
+        if (since === undefined) {
+            since = SMALLEST_DATE;
+        } else if (since > new Date()) {
+            throw Error("Since date is in the future");
+        }
+        if (limit === undefined) {
+            limit = 10;
+        }
+        if (offset === undefined) {
+            offset = 0;
+        }
+        pg.connect(
+            config,
+            function(error, client, done) {
+                if (error) {
+                    console.error(error);
+                    throw new Error('Error creating query');
+                }
+                // If the type is specified, add it to the where condition
+                var whereClause = ' WHERE date >= $1 ';
+                var queryArgs = [since, limit, offset];
+                if (type === ArgumentType.CON || type === ArgumentType.PRO) {
+                    whereClause += 'AND type = $4 ';
+                    queryArgs.push(type);
+                }
+                client.query(
+                    'SELECT id, type, text, date, submitter, downVoteCount, upVoteCount ' +
+                        'FROM ' + question.argTableName + whereClause +
+                        'ORDER BY date DESC ' +
+                        'LIMIT $2 OFFSET $3;',
+                    queryArgs,
+                    function(error, result) {
+                        done();
+                        if (error) {
+                            console.error(error);
+                            throw new Error('Could not get arguments');
+                        }
+                        var args = [];
+                        result.rows.forEach(function(row, index, array) {
+                            args.push(new Argument(
+                                row.id, row.type, row.text, row.date,
+                                row.submitter, row.downvotecount, row.upvotecount
+                            ));
+                        });
+                        getDone(args);
+                    }
+                );
+            }
+        );
+    };
+
     // For testing only
     self.rawQuery = function(query) {
         pg.connect(config, query);

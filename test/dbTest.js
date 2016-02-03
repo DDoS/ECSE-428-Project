@@ -136,32 +136,33 @@ describe('Database', function() {
         });
     });
 
-    describe('getNewQuestions(since, limit, getDone)', function() {
+    describe('getNewQuestions(since, limit, offset, getDone)', function() {
         var someDate = undefined;
         var numberAfterThatDate = 0;
 
         before(function(done) {
-            // Create a user to submit 100 questions
-            database.createUser('Spammer', 'annoying', 'fish@spam.io', function() {});
-            // Create those questions
-            questions = [];
-            var j = 0;
-            for (var i = 0; i < 20; i++) {
-                database.createQuestion('Title', 'Text', 'Spammer', function(question) {
-                    questions.push(question);
-                    if (++j >= 20) {
-                        // Find the date of the question in the middle
-                        someDate = questions[10].date;
-                        // Count the number of questions made after it
-                        questions.forEach(function(question, index, array) {
-                            if (question.date >= someDate) {
-                                numberAfterThatDate++;
-                            }
-                        });
-                        done();
-                    }
-                });
-            }
+            // Create a user to submit 20 questions
+            database.createUser('Spammer', 'annoying', 'fish@spam.io', function(user) {
+                // Create those questions
+                questions = [];
+                var j = 0;
+                for (var i = 0; i < 20; i++) {
+                    database.createQuestion('Title', 'Text', 'Spammer', function(question) {
+                        questions.push(question);
+                        if (++j >= 20) {
+                            // Find the date of the question in the middle
+                            someDate = questions[10].date;
+                            // Count the number of questions made after it
+                            questions.forEach(function(question, index, array) {
+                                if (question.date >= someDate) {
+                                    numberAfterThatDate++;
+                                }
+                            });
+                            done();
+                        }
+                    });
+                }
+            });
         });
 
         it('Should return at most the 10 newest questions in descending date, when no date, limit or offset is defined',
@@ -170,9 +171,9 @@ describe('Database', function() {
                     assert.equal(10, questions.length);
                     assert(isSorted(questions));
                     done();
-                }
-            );
-        });
+                });
+            }
+        );
 
         it('Should return the newest questions in descending date, up to a given limit, when no date or offset is defined',
             function(done) {
@@ -180,9 +181,9 @@ describe('Database', function() {
                     assert.equal(5, questions.length);
                     assert(isSorted(questions));
                     done();
-                }
-            );
-        });
+                });
+            }
+        );
 
         it('Should return the newest questions in descending date, before the given date, up to a given limit when no offset is given',
             function(done) {
@@ -193,9 +194,9 @@ describe('Database', function() {
                         assert(question.date >= someDate);
                     });
                     done();
-                }
-            );
-        });
+                });
+            }
+        );
 
         it('Should return the newest questions in descending date, up to a given limit, starting at a given offset, when no date is defined',
             function(done) {
@@ -217,9 +218,9 @@ describe('Database', function() {
                         });
                         done();
                     });
-                }
-            );
-        });
+                });
+            }
+        );
 
         it('Should not allow since dates in the future', function() {
             assert.throws(
@@ -231,7 +232,7 @@ describe('Database', function() {
         });
     });
 
-    describe('createArgument(type, text, submitter, createDone)', function() {
+    describe('createArgument(question, type, text, submitter, createDone)', function() {
         var targetQuestion = undefined;
 
         before(function(done) {
@@ -320,6 +321,134 @@ describe('Database', function() {
                     database.createArgument(targetQuestion, db.ArgumentType.PRO, 'I have an opinion', '', function() {});
                 },
                 Error, 'submitter is empty'
+            );
+        });
+    });
+
+    describe('getNewArguments(question, type, since, limit, offset, getDone)', function() {
+        var targetQuestion = undefined;
+        var someDate = undefined;
+        var numberAfterThatDate = 0;
+
+        before(function(done) {
+            // Create a user to submit one question and 20 arguments
+            database.createUser('Scammer', 'freeMoney', 'memes@scam.ng', function(user) {
+                database.createQuestion('Title', 'Text', 'Scammer', function(question) {
+                    targetQuestion = question;
+                    args = [];
+                    var j = 0;
+                    for (var i = 0; i < 20; i++) {
+                        database.createArgument(question, i % 2 == 0, 'Text', 'Scammer', function(argument) {
+                            args.push(argument);
+                            if (++j >= 20) {
+                                // Find the date of the argument in the middle
+                                someDate = args[10].date;
+                                // Count the number of arguments made after it
+                                args.forEach(function(argument, index, array) {
+                                    if (argument.date >= someDate) {
+                                        numberAfterThatDate++;
+                                    }
+                                });
+                                done();
+                            }
+                        });
+                    }
+                });
+            });
+        });
+
+        it('Should return at most the 10 newest arguments in descending date, when no type, date, limit or offset is defined',
+            function(done) {
+                database.getNewArguments(targetQuestion, undefined, undefined, undefined, undefined, function(args) {
+                    assert.equal(10, args.length);
+                    assert(isSorted(args));
+                    done();
+                });
+            }
+        );
+
+        it('Should return the newest arguments in descending date, up to a given limit, when no type, date or offset is defined',
+            function(done) {
+                database.getNewArguments(targetQuestion, undefined, undefined, 5, undefined, function(args) {
+                    assert.equal(5, args.length);
+                    assert(isSorted(args));
+                    done();
+                });
+            }
+        );
+
+        it('Should return the newest arguments in descending date, before the given date, up to a given limit when no type or offset is given',
+            function(done) {
+                database.getNewArguments(targetQuestion, undefined, someDate, 20, undefined, function(args) {
+                    assert.equal(numberAfterThatDate, args.length);
+                    assert(isSorted(args));
+                    args.forEach(function(argument, index, array) {
+                        assert(argument.date >= someDate);
+                    });
+                    done();
+                });
+            }
+        );
+
+        it('Should return the newest arguments in descending date, up to a given limit, starting at a given offset, when no type or date is defined',
+            function(done) {
+                database.getNewArguments(targetQuestion, undefined, undefined, 10, 0, function(args) {
+                    // Get the first 10 arguments
+                    assert.equal(10, args.length);
+                    assert(isSorted(args));
+                    // Get the other 10
+                    database.getNewArguments(targetQuestion, undefined, undefined, 10, 10, function(restOfArguments) {
+                        assert.equal(10, restOfArguments.length);
+                        // Append both argument arrays
+                        args.forEach(function(argument, index, array) {
+                            array.push(restOfArguments[index]);
+                        });
+                        assert(isSorted(args));
+                        // Assert no duplicates, all arguments have been returned once
+                        args.forEach(function(argument, index, array) {
+                            assert(index == 0 || argument != array[index - 1]);
+                        });
+                        done();
+                    });
+                });
+            }
+        );
+
+        it('Should return at most the 10 newest arguments in descending date for the given type, when no date, limit or offset is defined',
+            function(done) {
+                database.getNewArguments(targetQuestion, db.ArgumentType.PRO, undefined, undefined, undefined, function(proArgs) {
+                    assert.equal(10, proArgs.length);
+                    assert(isSorted(proArgs));
+                    proArgs.forEach(function(argument, index, array) {
+                        assert.strictEqual(db.ArgumentType.PRO, argument.type);
+                    });
+                    // Now check the con args
+                    database.getNewArguments(targetQuestion, db.ArgumentType.CON, undefined, undefined, undefined, function(conArgs) {
+                        assert.equal(10, conArgs.length);
+                        assert(isSorted(conArgs));
+                        conArgs.forEach(function(argument, index, array) {
+                            assert.strictEqual(db.ArgumentType.CON, argument.type);
+                        });
+                        // Append both argument arrays
+                        proArgs.forEach(function(argument, index, array) {
+                            array.push(conArgs[index]);
+                        });
+                        // Assert no duplicates, all arguments have been returned once
+                        proArgs.sort().forEach(function(argument, index, array) {
+                            assert(index == 0 || argument != array[index - 1]);
+                        });
+                        done();
+                    });
+                });
+            }
+        );
+
+        it('Should not allow since dates in the future', function() {
+            assert.throws(
+                function() {
+                    database.getNewQuestions(new Date('2018-01-01'), undefined, function() {});
+                },
+                Error, 'Since date is in the future'
             );
         });
     });
