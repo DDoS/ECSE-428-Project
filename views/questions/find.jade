@@ -2,23 +2,47 @@ extends ../layout
 
 block content
 
+    script.
+        function auto_grow(element) {
+            if (element.scrollHeight > 50) {
+                element.style.height = "auto";
+                element.style.height = (element.scrollHeight + 15) + "px";
+            }
+        }
 
     .page-header
         h3 View Questions
 
-    form.form-horizontal(method='POST')
-        input(type='hidden', name='_csrf', value=_csrf)
-        .form-group
-            .col-sm-3
-                label.control-label(for='number') Number of Question
-            .col-sm-2
-                input.form-control(type='number', min=1, name='number', id='number', autofocus=false)
-            .col-sm-7
-                button.col-sm-3.btn.btn-success(type='submit')
-                    i.fa.fa-paper-plane
-                    | Find
-        .form-group.col-lg-6
-                hr
+
+    //mixin pagination(start, numPages, curr, base)
+    //    ul.pagination
+    //        - var n = start
+    //        while n < start + numPages
+    //            if n == curr
+    //                li.active
+    //                    a(href='#{base}?page=#{n}') #{n}
+    //            else
+    //                li
+    //                    a(href='#{base}?page=#{n}') #{n}
+    //            - n++
+
+    mixin pagination(curr, base)
+          ul.pagination
+              if curr == 1
+                  li.disabled
+                      a Prev
+              else
+                  li
+                      a(href='#{base}?page=#{curr - 1}') Prev
+
+              if hasNextPage
+                  li
+                      a(href='#{base}?page=#{curr + 1}') Next
+              else
+                  li.disabled
+                      a Next
+
+
     if questions
         if questions.length == 0
             .form-group
@@ -29,33 +53,41 @@ block content
                 each question in questions
                     .form-group
                         .row
-                            .col-md-2
-                                label.control-label(for='number') Title
-                            .col-md-10
-                                li(style="list-style-type: none;")= question.title
-                        .row
-                            .col-md-2
-                                label.control-label(for='number') Posted Date
-                            .col-md-10
-                                li(style="list-style-type: none;")= question.date
-                        .row
                             .col-md-12
-                                label.control-label(for='number') Description
-                                li(style="list-style-type: none;")= question.text
+                                h2
+                                    | #{question.title}
+                                p
+                                    | #{question.text}
+
+                                i(style="font-size: smaller;")
+                                    | #{question.date}
+
                     .form-group
                         .row
-                            .col-md-6
-                                button.btn.btn-primary.col-sm-4(type='button')
-                                    i.fa.fa-thumbs-up
-                                    | Up Vote
-                                    span.badge.pull-right 10
-
-                            .col-md-6
-                                button.btn.btn-danger.col-sm-4(type='button')
-                                    i.fa.fa-thumbs-down
-                                    | Down Vote
-                                    span.badge.pull-right 7
+                            .btn-group-sm
+                                .col-md-6
+                                    button.btn.btn-sm.btn-primary.col-sm-5(type='button')
+                                        i.fa.fa-thumbs-up
+                                        | Up Vote
+                                        span.badge.pull-right #{question.upVoteCount}
+                                        button.btn.btn-sm.btn-danger.col-sm-5(type='button')
+                                            i.fa.fa-thumbs-down
+                                            | Down Vote
+                                            span.badge.pull-right #{question.downVoteCount}
+                    .form-group
+                        .row
+                            .col-md-12
+                                textarea.form-control(style="min-height:50px; outline: none; resize: none; overflow: hidden;",onkeyup='auto_grow(this)',name='argument', placeholder='Type your thoughts', autofocus=true)
+                    .form-group
+                        .row
+                            .col-md-offset-11
+                                .btn-group-sm
+                                    button.btn.btn-default(type='submit')
+                                        i.fa.fa-paper-plane
+                                        | Enter
                         hr
 
+    .form-group
+        +pagination(currPage,"/questions/find/")
 
 

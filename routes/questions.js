@@ -8,7 +8,7 @@ router.get('/create', function(req, res) {
 });
 
 
-router.post('/create', function(req, res){
+router.post('/create', function(req, res) {
     if (req.user === undefined) {
         req.flash('errors', { msg: 'Please login before posting new question.' });
         return res.redirect('/users/login');
@@ -34,24 +34,30 @@ router.post('/create', function(req, res){
 });
 
 router.get('/find', function(req, res) {
-    res.render('questions/find', {
-        title: 'View Questions'
+
+    var page;
+
+    if(req.query.page)
+        page = req.query.page - 1;
+    else
+       page = 0;
+
+
+    req.app.get('db').getNewQuestions(undefined,undefined, page * 10, function (questions) {
+        console.log(questions);
+        res.render('questions/find', {
+            title: 'View Question',
+            questions: questions,
+            currPage: page + 1,
+            hasNextPage: questions.length == 10
+
+        });
     });
+
+
+
 });
 
-router.post('/find', function(req, res){
-    if (req.body.number == "") {
-        req.flash('errors', { msg: 'Please enter a valid number.' });
-        return res.redirect('/questions/find');
-    }else {
-        req.app.get('db').getNewQuestions(undefined, req.body.number, function (questions) {
-            console.log(questions);
-            res.render('questions/find', {
-                title: 'View Question', "questions": questions
-            });
-        });
-    }
-});
 
 
 module.exports = router;
