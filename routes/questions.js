@@ -53,11 +53,30 @@ router.get('/find', function(req, res) {
 
         });
     });
-
-
-
 });
 
+router.post('/pa', function(req, res) {
+    if (req.user === undefined) {
+        req.flash('errors', { msg: 'Please login before posting new argument.' });
+        return res.redirect('/users/login');
+
+    }else {
+        if (req.body.argument === undefined) {
+            req.flash('errors', { msg: 'Argument is empty.' });
+            return res.redirect(req.get('referer'));
+
+        }else {
+            req.app.get('db').getQuestion(req.query.q, function (question) {
+                req.app.get('db').createArgument(question, true, req.body.argument, req.user.username, function (argument) {
+                    console.log(argument);
+                    req.flash('success', {msg: 'New argument posted!'});
+                    res.redirect(req.get('referer'));
+
+                });
+            });
+        }
+    }
+});
 
 
 module.exports = router;
