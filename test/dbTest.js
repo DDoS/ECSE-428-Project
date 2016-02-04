@@ -232,8 +232,8 @@ describe('Database', function() {
         });
     });
 
-    describe('createArgument(question, type, text, submitter, createDone)', function() {
-        var targetQuestion = undefined;
+    describe('createArgument(questionID, type, text, submitter, createDone)', function() {
+        var questionID = undefined;
 
         before(function(done) {
             database.createUser('Dude', 'everyoneCanSee', 'nothing@really.matters', function(user) {
@@ -242,7 +242,7 @@ describe('Database', function() {
                 assert(user.authenticate('everyoneCanSee'));
                 assert(!user.authenticate('everyoneDanSee'));
                 database.createQuestion('Hillary for president', 'This can only end well...', 'Dude', function(question) {
-                    targetQuestion = question;
+                    questionID = question.id;
                     done();
                 });
             });
@@ -251,7 +251,7 @@ describe('Database', function() {
         it('Should insert a new row in the arguments table and return a new argument object', function(done) {
             var beforeDate = new Date();
             database.createArgument(
-                targetQuestion,
+                questionID,
                 db.ArgumentType.CON,
                 'Can\'t stump the Trump!\n' +
                     'We\'ll make them build a wall and pay for it!\n' +
@@ -274,7 +274,7 @@ describe('Database', function() {
                     assert.equal(0, argument.downVoteCount);
                     assert.equal(0, argument.upVoteCount);
                     // Check if the question is indeed in the db
-                    database.getArgument(targetQuestion, argument.id, function(getArgument) {
+                    database.getArgument(questionID, argument.id, function(getArgument) {
                         assert.equal(argument.id, getArgument.id);
                         assert.strictEqual(argument.type, getArgument.type);
                         assert.equal(argument.text, getArgument.text);
@@ -300,7 +300,7 @@ describe('Database', function() {
         it('Should not allow an invalid argument type', function() {
             assert.throws(
                 function() {
-                    database.createArgument(targetQuestion, 'idiot', 'I have an opinion', 'KenM', function() {});
+                    database.createArgument(questionID, 'idiot', 'I have an opinion', 'KenM', function() {});
                 },
                 Error, 'argument type is neither pro or con'
             );
@@ -309,7 +309,7 @@ describe('Database', function() {
         it('Should not allow an empty text', function() {
             assert.throws(
                 function() {
-                    database.createArgument(targetQuestion, db.ArgumentType.PRO, '', 'KenM', function() {});
+                    database.createArgument(questionID, db.ArgumentType.PRO, '', 'KenM', function() {});
                 },
                 Error, 'text is empty'
             );
@@ -318,15 +318,15 @@ describe('Database', function() {
         it('Should not allow an empty submitter', function() {
             assert.throws(
                 function() {
-                    database.createArgument(targetQuestion, db.ArgumentType.PRO, 'I have an opinion', '', function() {});
+                    database.createArgument(questionID, db.ArgumentType.PRO, 'I have an opinion', '', function() {});
                 },
                 Error, 'submitter is empty'
             );
         });
     });
 
-    describe('getNewArguments(question, type, since, limit, offset, getDone)', function() {
-        var targetQuestion = undefined;
+    describe('getNewArguments(questionID, type, since, limit, offset, getDone)', function() {
+        var questionID = undefined;
         var someDate = undefined;
         var numberAfterThatDate = 0;
 
@@ -334,11 +334,11 @@ describe('Database', function() {
             // Create a user to submit one question and 20 arguments
             database.createUser('Scammer', 'freeMoney', 'memes@scam.ng', function(user) {
                 database.createQuestion('Title', 'Text', 'Scammer', function(question) {
-                    targetQuestion = question;
+                    questionID = question.id;
                     args = [];
                     var j = 0;
                     for (var i = 0; i < 20; i++) {
-                        database.createArgument(question, i % 2 == 0, 'Text', 'Scammer', function(argument) {
+                        database.createArgument(questionID, i % 2 == 0, 'Text', 'Scammer', function(argument) {
                             args.push(argument);
                             if (++j >= 20) {
                                 // Find the date of the argument in the middle
@@ -359,7 +359,7 @@ describe('Database', function() {
 
         it('Should return at most the 10 newest arguments in descending date, when no type, date, limit or offset is defined',
             function(done) {
-                database.getNewArguments(targetQuestion, undefined, undefined, undefined, undefined, function(args) {
+                database.getNewArguments(questionID, undefined, undefined, undefined, undefined, function(args) {
                     assert.equal(10, args.length);
                     assert(isSorted(args));
                     done();
@@ -369,7 +369,7 @@ describe('Database', function() {
 
         it('Should return the newest arguments in descending date, up to a given limit, when no type, date or offset is defined',
             function(done) {
-                database.getNewArguments(targetQuestion, undefined, undefined, 5, undefined, function(args) {
+                database.getNewArguments(questionID, undefined, undefined, 5, undefined, function(args) {
                     assert.equal(5, args.length);
                     assert(isSorted(args));
                     done();
@@ -379,7 +379,7 @@ describe('Database', function() {
 
         it('Should return the newest arguments in descending date, before the given date, up to a given limit when no type or offset is given',
             function(done) {
-                database.getNewArguments(targetQuestion, undefined, someDate, 20, undefined, function(args) {
+                database.getNewArguments(questionID, undefined, someDate, 20, undefined, function(args) {
                     assert.equal(numberAfterThatDate, args.length);
                     assert(isSorted(args));
                     args.forEach(function(argument, index, array) {
@@ -392,12 +392,12 @@ describe('Database', function() {
 
         it('Should return the newest arguments in descending date, up to a given limit, starting at a given offset, when no type or date is defined',
             function(done) {
-                database.getNewArguments(targetQuestion, undefined, undefined, 10, 0, function(args) {
+                database.getNewArguments(questionID, undefined, undefined, 10, 0, function(args) {
                     // Get the first 10 arguments
                     assert.equal(10, args.length);
                     assert(isSorted(args));
                     // Get the other 10
-                    database.getNewArguments(targetQuestion, undefined, undefined, 10, 10, function(restOfArguments) {
+                    database.getNewArguments(questionID, undefined, undefined, 10, 10, function(restOfArguments) {
                         assert.equal(10, restOfArguments.length);
                         // Append both argument arrays
                         args.forEach(function(argument, index, array) {
@@ -416,14 +416,14 @@ describe('Database', function() {
 
         it('Should return at most the 10 newest arguments in descending date for the given type, when no date, limit or offset is defined',
             function(done) {
-                database.getNewArguments(targetQuestion, db.ArgumentType.PRO, undefined, undefined, undefined, function(proArgs) {
+                database.getNewArguments(questionID, db.ArgumentType.PRO, undefined, undefined, undefined, function(proArgs) {
                     assert.equal(10, proArgs.length);
                     assert(isSorted(proArgs));
                     proArgs.forEach(function(argument, index, array) {
                         assert.strictEqual(db.ArgumentType.PRO, argument.type);
                     });
                     // Now check the con args
-                    database.getNewArguments(targetQuestion, db.ArgumentType.CON, undefined, undefined, undefined, function(conArgs) {
+                    database.getNewArguments(questionID, db.ArgumentType.CON, undefined, undefined, undefined, function(conArgs) {
                         assert.equal(10, conArgs.length);
                         assert(isSorted(conArgs));
                         conArgs.forEach(function(argument, index, array) {

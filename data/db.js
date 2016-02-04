@@ -271,9 +271,9 @@ var Database = function(dbName){
         );
     };
 
-    self.createArgument = function(question, type, text, submitter, createDone) {
-        if (question === undefined) {
-            throw new Error('question is undefined');
+    self.createArgument = function(questionID, type, text, submitter, createDone) {
+        if (questionID === undefined) {
+            throw new Error('question ID is undefined');
         }
         if (type !== ArgumentType.CON && type !== ArgumentType.PRO) {
             throw new Error('argument type is neither pro or con');
@@ -291,8 +291,9 @@ var Database = function(dbName){
                     console.error(error);
                     throw new Error('Error creating query');
                 }
+                var argTableName = 'argTable_' + questionID;
                 client.query(
-                    'INSERT INTO ' + question.argTableName + ' (type, text, submitter) VALUES ($1, $2, $3)' +
+                    'INSERT INTO ' + argTableName + ' (type, text, submitter) VALUES ($1, $2, $3)' +
                         'RETURNING id, date;',
                     [type, text, submitter],
                     function(error, result) {
@@ -309,7 +310,10 @@ var Database = function(dbName){
         );
     };
 
-    self.getArgument = function(question, id, getDone) {
+    self.getArgument = function(questionID, id, getDone) {
+        if (questionID === undefined) {
+            throw new Error('question ID is undefined');
+        }
         pg.connect(
             config,
             function(error, client, done) {
@@ -317,9 +321,10 @@ var Database = function(dbName){
                     console.error(error);
                     throw new Error('Error creating query');
                 }
+                var argTableName = 'argTable_' + questionID;
                 client.query(
                     'SELECT type, text, date, submitter, downVoteCount, upVoteCount ' +
-                        'FROM ' + question.argTableName + ' WHERE id = $1;',
+                        'FROM ' + argTableName + ' WHERE id = $1;',
                     [id],
                     function(error, result) {
                         done();
@@ -343,9 +348,9 @@ var Database = function(dbName){
         );
     };
 
-    self.getNewArguments = function(question, type, since, limit, offset, getDone) {
-        if (question === undefined) {
-            throw new Error('question is undefined');
+    self.getNewArguments = function(questionID, type, since, limit, offset, getDone) {
+        if (questionID === undefined) {
+            throw new Error('question ID is undefined');
         }
         if (since === undefined) {
             since = SMALLEST_DATE;
@@ -365,6 +370,7 @@ var Database = function(dbName){
                     console.error(error);
                     throw new Error('Error creating query');
                 }
+                var argTableName = 'argTable_' + questionID;
                 // If the type is specified, add it to the where condition
                 var whereClause = ' WHERE date >= $1 ';
                 var queryArgs = [since, limit, offset];
@@ -374,7 +380,7 @@ var Database = function(dbName){
                 }
                 client.query(
                     'SELECT id, type, text, date, submitter, downVoteCount, upVoteCount ' +
-                        'FROM ' + question.argTableName + whereClause +
+                        'FROM ' + argTableName + whereClause +
                         'ORDER BY date DESC ' +
                         'LIMIT $2 OFFSET $3;',
                     queryArgs,
