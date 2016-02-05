@@ -2,6 +2,7 @@ extends ../layout
 
 block content
 
+
     script.
         function auto_grow(element) {
             if (element.scrollHeight > 50) {
@@ -55,12 +56,12 @@ block content
                         .row
                             .col-md-12
                                 h2
-                                    | #{question.title}
+                                    a(href="/questions/view/?q=#{question.id}") #{question.title}
                                 p
                                     | #{question.text}
 
                                 i(style="font-size: smaller;")
-                                    | #{question.date}
+                                    | #{question.date}, By #{question.submitter}
 
                     .form-group
                         .row
@@ -74,24 +75,6 @@ block content
                                             i.fa.fa-thumbs-down
                                             | Down Vote
                                             span.badge.pull-right #{question.downVoteCount}
-
-                    form(id='argument_form', method='POST',action="/questions/pa?q=#{question.id}&t=1")
-                        .form-group
-                            .row
-                                .col-md-12
-                                    textarea.form-control(style="min-height:50px; outline: none; resize: none; overflow: hidden;",onkeyup='auto_grow(this)',name='argument', placeholder='Type your thoughts', autofocus=true)
-                        .form-group
-                            .row
-                                .col-md-offset-10
-                                    .btn-group-sm
-                                        button.btn.btn-default(type='submit')
-                                            i.fa.fa-paper-plane
-                                            | Agree
-                                            button.btn.btn-default(type='submit')
-                                                i.fa.fa-paper-plane
-                                                | Disagree
-
-                            hr
 
     .form-group
         +pagination(currPage,"/questions/find/")
