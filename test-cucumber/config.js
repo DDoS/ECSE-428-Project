@@ -44,7 +44,7 @@ exports.config = {
      * location of feature files
      */
     featureFiles: [
-        'test/features/**/*.feature'
+        'test-cucumber/features/**/*.feature'
     ],
 
     /**
