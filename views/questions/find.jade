@@ -56,7 +56,7 @@ block content
                         .row
                             .col-md-12
                                 h2
-                                    a(href="/questions/view/?q=#{question.id}") #{question.title}
+                                    a.btn-link(id="question_#{question.id}",href="/questions/view/?q=#{question.id}") #{question.title}
                                 p
                                     | #{question.text}
 

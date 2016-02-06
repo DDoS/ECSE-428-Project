@@ -32,24 +32,26 @@ block content
     if arguments
         .form-group
             if arguments.length == 0
-                p
+                p#view_arguments_empty
+
                     | No argument found
             else
                 - var n = 0
                 while n < arguments.length
-                    label.control-label #{arguments[n].submitter}
-                    i(style="font-size: smaller;")
-                        | , #{arguments[n].date}
-                    p
-                        | #{arguments[n].text}
-                    - n++
+                    #view_arguments_nonempty
+                        label.control-label #{arguments[n].submitter}
+                        i(style="font-size: smaller;")
+                            | , #{arguments[n].date}
+                        p
+                            | #{arguments[n].text}
+                        - n++
         hr
 
     form(id='argument_form', method='POST',action="/questions/pa?q=#{question.id}&t=1")
         .form-group
             .row
                 .col-md-12
-                    textarea.form-control(style="min-height:50px; outline: none; resize: none; overflow: hidden;",onkeyup='auto_grow(this)',name='argument', placeholder='Type your thoughts', autofocus=false)
+                    textarea.form-control(id="create_argument",style="min-height:50px; outline: none; resize: none; overflow: hidden;",onkeyup='auto_grow(this)',name='argument', placeholder='Type your thoughts', autofocus=true)
         .form-group
             .row
                 .col-md-offset-10

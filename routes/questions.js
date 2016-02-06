@@ -46,7 +46,7 @@ router.get('/find', function(req, res) {
     req.app.get('db').getNewQuestions(undefined,undefined, page * 10, function (questions) {
         console.log(questions);
         res.render('questions/find', {
-            title: 'View Question',
+            title: 'View Questions',
             questions: questions,
             currPage: page + 1,
             hasNextPage: questions.length == 10
