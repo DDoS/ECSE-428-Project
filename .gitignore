@@ -2,7 +2,6 @@
 ############
 build
 dist
-lib
 out
 run
 target

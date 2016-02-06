@@ -61,7 +61,7 @@ router.post('/pa', function(req, res) {
         return res.redirect('/users/login');
 
     }else {
-        if (req.body.argument === undefined) {
+        if (req.body.argument == "") {
             req.flash('errors', { msg: 'Argument is empty.' });
             return res.redirect(req.get('referer'));
 
@@ -74,6 +74,19 @@ router.post('/pa', function(req, res) {
             });
         }
     }
+});
+
+router.get('/view', function(req, res) {
+    req.app.get('db').getQuestion(req.query.q, function (question) {
+        req.app.get('db').getNewArguments(question.id, true, undefined, undefined, undefined, function (arguments) {
+            res.render('questions/view', {
+                arguments: arguments,
+                title: 'View An Question',
+                question: question
+            });
+
+        });
+    });
 });
 
 
