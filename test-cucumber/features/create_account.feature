@@ -37,6 +37,9 @@ Scenario: Check create account non-matching password failure
 	Then I expect that the title is "Create Account - Mayhem"
 	And I expect that element ".alert.alert-danger" becomes visible
 
+# To test create new account:
+# - change username
+# - remove "@Pending"
 @Pending
 Scenario: Check create account successfully
     Given I open the url "http://mayhem-ecse428.rhcloud.com/users/create"

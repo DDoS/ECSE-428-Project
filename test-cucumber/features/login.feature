@@ -1,6 +1,10 @@
 # Gherkin Acceptance Tests for Login
 
-Feature:
+Feature: Test Login
+    Given I am an anonymous user
+    And I want to log in to my user account
+    When I click Login
+    Then I should receive a Login form
 
 Scenario: Check login empty username failure
     Given I open the url "http://mayhem-ecse428.rhcloud.com/users/login"
