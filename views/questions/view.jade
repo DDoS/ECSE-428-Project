@@ -42,8 +42,12 @@ block content
                         label.control-label #{arguments[n].submitter}
                         i(style="font-size: smaller;")
                             | , #{arguments[n].date}
-                        p
-                            | #{arguments[n].text}
+                        if arguments[n].type
+                            p(style="color:blue;")
+                                | #{arguments[n].text}
+                        else
+                            p(style="color:red;")
+                                | #{arguments[n].text}
                         - n++
         hr
 
@@ -51,15 +55,15 @@ block content
         .form-group
             .row
                 .col-md-12
-                    textarea.form-control(id="create_argument",style="min-height:50px; outline: none; resize: none; overflow: hidden;",onkeyup='auto_grow(this)',name='argument', placeholder='Type your thoughts', autofocus=true)
+                    textarea.form-control(id="create_argument",style="min-height:50px; outline: none; resize: none; overflow: hidden;",onkeyup='auto_grow(this)',name='argument', placeholder='Type your thoughts', autofocus=false)
         .form-group
             .row
                 .col-md-offset-10
                     .btn-group-sm
-                        button.btn.btn-default(type='submit')
+                        button.btn.btn-default(type='submit',name='post_arg',value='pro')
                             i.fa.fa-paper-plane
                             | Agree
-                            button.btn.btn-default(type='submit')
+                            button.btn.btn-default(type='submit',name='post_arg',value='con')
                                 i.fa.fa-paper-plane
                                 | Disagree
 

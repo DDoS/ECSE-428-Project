@@ -66,9 +66,11 @@ router.post('/pa', function(req, res) {
             return res.redirect(req.get('referer'));
 
         }else {
-            req.app.get('db').createArgument(req.query.q, true, req.body.argument, req.user.username, function (argument) {
+            var argType = (req.body.post_arg === 'pro');
+
+            req.app.get('db').createArgument(req.query.q, argType, req.body.argument, req.user.username, function (argument) {
                 console.log(argument);
-                req.flash('success', {msg: 'New argument posted!'});
+                argType ? req.flash('success', {msg: 'New agree argument posted!'}) : req.flash('success', {msg: 'New disagree argument posted!'});
                 res.redirect(req.get('referer'));
 
             });
@@ -78,11 +80,19 @@ router.post('/pa', function(req, res) {
 
 router.get('/view', function(req, res) {
     req.app.get('db').getQuestion(req.query.q, function (question) {
-        req.app.get('db').getNewArguments(question.id, true, undefined, undefined, undefined, function (arguments) {
-            res.render('questions/view', {
-                arguments: arguments,
-                title: 'View An Question',
-                question: question
+        req.app.get('db').getNewArguments(question.id, true, undefined, undefined, undefined, function (proArgs) {
+            req.app.get('db').getNewArguments(question.id, false, undefined, undefined, undefined, function (conArgs) {
+
+                var allArgs = proArgs.concat(conArgs);
+                allArgs.sort(function(a,b) {
+                    return new Date(b.date) - new Date(a.date);
+                });
+
+                res.render('questions/view', {
+                    arguments: allArgs,
+                    title: 'View An Question',
+                    question: question
+                });
             });
 
         });
