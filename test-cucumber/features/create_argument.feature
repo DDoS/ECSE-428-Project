@@ -1,6 +1,6 @@
-# Gherkin Acceptance Tests for Create Argument
+# Gherkin Acceptance Test for Create an Argument
 
-Feature: Test Create Argument
+Feature: Create an Argument
 	Given I am an registered user
 	And I have logged in successfully
 	And I want to create a argument for question
@@ -14,23 +14,30 @@ Background:
 	And I press "Enter"
 	Then I expect that the title is "HOME - Mayhem"
 	And I expect that element ".alert.alert-success" becomes visible
-
-Scenario: Check create argument empty text failure using button
-    Given I open the url "http://mayhem-ecse428.rhcloud.com/questions/find"
+	And I open the url "http://mayhem-ecse428.rhcloud.com/questions/find"
 	Then I expect that the title is "View Questions - Mayhem"
-    And I open the url "http://mayhem-ecse428.rhcloud.com/questions/view/?q=1"
-	Then I expect that the title is "View An Question - Mayhem"
- 	And I click on the button ".btn.btn-default"
- 	Then I expect that the title is "View An Question - Mayhem"
-	And I expect that element ".alert.alert-danger" becomes visible
 	
-Scenario: Check create argument successfully
-    Given I open the url "http://mayhem-ecse428.rhcloud.com/questions/find"
-	Then I expect that the title is "View Questions - Mayhem"
-    And I open the url "http://mayhem-ecse428.rhcloud.com/questions/view/?q=1"
+Scenario: Successfully Creating an Argument In Favour of a Question
+    Given I open the url "http://mayhem-ecse428.rhcloud.com/questions/view/?q=1"
 	Then I expect that the title is "View An Question - Mayhem"
- 	When I set "argument" to the inputfield "#create_argument"
- 	And I click on the button ".btn.btn-default"
+ 	When I set "agree argument" to the inputfield "#create_argument"
+ 	And I click on the button "#pro"
  	Then I expect that the title is "View An Question - Mayhem"
 	And I expect that element ".alert.alert-success" becomes visible
+
+Scenario: Successfully Creating an Argument Against a Question
+    Given I open the url "http://mayhem-ecse428.rhcloud.com/questions/view/?q=1"
+	Then I expect that the title is "View An Question - Mayhem"
+ 	When I set "disagree argument" to the inputfield "#create_argument"
+ 	And I click on the button "#con"
+ 	Then I expect that the title is "View An Question - Mayhem"
+	And I expect that element ".alert.alert-success" becomes visible
+
+Scenario: Attempting to Create Argument with No Content
+    Given I open the url "http://mayhem-ecse428.rhcloud.com/questions/view/?q=1"
+	Then I expect that the title is "View An Question - Mayhem"
+ 	And I click on the button "#pro"
+ 	Then I expect that the title is "View An Question - Mayhem"
+	And I expect that element ".alert.alert-danger" becomes visible
+
 	
