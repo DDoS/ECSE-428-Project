@@ -89,8 +89,8 @@ router.get('/view', function(req, res) {
                 });
 
                 res.render('questions/view', {
+                    title: 'View A Question',
                     arguments: allArgs,
-                    title: 'View An Question',
                     question: question
                 });
             });

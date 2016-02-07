@@ -1,12 +1,10 @@
 # Gherkin Acceptance Test for Create a Question
 
 Feature: Create a Question
-	Given I am an registered user
-	And I have logged in successfully
-	And I want to create a question
-	When I click Create New Question 
-	Then I should be redirected to Create New Question Form
-	
+	As a registered user
+    In order to propose a topic for debate to the other users of the website
+    I should be able to create a question	
+    
 Background: 
 	Given I open the url "http://mayhem-ecse428.rhcloud.com/users/login"
 	When I set "henry" to the inputfield "#username"

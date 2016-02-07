@@ -1,11 +1,8 @@
 extends ../layout
 
 block content
-
-
     .page-header
         h3 #{question.title}
-
     .form-group
         .row
             .col-md-12
@@ -14,7 +11,6 @@ block content
 
                 i(style="font-size: smaller;")
                     | #{question.date}, By #{question.submitter}
-
     .form-group
         .row
             .btn-group-sm
@@ -27,8 +23,6 @@ block content
                             i.fa.fa-thumbs-down
                             | Down Vote
                             span.badge.pull-right #{question.downVoteCount}
-
-
     if arguments
         .form-group
             if arguments.length == 0
@@ -50,7 +44,6 @@ block content
                                 | #{arguments[n].text}
                         - n++
         hr
-
     form(id='argument_form', method='POST',action="/questions/pa?q=#{question.id}&t=1")
         .form-group
             .row
@@ -66,5 +59,4 @@ block content
                             button.btn.btn-default(id='con',type='submit',name='post_arg',value='con')
                                 i.fa.fa-paper-plane
                                 | Disagree
-
             hr
