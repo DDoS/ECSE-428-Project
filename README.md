@@ -1,6 +1,6 @@
 # ECSE-428-Project
 
-![Build status](https://travis-ci.org/DDoS/ECSE-428-Project.svg?branch=master)
+[![Build Status](https://travis-ci.org/DDoS/ECSE-428-Project.svg?branch=master)](https://travis-ci.org/DDoS/ECSE-428-Project)
 
 ## Project Mayhem
 
