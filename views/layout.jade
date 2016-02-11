@@ -6,6 +6,8 @@ html
     meta(name='viewport', content='width=device-width, initial-scale=1.0')
     meta(name='csrf-token', content=_csrf)
     title #{title} - Mayhem
+    link(rel='stylesheet', href='/third-party/bootstrap/css/bootstrap.min.css')
+    link(rel='stylesheet', href='/third-party/font-awesome/css/font-awesome.min.css')
     link(rel='stylesheet', href='/css/main.css')
     
   body
@@ -17,9 +19,8 @@ html
 
     include partials/footer
 
-    script(src='/js/lib/jquery.min.js')
-    script(src='/js/lib/bootstrap.min.js')
-    script(src='/js/main.js')
+    script(src='/third-party/jquery/jquery.min.js')
+    script(src='/third-party/bootstrap/js/bootstrap.min.js')
 
     // Google Analytics: change UA-XXXXX-X to be our site's ID
     script.
