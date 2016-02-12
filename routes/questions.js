@@ -3,7 +3,7 @@ var router = express.Router();
 
 router.get('/create', function(req, res) {
     res.render('questions/create', {
-        title: 'New Question'
+        title: 'Create New Question'
     });
 });
 
@@ -46,7 +46,7 @@ router.get('/find', function(req, res) {
     req.app.get('db').getNewQuestions(undefined,undefined, page * 10, function (questions) {
         console.log(questions);
         res.render('questions/find', {
-            title: 'View Questions',
+            title: 'All Questions',
             questions: questions,
             currPage: page + 1,
             hasNextPage: questions.length == 10
@@ -89,7 +89,7 @@ router.get('/view', function(req, res) {
                 });
 
                 res.render('questions/view', {
-                    title: 'View A Question',
+                    title: "Question: " + question,
                     arguments: allArgs,
                     question: question
                 });

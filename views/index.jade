@@ -1,5 +1,11 @@
 extends layout
 
 block content
-  h1= title
-  p Welcome to #{title}
+  div.jumbotron
+    h1 Welcome to Project Mayhem!
+    p
+      | Project Mayhem is a Reddit-style online debating platform where users
+      | can submit and argue in favour or against debate propositions in the
+      | form of "yes" or "no" questions.
+    a.btn.btn-primary.btn-lg(href="/questions/find")
+      | Get started &raquo;
