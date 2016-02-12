@@ -9,7 +9,10 @@ var expressValidator = require('express-validator');
 var session = require('express-session');
 var passport = require('passport');
 var dotenv = require('dotenv');
+var csurf = require('csurf');
+
 var db = require('./data/db');
+
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var arguments = require('./routes/arguments');
@@ -41,6 +44,12 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(function(req, res, next) {
     res.locals.user = req.user;
+    next();
+});
+
+app.use(csurf());
+app.use(function(req, res, next) {
+    res.locals.csrfToken = req.csrfToken();
     next();
 });
 

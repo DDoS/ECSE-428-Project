@@ -45,6 +45,7 @@ block content
                         - n++
         hr
     form(id='argument_form', method='POST',action="/questions/pa?q=#{question.id}&t=1")
+        input(type='hidden', name='_csrf', value=csrfToken)
         .form-group
             .row
                 .col-md-12

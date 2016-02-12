@@ -16,7 +16,7 @@ block content
         }
 
     form.form-horizontal(method='POST')
-        input(type='hidden', name='_csrf', value=_csrf)
+        input(type='hidden', name='_csrf', value=csrfToken)
         .form-group
             label.col-sm-3.control-label(for='title') Title
             .col-sm-7
