@@ -17,7 +17,6 @@ target
 *.db
 *.sql
 *.sqlite
-/db
 
 # Packages #
 ############
