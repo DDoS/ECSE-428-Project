@@ -403,19 +403,11 @@ var Database = function(dbName){
         callback(VoteType.NONE);
     };
 
-    self.upVoteQuestion = function(questionId, username, callback) {
+    self.setQuestionVote = function(questionId, username, vote, callback) {
         callback();
     };
 
-    self.downVoteQuestion = function(questionId, username, callback) {
-        callback();
-    };
-
-    self.upVoteArgument = function(questionId, argumentId, username, callback) {
-        callback();
-    };
-
-    self.downVoteArgument = function(questionId, argumentId, username, callback) {
+    self.setArgumentVote = function(questionId, argumentId, username, vote, callback) {
         callback();
     };
 

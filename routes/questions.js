@@ -168,21 +168,37 @@ router.post('/vote', function(req, res) {
             res.redirect(req.get('referer'));
         }
 
+        function noVote() {
+            req.flash('success', {
+                msg: 'Vote removal recorded!'
+            });
+            res.redirect(req.get('referer'));
+        }
+
         if (req.query.a) {
             if (req.body.vote === "up") {
-                dbInst.upVoteArgument(req.query.q, req.query.a,
-                                      req.user.username, upVote);
+                dbInst.setArgumentVote(req.query.q, req.query.a,
+                                       req.user.username, db.VoteType.UP,
+                                       upVote);
+            } else if (req.body.vote === "down") {
+                dbInst.setArgumentVote(req.query.q, req.query.a,
+                                       req.user.username, db.VoteType.DOWN,
+                                       downVote);
             } else {
-                dbInst.downVoteArgument(req.query.q, req.query.a,
-                                        req.user.username, downVote);
+                dbInst.setArgumentVote(req.query.q, req.query.a,
+                                       req.user.username, db.VoteType.NONE,
+                                       noVote);
             }
         } else {
             if (req.body.vote === "up") {
-                dbInst.upVoteQuestion(req.query.q, req.user.username,
-                                      upVote);
+                dbInst.setQuestionVote(req.query.q, req.user.username,
+                                       db.VoteType.UP, upVote);
+            } else if (req.body.vote === "down") {
+                dbInst.setQuestionVote(req.query.q, req.user.username,
+                                       db.VoteType.DOWN, downVote);
             } else {
-                dbInst.downVoteQuestion(req.query.q, req.user.username,
-                                        downVote);
+                dbInst.setQuestionVote(req.query.q, req.user.username,
+                                       db.VoteType.NONE, noVote);
             }
         }
     } catch (err) {
