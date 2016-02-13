@@ -396,11 +396,11 @@ var Database = function(dbName){
     };
 
     self.getQuestionVote = function(questionId, username, callback) {
-        callback("none");
+        callback(VoteType.NONE);
     };
 
     self.getArgumentVote = function(questionId, argumentId, username, callback) {
-        callback("none");
+        callback(VoteType.NONE);
     };
 
     // For testing only
@@ -439,6 +439,12 @@ var ArgumentType = Object.freeze({
         "PRO": true
 });
 
+var VoteType = Object.freeze({
+    "UP": 1,
+    "DOWN": 2,
+    "NONE": 3
+});
+
 var Argument = function(id, type, text, date, submitter, downVoteCount, upVoteCount) {
     var self = this;
     self.id = id;
@@ -459,3 +465,4 @@ module.exports.User = User;
 module.exports.Question = Question;
 module.exports.ArgumentType = ArgumentType;
 module.exports.Argument = Argument;
+module.exports.VoteType = VoteType;
