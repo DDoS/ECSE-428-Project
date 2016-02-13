@@ -85,6 +85,13 @@ router.post('/pa', function(req, res) {
 router.get('/view', function(req, res) {
     var dbInst = req.app.get('db');
 
+    var page;
+    if (req.query.page) {
+        page = req.query.page - 1;
+    } else {
+        page = 0;
+    }
+
     function error() {
         req.flash('errors', {
             msg: 'Failed to load question. Please try again.'
@@ -99,15 +106,17 @@ router.get('/view', function(req, res) {
                 return;
             }
 
-            dbInst.getNewArguments(question.id, true, undefined, undefined, undefined, function (argsFor) {
-                dbInst.getNewArguments(question.id, false, undefined, undefined, undefined, function (argsAgainst) {
+            dbInst.getNewArguments(question.id, db.ArgumentType.PRO, undefined, undefined, page * 10, function (argsFor) {
+                dbInst.getNewArguments(question.id, db.ArgumentType.CON, undefined, undefined, page * 10, function (argsAgainst) {
 
                     function render() {
                         res.render('questions/view', {
                             title: "Question: " + question.title,
                             question: question,
                             argsFor: argsFor,
-                            argsAgainst: argsAgainst
+                            argsAgainst: argsAgainst,
+                            currArgs: page + 1,
+                            hasNextArgs: argsFor.length == 10 || argsAgainst.length == 10
                         });
                     }
 

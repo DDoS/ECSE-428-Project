@@ -56,6 +56,10 @@ block content
                                 i.fa.fa-label.fa-paper-plane
                                 | Against
 
+    .row
+        .col-md-12
+            +pagination(locals.currArgs, locals.hasNextArgs, '/questions/view?q=' + question.id)
+
 mixin question(id, text, submitter, date, upVoted, downVoted, count, user)
     .panel.panel-default
         .panel-body
@@ -109,3 +113,19 @@ mixin argument(qid, aid, text, submitter, date, upVoted, downVoted, count)
             span.text-muted
                 | Submitted by #{submitter} on
                 | #{moment(date.toISOString()).format('YYYY-MM-DD HH:m:s')}
+
+mixin pagination(currArgs, hasNextArgs, base)
+    ul.pagination
+        if currArgs == 1
+            li.disabled
+                a Prev
+        else
+            li
+                a(href='#{base}&page=#{currArgs - 1}') Prev
+
+        if hasNextArgs
+            li
+                a(href='#{base}&page=#{currArgs + 1}') Next
+        else
+            li.disabled
+                a Next
