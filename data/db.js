@@ -395,12 +395,12 @@ var Database = function(dbName){
         );
     };
 
-    self.getQuestionVote = function(questionId, username) {
-        return "none";
+    self.getQuestionVote = function(questionId, username, callback) {
+        callback("none");
     };
 
-    self.getArgumentVote = function(questionId, argumentId, username) {
-        return "none";
+    self.getArgumentVote = function(questionId, argumentId, username, callback) {
+        callback("none");
     };
 
     // For testing only
