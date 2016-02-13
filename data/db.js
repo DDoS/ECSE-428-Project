@@ -395,6 +395,14 @@ var Database = function(dbName){
         );
     };
 
+    self.getQuestionVote = function(questionId, username) {
+        return "none";
+    };
+
+    self.getArgumentVote = function(questionId, argumentId, username) {
+        return "none";
+    };
+
     // For testing only
     self.rawQuery = function(query) {
         pg.connect(config, query);
