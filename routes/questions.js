@@ -131,5 +131,66 @@ router.get('/view', function(req, res) {
     });
 });
 
+router.post('/vote', function(req, res) {
+    if (!req.query.q) {
+        req.flash('errors', {
+            msg: 'No question ID specified. Please try voting again.'
+        });
+        res.redirect(req.get('referer'));
+        return;
+    } else if (!req.user) {
+        req.flash('errors', {
+            msg: 'Please login before voting on a question or argument.'
+        });
+        res.redirect('/users/login');
+        return;
+    } else if (req.body.vote !== "up" && req.body.vote !== "down") {
+        req.flash('errors', {
+            msg: 'No vote specified. Please try voting again.'
+        });
+        res.redirect(req.get('referer'));
+        return;
+    }
+
+    var dbInst = req.app.get('db');
+    try {
+        function upVote() {
+            req.flash('success', {
+                msg: 'Upvote recorded!'
+            });
+            res.redirect(req.get('referer'));
+        }
+
+        function downVote() {
+            req.flash('success', {
+                msg: 'Downvote recorded!'
+            });
+            res.redirect(req.get('referer'));
+        }
+
+        if (req.query.a) {
+            if (req.body.vote === "up") {
+                dbInst.upVoteArgument(req.query.q, req.query.a,
+                                      req.user.username, upVote);
+            } else {
+                dbInst.downVoteArgument(req.query.q, req.query.a,
+                                        req.user.username, downVote);
+            }
+        } else {
+            if (req.body.vote === "up") {
+                dbInst.upVoteQuestion(req.query.q, req.user.username,
+                                      upVote);
+            } else {
+                dbInst.downVoteQuestion(req.query.q, req.user.username,
+                                        downVote);
+            }
+        }
+    } catch (err) {
+        req.flash('errors', {
+            msg: 'Error recording vote. Please try voting again.'
+        });
+        res.redirect(req.get('referer'));
+    }
+});
 
 module.exports = router;
