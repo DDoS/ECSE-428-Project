@@ -2,62 +2,106 @@ extends ../layout
 
 block content
     .page-header
-        h3 #{question.title}
-    .form-group
+        h2 Question: #{question.title}
+
+    .row
+        .col-md-12
+            +question(question.id, question.text, question.submitter,
+                      question.date, question.upVoted, question.downVoted,
+                      question.upVoteCount - question.downVoteCount, user)
+
+    .row
+        .col-md-6
+            h3 Arguments in Favour
+            if locals.argsFor.length !== 0
+                each argument in locals.argsFor
+                    +argument(question.id, argument.id, argument.text,
+                              argument.submitter, argument.date,
+                              argument.upVoted, argument.downVoted,
+                              argument.upVoteCount - argument.downVoteCount,
+                              user)
+            else
+                p
+                    | No arguments have yet been made in favour. Why don't you
+                    | write one?
+        .col-md-6
+            h3 Arguments Against
+            if locals.argsAgainst.length !== 0
+                each argument in locals.argsAgainst
+                    +argument(question.id, argument.id, argument.text,
+                              argument.submitter, argument.date,
+                              argument.upVoted, argument.downVoted,
+                              argument.upVoteCount - argument.downVoteCount,
+                              user)
+            else
+                p
+                    | No arguments have yet been made against. Why don't you
+                    | write one?
+
+    if user
         .row
             .col-md-12
-                p
-                    | #{question.text}
+                h3 Create an Argument
+                form(method='POST', action='/questions/pa?q=#{question.id}')
+                    input(type='hidden', name='_csrf', value=csrfToken)
+                    .form-group
+                        textarea.form-control(name='argument', rows='5',
+                                              placeholder="What's your argument?")
+                    .form-group
+                        .btn-group
+                            button.btn.btn-default(name='post_arg', type='submit', value='pro')
+                                i.fa.fa-label.fa-paper-plane
+                                | For
+                            button.btn.btn-default(name='post_arg', type='submit', value='con')
+                                i.fa.fa-label.fa-paper-plane
+                                | Against
 
-                i(style="font-size: smaller;")
-                    | #{question.date}, By #{question.submitter}
-    .form-group
-        .row
-            .btn-group-sm
-                .col-md-6
-                    button.btn.btn-sm.btn-primary.col-sm-5(type='button')
-                        i.fa.fa-thumbs-up
-                        | Up Vote
-                        span.badge.pull-right #{question.upVoteCount}
-                        button.btn.btn-sm.btn-danger.col-sm-5(type='button')
+mixin question(id, text, submitter, date, upVoted, downVoted, count, user)
+    .panel.panel-default
+        .panel-body
+            .vote-group
+                form(method='POST', action='/questions/vote?q=#{id}')
+                    .btn-group-vertical
+                        button.btn.btn-primary(class=upVoted ? 'active' : undefined,
+                                               disabled = !user ? 'disabled' : undefined,
+                                               type='submit', name='vote', value='up')
+                            i.fa.fa-thumbs-up
+                        button.btn.btn-default.vote-status(disabled='disabled')
+                            span.badge= count
+                        button.btn.btn-danger(class=downVoted ? 'active' : undefined,
+                                              disabled = !user ? 'disabled' : undefined,
+                                              type='submit', name='vote', value='down')
                             i.fa.fa-thumbs-down
-                            | Down Vote
-                            span.badge.pull-right #{question.downVoteCount}
-    if arguments
-        .form-group
-            if arguments.length == 0
-                p#view_arguments_empty
+                    input(type='hidden', name='_csrf', value=csrfToken)
+            .vote-panel-text
+                each para in text.split('\n')
+                    p= para
+        .panel-footer
+            span.text-muted
+                | Submitted by #{submitter} on
+                | #{moment(date.toISOString()).format('YYYY-MM-DD HH:m:s')}
 
-                    | No argument found
-            else
-                - var n = 0
-                while n < arguments.length
-                    #view_arguments_nonempty
-                        label.control-label #{arguments[n].submitter}
-                        i(style="font-size: smaller;")
-                            | , #{arguments[n].date}
-                        if arguments[n].type
-                            p(style="color:blue;")
-                                | #{arguments[n].text}
-                        else
-                            p(style="color:red;")
-                                | #{arguments[n].text}
-                        - n++
-        hr
-    form(id='argument_form', method='POST',action="/questions/pa?q=#{question.id}&t=1")
-        input(type='hidden', name='_csrf', value=csrfToken)
-        .form-group
-            .row
-                .col-md-12
-                    textarea.form-control(id="create_argument",style="min-height:50px; outline: none; resize: none; overflow: hidden;",onkeyup='auto_grow(this)',name='argument', placeholder='Type your thoughts', autofocus=false)
-        .form-group
-            .row
-                .col-md-offset-10
-                    .btn-group-sm
-                        button.btn.btn-default(id='pro',type='submit',name='post_arg',value='pro')
-                            i.fa.fa-paper-plane
-                            | Agree
-                            button.btn.btn-default(id='con',type='submit',name='post_arg',value='con')
-                                i.fa.fa-paper-plane
-                                | Disagree
-            hr
+mixin argument(qid, aid, text, submitter, date, upVoted, downVoted, count)
+    .panel.panel-default
+        .panel-body
+            .vote-group
+                form(method='POST', action='/questions/vote?q=#{qid}&a=#{aid}')
+                    .btn-group-vertical
+                        button.btn.btn-primary(class=upVoted ? 'active' : undefined,
+                                               disabled = !user ? 'disabled' : undefined,
+                                               type='submit', name='vote', value='up')
+                            i.fa.fa-thumbs-up
+                        button.btn.btn-default.vote-status(disabled='disabled')
+                            span.badge= count
+                        button.btn.btn-danger(class=downVoted ? 'active' : undefined,
+                                              disabled = !user ? 'disabled' : undefined,
+                                              type='submit', name='vote', value='down')
+                            i.fa.fa-thumbs-down
+                    input(type='hidden', name='_csrf', value=csrfToken)
+            .vote-panel-text
+                each para in text.split('\n')
+                    p= para
+        .panel-footer
+            span.text-muted
+                | Submitted by #{submitter} on
+                | #{moment(date.toISOString()).format('YYYY-MM-DD HH:m:s')}

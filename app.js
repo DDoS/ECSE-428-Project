@@ -10,6 +10,7 @@ var session = require('express-session');
 var passport = require('passport');
 var dotenv = require('dotenv');
 var csurf = require('csurf');
+var moment = require('moment');
 
 var db = require('./data/db');
 
@@ -22,6 +23,7 @@ dotenv.load({ path: __dirname + '/.env' });
 var passportConf = require('./config/passport');
 
 var app = express();
+app.locals.moment = moment;
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));

@@ -1,3 +1,7 @@
+var async = require('async');
+
+var db = require('../data/db');
+
 var express = require('express');
 var router = express.Router();
 
@@ -79,22 +83,50 @@ router.post('/pa', function(req, res) {
 });
 
 router.get('/view', function(req, res) {
-    req.app.get('db').getQuestion(req.query.q, function (question) {
-        req.app.get('db').getNewArguments(question.id, true, undefined, undefined, undefined, function (proArgs) {
-            req.app.get('db').getNewArguments(question.id, false, undefined, undefined, undefined, function (conArgs) {
+    var dbInst = req.app.get('db');
 
-                var allArgs = proArgs.concat(conArgs);
-                allArgs.sort(function(a,b) {
-                    return new Date(b.date) - new Date(a.date);
-                });
+    dbInst.getQuestion(req.query.q, function (question) {
 
-                res.render('questions/view', {
-                    title: "Question: " + question,
-                    arguments: allArgs,
-                    question: question
-                });
+        dbInst.getNewArguments(question.id, true, undefined, undefined, undefined, function (argsFor) {
+            dbInst.getNewArguments(question.id, false, undefined, undefined, undefined, function (argsAgainst) {
+
+                function render() {
+                    res.render('questions/view', {
+                        title: "Question: " + question.title,
+                        question: question,
+                        argsFor: argsFor,
+                        argsAgainst: argsAgainst
+                    });
+                }
+
+                if (req.user) {
+                    dbInst.getQuestionVote(question.id, req.user.username, function(questionVote) {
+                        question.upVoted = questionVote === db.VoteType.UP;
+                        question.downVoted = questionVote === db.VoteType.DOWN;
+
+                        async.each(argsFor.concat(argsAgainst), function(argument, callback) {
+                            dbInst.getArgumentVote(question.id, argument.id, req.user.username, function(argumentVote) {
+                                argument.upVoted = argumentVote === db.VoteType.UP;
+                                argument.downVoted = questionVote === db.VoteType.DOWN;
+                                callback();
+                            });
+                        }, function() {
+                            render();
+                        });
+                    });
+                } else {
+                    question.upVoted = false;
+                    question.downVoted = false;
+
+                    var args = argsFor.concat(argsAgainst);
+                    for (var i = 0; i < args.length; i++) {
+                        args[i].upVoted = false;
+                        args[i].downVoted = false;
+                    }
+
+                    render();
+                }
             });
-
         });
     });
 });
