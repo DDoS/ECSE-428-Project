@@ -1,82 +1,70 @@
 extends ../layout
 
 block content
-
-
-    script.
-        function auto_grow(element) {
-            if (element.scrollHeight > 50) {
-                element.style.height = "auto";
-                element.style.height = (element.scrollHeight + 15) + "px";
-            }
-        }
-
     .page-header
-        h3 View Questions
+        h2 All Questions
 
-
-    //mixin pagination(start, numPages, curr, base)
-    //    ul.pagination
-    //        - var n = start
-    //        while n < start + numPages
-    //            if n == curr
-    //                li.active
-    //                    a(href='#{base}?page=#{n}') #{n}
-    //            else
-    //                li
-    //                    a(href='#{base}?page=#{n}') #{n}
-    //            - n++
-
-    mixin pagination(curr, base)
-          ul.pagination
-              if curr == 1
-                  li.disabled
-                      a Prev
-              else
-                  li
-                      a(href='#{base}?page=#{curr - 1}') Prev
-
-              if hasNextPage
-                  li
-                      a(href='#{base}?page=#{curr + 1}') Next
-              else
-                  li.disabled
-                      a Next
-
-
-    if questions
-        if questions.length == 0
-            .form-group
+    if questions.length == 0
+        .row
+            .col-md-12
                 p
-                | No question found
-        else
-            .form-group
-                each question in questions
-                    .form-group
-                        .row
-                            .col-md-12
-                                h2
-                                    a.btn-link(id="question_#{question.id}",href="/questions/view/?q=#{question.id}") #{question.title}
-                                p
-                                    | #{question.text}
-
-                                i(style="font-size: smaller;")
-                                    | #{question.date}, By #{question.submitter}
-
-                    .form-group
-                        .row
-                            .btn-group-sm
-                                .col-md-6
-                                    button.btn.btn-sm.btn-primary.col-sm-5(type='button')
-                                        i.fa.fa-label.fa-thumbs-up
-                                        | Up Vote
-                                        span.badge.pull-right #{question.upVoteCount}
-                                        button.btn.btn-sm.btn-danger.col-sm-5(type='button')
-                                            i.fa.fa-label.fa-thumbs-down
-                                            | Down Vote
-                                            span.badge.pull-right #{question.downVoteCount}
+                    | No questions have been submitted. Why not write one of
+                    | your own?
+    else
+        .row
+            each question in questions
+                .col-md-12
+                    +question(question.id, question.title, question.text,
+                              question.submitter,  question.date,
+                              question.upVoted, question.downVoted,
+                              question.upVoteCount - question.downVoteCount,
+                              user)
 
     .form-group
         +pagination(currPage,"/questions/find/")
 
+mixin question(id, title, text, submitter, date, upVoted, downVoted, count, user)
+    .panel.panel-default
+        .panel-heading
+            h4
+                a(href='/questions/view/?q=#{id}')= title
+        .panel-body
+            .vote-group
+                form(method='POST', action='/questions/vote?q=#{id}')
+                    .btn-group-vertical
+                        button.btn.btn-primary(class=upVoted ? 'active' : undefined,
+                        disabled = !user ? 'disabled' : undefined,
+                        type='submit', name='vote',
+                        value=upVoted ? 'none' : 'up')
+                            i.fa.fa-thumbs-up
+                        button.btn.btn-default.vote-status(disabled='disabled')
+                            span.badge= count
+                        button.btn.btn-danger(class=downVoted ? 'active' : undefined,
+                        disabled = !user ? 'disabled' : undefined,
+                        type='submit', name='vote',
+                        value=downVoted ? 'none' : 'down')
+                            i.fa.fa-thumbs-down
+                    input(type='hidden', name='_csrf', value=csrfToken)
+            .vote-panel-text
+                each para in text.split('\n')
+                    p= para
+        .panel-footer
+            span.text-muted
+                | Submitted by #{submitter} on
+                | #{moment(date.toISOString()).format('YYYY-MM-DD HH:m:s')}
 
+mixin pagination(curr, base)
+    ul.pagination
+        if curr == 1
+            li.disabled
+                a Prev
+        else
+            li
+                a(href='#{base}?page=#{curr - 1}') Prev
+
+        if locals.hasNextPage
+            li
+                a(href='#{base}?page=#{curr + 1}') Next
+        else
+            li.disabled
+                a Next
