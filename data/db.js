@@ -403,6 +403,22 @@ var Database = function(dbName){
         callback(VoteType.NONE);
     };
 
+    self.upVoteQuestion = function(questionId, username, callback) {
+        callback();
+    };
+
+    self.downVoteQuestion = function(questionId, username, callback) {
+        callback();
+    };
+
+    self.upVoteArgument = function(questionId, argumentId, username, callback) {
+        callback();
+    };
+
+    self.downVoteArgument = function(questionId, argumentId, username, callback) {
+        callback();
+    };
+
     // For testing only
     self.rawQuery = function(query) {
         pg.connect(config, query);
