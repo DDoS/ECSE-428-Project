@@ -2,14 +2,31 @@ extends ../layout
 
 block content
     .page-header
-        h2 All Questions
+        h2 #{title}
+
+    .row
+        .col-sm-6
+            form(method='POST', action='search')
+                input(type='hidden', name='_csrf', value=csrfToken)
+                .form-group
+                    .input-group
+                        if filter === undefined
+                            input.form-control(name='search', id='search', placeholder='Search for questions...', autofocus=true)
+                        else
+                            input.form-control(name='search', id='search', placeholder='Search for questions...', value=filter)
+                        span.input-group-btn
+                            button.btn.btn-success(type='submit')
+                                i.fa.fa-search
 
     if questions.length == 0
         .row
             .col-md-12
                 p
-                    | No questions have been submitted. Why not write one of
-                    | your own?
+                    if filter === undefined
+                        | No questions have been submitted. Why not write one of
+                        | your own?
+                    else
+                        | No results found
     else
         .row
             each question in questions

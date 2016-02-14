@@ -59,6 +59,24 @@ router.get('/find', function(req, res) {
     });
 });
 
+router.post('/search', function(req, res) {
+
+    var filter = req.body.search;
+
+    if (filter.length == 0){
+        res.redirect('find');
+    }
+    else {
+        res.render('questions/find', {
+            title: 'Results for "'+filter+'"',
+            filter: filter,
+            questions: '',
+            currPage: 1,
+            hasNextPage: false
+        });
+    }
+});
+
 router.post('/pa', function(req, res) {
     if (req.user === undefined) {
         req.flash('errors', { msg: 'Please login before posting new argument.' });
