@@ -12,6 +12,7 @@ const userTable = 'Users';
 const moderatorTable = 'Moderators';
 const adminTable = 'Admins';
 const questionTable = 'Questions';
+const argumentTable = 'Arguments';
 
 var Database = function(dbName){
     var self = this;
@@ -54,6 +55,17 @@ var Database = function(dbName){
                         'submitter VARCHAR(64) NOT NULL REFERENCES ' + userTable + ',' +
                         'downVoteCount INTEGER DEFAULT 0 CHECK (downVoteCount >= 0),' +
                         'upVoteCount INTEGER DEFAULT 0 CHECK (upVoteCount >= 0)' +
+                    ');' +
+                    'CREATE TABLE IF NOT EXISTS ' + argumentTable + ' (' +
+                        'id SERIAL,' +
+                        'questionID BIGINT NOT NULL REFERENCES ' + questionTable + ',' +
+                        'type BOOLEAN NOT NULL,' +
+                        'text VARCHAR(4096) NOT NULL,' +
+                        'date TIMESTAMP DEFAULT now(),' +
+                        'submitter VARCHAR(64) NOT NULL REFERENCES ' + userTable + ',' +
+                        'downVoteCount INTEGER DEFAULT 0 CHECK (downVoteCount >= 0),' +
+                        'upVoteCount INTEGER DEFAULT 0 CHECK (upVoteCount >= 0),' +
+                        'PRIMARY KEY (id, questionID)' +
                     ');',
                     function(error, result) {
                         done();
@@ -160,31 +172,13 @@ var Database = function(dbName){
                         'RETURNING id, date;',
                     [title, text, submitter],
                     function(error, result) {
+                        done();
                         if (error) {
                             console.error(error);
                             throw new Error('Could not create question');
                         }
                         var question = new Question(result.rows[0].id, title, text, result.rows[0].date, submitter, 0, 0);
-                        // Also create the argument table for that question
-                        client.query(
-                            'CREATE TABLE IF NOT EXISTS ' + question.argTableName + ' (' +
-                                'id SERIAL PRIMARY KEY,' +
-                                'type BOOLEAN NOT NULL,' +
-                                'text VARCHAR(4096) NOT NULL,' +
-                                'date TIMESTAMP DEFAULT now(),' +
-                                'submitter VARCHAR(64) NOT NULL REFERENCES ' + userTable + ',' +
-                                'downVoteCount INTEGER DEFAULT 0 CHECK (downVoteCount >= 0),' +
-                                'upVoteCount INTEGER DEFAULT 0 CHECK (upVoteCount >= 0)' +
-                            ');',
-                            function(error, result) {
-                                done();
-                                if (error) {
-                                    console.error(error);
-                                    throw new Error('Could not create argument table');
-                                }
-                                createDone(question);
-                            }
-                        );
+                        createDone(question);
                     }
                 );
             }
@@ -291,11 +285,10 @@ var Database = function(dbName){
                     console.error(error);
                     throw new Error('Error creating query');
                 }
-                var argTableName = 'argTable_' + questionID;
                 client.query(
-                    'INSERT INTO ' + argTableName + ' (type, text, submitter) VALUES ($1, $2, $3)' +
+                    'INSERT INTO ' + argumentTable + ' (questionID, type, text, submitter) VALUES ($1, $2, $3, $4)' +
                         'RETURNING id, date;',
-                    [type, text, submitter],
+                    [questionID, type, text, submitter],
                     function(error, result) {
                         done();
                         if (error) {
@@ -321,11 +314,10 @@ var Database = function(dbName){
                     console.error(error);
                     throw new Error('Error creating query');
                 }
-                var argTableName = 'argTable_' + questionID;
                 client.query(
                     'SELECT type, text, date, submitter, downVoteCount, upVoteCount ' +
-                        'FROM ' + argTableName + ' WHERE id = $1;',
-                    [id],
+                        'FROM ' + argumentTable + ' WHERE questionID = $1 AND id = $2;',
+                    [questionID, id],
                     function(error, result) {
                         done();
                         if (error) {
@@ -370,19 +362,18 @@ var Database = function(dbName){
                     console.error(error);
                     throw new Error('Error creating query');
                 }
-                var argTableName = 'argTable_' + questionID;
                 // If the type is specified, add it to the where condition
-                var whereClause = ' WHERE date >= $1 ';
-                var queryArgs = [since, limit, offset];
+                var whereClause = ' WHERE questionID = $1 AND date >= $2 ';
+                var queryArgs = [questionID, since, limit, offset];
                 if (type === ArgumentType.CON || type === ArgumentType.PRO) {
-                    whereClause += 'AND type = $4 ';
+                    whereClause += 'AND type = $5 ';
                     queryArgs.push(type);
                 }
                 client.query(
                     'SELECT id, type, text, date, submitter, downVoteCount, upVoteCount ' +
-                        'FROM ' + argTableName + whereClause +
+                        'FROM ' + argumentTable + whereClause +
                         'ORDER BY date DESC ' +
-                        'LIMIT $2 OFFSET $3;',
+                        'LIMIT $3 OFFSET $4;',
                     queryArgs,
                     function(error, result) {
                         done();
@@ -402,6 +393,22 @@ var Database = function(dbName){
                 );
             }
         );
+    };
+
+    self.getQuestionVote = function(questionId, username, callback) {
+        callback(VoteType.NONE);
+    };
+
+    self.getArgumentVote = function(questionId, argumentId, username, callback) {
+        callback(VoteType.NONE);
+    };
+
+    self.setQuestionVote = function(questionId, username, vote, callback) {
+        callback();
+    };
+
+    self.setArgumentVote = function(questionId, argumentId, username, vote, callback) {
+        callback();
     };
 
     // For testing only
@@ -440,6 +447,12 @@ var ArgumentType = Object.freeze({
         "PRO": true
 });
 
+var VoteType = Object.freeze({
+    "UP": 1,
+    "DOWN": 2,
+    "NONE": 3
+});
+
 var Argument = function(id, type, text, date, submitter, downVoteCount, upVoteCount) {
     var self = this;
     self.id = id;
@@ -460,3 +473,4 @@ module.exports.User = User;
 module.exports.Question = Question;
 module.exports.ArgumentType = ArgumentType;
 module.exports.Argument = Argument;
+module.exports.VoteType = VoteType;
