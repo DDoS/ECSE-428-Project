@@ -1,0 +1,40 @@
+search_argument.feature
+# Gherkin Acceptance Test for Searching Arguments
+
+Feature: Search for an Argument
+	Given I am an anonymous user or registered user
+	And I want to find a particular argument or an argument that contains specific keywords
+	I should be able to search for that argument by viewing a list of arguments matching particular keywords
+
+Scenario: Obtain agrument search results using one keyword
+	Given I open the url "http://mayhem-ecse428.rhcloud.com/arguments/search"
+	And the title is "Search Arguments - Mayhem"
+	When I set "keyword" to the input field "#search"
+	And I click on the button ".btn.btn-search"
+	Then I expect that the title is "Argument Search Result - Mayhem"
+	And I expect that element "#view_arguments_date_asc" becomes visible
+
+Scenario: Obtain argument search results using multiple keyword
+	Given I open the url "http://mayhem-ecse428.rhcloud.com/arguments/search"
+	And the title is "Search Arguments - Mayhem"
+	When I set "keyword1 keyword2 keyword3" to the input field "#search"
+	And I click on the button ".btn.btn-search"
+	Then I expect that the title is "Argument Search Result - Mayhem"
+	And I expect that element "#view_questions_date_asc" becomes visible
+
+Scenario: Obtain argument search results failed due to empty keyword field
+	Given I open the url "http://mayhem-ecse428.rhcloud.com/arguments/search"
+	And the title is "Search Arguments - Mayhem"
+	When I click on the button ".btn.btn-search"
+	Then I expect that the title is "Argument Search Result - Mayhem"
+	And I expect that element "#empty" becomes visible
+	And I expect that element ".alert.alert-noKeyword" becomes visible
+
+Scenario: Obtain argument search results failed due to no matches
+	Given I open the url "http://mayhem-ecse428.rhcloud.com/arguments/search"
+	And the title is "Search Arguments - Mayhem"
+	When I set "invalidKeyword" to the input field "#search"
+	And I click on the button ".btn.btn-search"
+	Then I expect that the title is "Argument Search Result - Mayhem"
+	And I expect that element "#empty" becomes visible
+	And I expect that element ".alert.alert-noMatch" becomes visible
