@@ -64,7 +64,11 @@ process.argv.slice(2).forEach(function (arg) {
 });
 
 proc = spawn(process.argv[0], args, {
+<<<<<<< HEAD
+    stdio: [0, 1, 2]
+=======
     customFds: [0, 1, 2]
+>>>>>>> d3f56dadf16f4d8ee257e16fa2319f3af2dfcbbc
 });
 proc.on(
     'exit',
