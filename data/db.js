@@ -13,6 +13,8 @@ const moderatorTable = 'Moderators';
 const adminTable = 'Admins';
 const questionTable = 'Questions';
 const argumentTable = 'Arguments';
+const questionVoteTable = 'QuestionVotes';
+const argumentVoteTable = 'ArgumentVotes';
 
 var Database = function(dbName){
     var self = this;
@@ -57,7 +59,7 @@ var Database = function(dbName){
                         'upVoteCount INTEGER DEFAULT 0 CHECK (upVoteCount >= 0)' +
                     ');' +
                     'CREATE TABLE IF NOT EXISTS ' + argumentTable + ' (' +
-                        'id SERIAL,' +
+                        'id BIGSERIAL,' +
                         'questionID BIGINT NOT NULL REFERENCES ' + questionTable + ',' +
                         'type BOOLEAN NOT NULL,' +
                         'text VARCHAR(4096) NOT NULL,' +
@@ -66,6 +68,20 @@ var Database = function(dbName){
                         'downVoteCount INTEGER DEFAULT 0 CHECK (downVoteCount >= 0),' +
                         'upVoteCount INTEGER DEFAULT 0 CHECK (upVoteCount >= 0),' +
                         'PRIMARY KEY (id, questionID)' +
+                    ');' +
+                    'CREATE TABLE IF NOT EXISTS ' + questionVoteTable + ' (' +
+                        'questionID BIGINT NOT NULL REFERENCES ' + questionTable + ',' +
+                        'username VARCHAR(64) NOT NULL REFERENCES ' + userTable + ',' +
+                        'vote BOOLEAN NOT NULL,' +
+                        'PRIMARY KEY (questionID, username)' +
+                    ');' +
+                    'CREATE TABLE IF NOT EXISTS ' + argumentVoteTable + ' (' +
+                        'questionID BIGINT NOT NULL,' +
+                        'argumentID BIGINT NOT NULL,' +
+                        'username VARCHAR(64) NOT NULL REFERENCES ' + userTable + ',' +
+                        'vote BOOLEAN NOT NULL,' +
+                        'FOREIGN KEY (questionID, argumentID) REFERENCES ' + argumentTable + ' (questionID, id),' +
+                        'PRIMARY KEY (questionID, argumentID, username)' +
                     ');',
                     function(error, result) {
                         done();
@@ -395,19 +411,103 @@ var Database = function(dbName){
         );
     };
 
-    self.getQuestionVote = function(questionId, username, callback) {
+    self.getQuestionVote = function(questionID, username, getDone) {
+        pg.connect(
+            config,
+            function(error, client, done) {
+                if (error) {
+                    console.error(error);
+                    throw new Error('Error creating query');
+                }
+                client.query(
+                    'SELECT vote FROM ' + questionVoteTable + ' WHERE questionID = $1 AND username = $2;',
+                    [questionID, username],
+                    function(error, result) {
+                        done();
+                        if (error) {
+                            console.error(error);
+                            throw new Error('Could not get question vote');
+                        }
+                        var vote;
+                        if (result.rows.length <= 0) {
+                            vote = VoteType.NONE;
+                        } else {
+                            if (result.rows[0].vote) {
+                                vote = VoteType.UP;
+                            } else {
+                                vote = VoteType.DOWN;
+                            }
+                        }
+                        getDone(vote);
+                    }
+                );
+            }
+        );
+    };
+
+    self.setQuestionVote = function(questionID, username, vote, setDone) {
+        if (questionID === undefined) {
+            throw new Error('question ID is undefined');
+        }
+        if (stringEmpty(username)) {
+            throw new Error('username is empty');
+        }
+        if (vote === VoteType.UP || vote === VoteType.DOWN) {
+            pg.connect(
+                config,
+                function(error, client, done) {
+                    if (error) {
+                        console.error(error);
+                        throw new Error('Error creating query');
+                    }
+                    upVote = vote === VoteType.UP;
+                    client.query(
+                        'INSERT INTO ' + questionVoteTable + ' (questionID, username, vote) VALUES ($1, $2, $3)' +
+                            'ON CONFLICT (questionID, username) DO UPDATE SET vote = EXCLUDED.vote',
+                        [questionID, username, upVote],
+                        function(error, result) {
+                            done();
+                            if (error) {
+                                console.error(error);
+                                throw new Error('Could set question vote');
+                            }
+                            setDone();
+                        }
+                    );
+                }
+            );
+        } else if (vote === VoteType.NONE) {
+            pg.connect(
+                config,
+                function(error, client, done) {
+                    if (error) {
+                        console.error(error);
+                        throw new Error('Error creating query');
+                    }
+                    client.query(
+                        'DELETE FROM ' + questionVoteTable + ' WHERE questionID = $1 AND username = $2',
+                        [questionID, username],
+                        function(error, result) {
+                            done();
+                            if (error) {
+                                console.error(error);
+                                throw new Error('Could set question vote');
+                            }
+                            setDone();
+                        }
+                    );
+                }
+            );
+        } else {
+            throw new Error('vote type is neither up, down or none');
+        }
+    };
+
+    self.getArgumentVote = function(questionID, argumentID, username, callback) {
         callback(VoteType.NONE);
     };
 
-    self.getArgumentVote = function(questionId, argumentId, username, callback) {
-        callback(VoteType.NONE);
-    };
-
-    self.setQuestionVote = function(questionId, username, vote, callback) {
-        callback();
-    };
-
-    self.setArgumentVote = function(questionId, argumentId, username, vote, callback) {
+    self.setArgumentVote = function(questionID, argumentID, username, vote, callback) {
         callback();
     };
 
@@ -442,6 +542,17 @@ var Question = function(id, title, text, date, submitter, downVoteCount, upVoteC
     self.argTableName = 'argTable_' + id;
 };
 
+var Argument = function(id, type, text, date, submitter, downVoteCount, upVoteCount) {
+    var self = this;
+    self.id = id;
+    self.type = type;
+    self.text = text;
+    self.date = date;
+    self.submitter = submitter;
+    self.downVoteCount = downVoteCount;
+    self.upVoteCount = upVoteCount;
+};
+
 var ArgumentType = Object.freeze({
         "CON": false,
         "PRO": true
@@ -452,17 +563,6 @@ var VoteType = Object.freeze({
     "DOWN": 2,
     "NONE": 3
 });
-
-var Argument = function(id, type, text, date, submitter, downVoteCount, upVoteCount) {
-    var self = this;
-    self.id = id;
-    self.type = type;
-    self.text = text;
-    self.date = date;
-    self.submitter = submitter;
-    self.downVoteCount = downVoteCount;
-    self.upVoteCount = upVoteCount;
-}
 
 function stringEmpty(string) {
     return !string || string.trim().length === 0;

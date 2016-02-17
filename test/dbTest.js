@@ -111,7 +111,7 @@ describe('Database', function() {
         it('Should not allow an empty title', function() {
             assert.throws(
                 function() {
-                    database.createUser('', 'typical circlejerk', 'inappropriateUsername', function() {});
+                    database.createQuestion('', 'typical circlejerk', 'inappropriateUsername', function() {});
                 },
                 Error, 'title is empty'
             );
@@ -120,7 +120,7 @@ describe('Database', function() {
         it('Should not allow an empty text', function() {
             assert.throws(
                 function() {
-                    database.createUser('AYY LMAO', '', 'inappropriateUsername', function() {});
+                    database.createQuestion('AYY LMAO', '', 'inappropriateUsername', function() {});
                 },
                 Error, 'text is empty'
             );
@@ -129,7 +129,7 @@ describe('Database', function() {
         it('Should not allow an empty submitter', function() {
             assert.throws(
                 function() {
-                    database.createUser('AYY LMAO', 'typical circlejerk', '', function() {});
+                    database.createQuestion('AYY LMAO', 'typical circlejerk', '', function() {});
                 },
                 Error, 'submitter is empty'
             );
@@ -449,6 +449,78 @@ describe('Database', function() {
                     database.getNewQuestions(new Date('2018-01-01'), undefined, function() {});
                 },
                 Error, 'Since date is in the future'
+            );
+        });
+    });
+
+    describe('setQuestionVote(questionID, username, vote, setDone)', function() {
+        var questionID = undefined;
+
+        before(function(done) {
+            database.createUser('Hu', 'Go', 'boss@in.c', function(user) {
+                database.createUser('Man', 'ImJustA', 'goes@to.plan', function(user) {
+                    database.createQuestion('UP VOTE IF JESUS', '1 UPVOTE = 1 PRAYER', 'Man', function(question) {
+                        questionID = question.id;
+                        done();
+                    });
+                });
+            });
+        });
+
+        it('Should insert a new row in the questions vote table when vote is up or down', function(done) {
+            database.setQuestionVote(questionID, 'Hu', db.VoteType.DOWN, function() {
+                database.getQuestionVote(questionID, 'Hu', function(vote) {
+                    assert.equal(db.VoteType.DOWN, vote);
+                    // Update the vote
+                    database.setQuestionVote(questionID, 'Hu', db.VoteType.UP, function() {
+                        database.getQuestionVote(questionID, 'Hu', function(updated) {
+                            assert.equal(db.VoteType.UP, updated);
+                            done();
+                        });
+                    });
+                });
+            });
+        });
+
+        it('Should insert delete the row in the questions vote table when vote is none', function(done) {
+            database.setQuestionVote(questionID, 'Man', db.VoteType.DOWN, function() {
+                database.getQuestionVote(questionID, 'Man', function(vote) {
+                    assert.equal(db.VoteType.DOWN, vote);
+                    // Delete the vote
+                    database.setQuestionVote(questionID, 'Man', db.VoteType.NONE, function() {
+                        database.getQuestionVote(questionID, 'Man', function(deleted) {
+                            assert.equal(db.VoteType.NONE, deleted);
+                            done();
+                        });
+                    });
+                });
+            });
+        });
+
+        it('Should not allow an undefined question ID', function() {
+            assert.throws(
+                function() {
+                    database.setQuestionVote(undefined, 'Man', db.VoteType.UP, function() {});
+                },
+                Error, 'question ID is undefined'
+            );
+        });
+
+        it('Should not allow an empty username', function() {
+            assert.throws(
+                function() {
+                    database.setQuestionVote(questionID, '', db.VoteType.UP, function() {});
+                },
+                Error, 'username is empty'
+            );
+        });
+
+        it('Should not allow an invalid vote type', function() {
+            assert.throws(
+                function() {
+                    database.setQuestionVote(questionID, 'Man', undefined, function() {});
+                },
+                Error, 'vote type is neither up, down or none'
             );
         });
     });
