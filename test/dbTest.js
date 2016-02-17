@@ -91,8 +91,6 @@ describe('Database', function() {
                     assert(question.date >= beforeDate);
                     assert(question.date <= new Date());
                     assert.equal('Bloke', question.submitter);
-                    assert.equal(0, question.downVoteCount);
-                    assert.equal(0, question.upVoteCount);
                     // Check if the question is indeed in the db
                     database.getQuestion(question.id, function(getQuestion) {
                         assert.equal(question.id, getQuestion.id);
@@ -100,8 +98,6 @@ describe('Database', function() {
                         assert.equal(question.text, getQuestion.text);
                         assert.equal(question.date.getTime(), getQuestion.date.getTime());
                         assert.equal(question.submitter, getQuestion.submitter);
-                        assert.equal(question.downVoteCount, getQuestion.downVoteCount);
-                        assert.equal(question.upVoteCount, getQuestion.upVoteCount);
                         done();
                     });
                 }
@@ -271,8 +267,6 @@ describe('Database', function() {
                     assert(argument.date >= beforeDate);
                     assert(argument.date <= new Date());
                     assert.equal('Dude', argument.submitter);
-                    assert.equal(0, argument.downVoteCount);
-                    assert.equal(0, argument.upVoteCount);
                     // Check if the question is indeed in the db
                     database.getArgument(questionID, argument.id, function(getArgument) {
                         assert.equal(argument.id, getArgument.id);
@@ -280,8 +274,6 @@ describe('Database', function() {
                         assert.equal(argument.text, getArgument.text);
                         assert.equal(argument.date.getTime(), getArgument.date.getTime());
                         assert.equal(argument.submitter, getArgument.submitter);
-                        assert.equal(argument.downVoteCount, getArgument.downVoteCount);
-                        assert.equal(argument.upVoteCount, getArgument.upVoteCount);
                         done();
                     });
                 }
@@ -607,6 +599,94 @@ describe('Database', function() {
                 },
                 Error, 'vote type is neither up, down or none'
             );
+        });
+    });
+
+    describe('getQuestionVoteScore(questionID, getDone)', function() {
+        var questionID = undefined;
+
+        before(function(done) {
+            database.createUser('More', 'Bull', 'shit@to.write', function(user) {
+                database.createUser('Another', 'Wanker', 'no@one.cares', function(user) {
+                    database.createQuestion('I ONLY SPEAK TO SAILORS', 'ECH', 'More', function(question) {
+                        questionID = question.id;
+                        done();
+                    });
+                });
+            });
+        });
+
+        it('Should return the sum of votes for a question', function(done) {
+            database.getQuestionVoteScore(questionID, function(score1) {
+                // No votes
+                assert.equal(0, score1);
+                database.setQuestionVote(questionID, 'More', db.VoteType.DOWN, function() {
+                    database.getQuestionVoteScore(questionID, function(score2) {
+                        // One down vote
+                        assert.equal(-1, score2);
+                        database.setQuestionVote(questionID, 'Another', db.VoteType.UP, function() {
+                            database.getQuestionVoteScore(questionID, function(score3) {
+                                // One down and one up vote
+                                assert.equal(0, score3);
+                                done();
+                            });
+                        });
+                    });
+                });
+            });
+        });
+
+        it('Should return 0 for a non existant question', function(done) {
+            database.getQuestionVoteScore(0, function(score) {
+                assert.equal(0, score);
+                done();
+            });
+        });
+    });
+
+    describe('getArgumentVoteScore(questionID, argumentID, getDone)', function() {
+        var questionID = undefined;
+        var argumentID = undefined;
+
+        before(function(done) {
+            database.createUser('OK', 'this', 'is@a.thing', function(user) {
+                database.createUser('Hey', 'you', 'over@there.my', function(user) {
+                    database.createQuestion('TFIU by spelling "TIFU" wrong', 'I have a GF btw', 'OK', function(question) {
+                        questionID = question.id;
+                        database.createArgument(questionID, db.ArgumentType.PRO, 'TIL', 'Hey', function(argument){
+                            argumentID = argument.id;
+                            done();
+                        });
+                    });
+                });
+            });
+        });
+
+        it('Should return the sum of votes for an argument', function(done) {
+            database.getArgumentVoteScore(questionID, argumentID, function(score1) {
+                // No votes
+                assert.equal(0, score1);
+                database.setArgumentVote(questionID, argumentID, 'OK', db.VoteType.UP, function() {
+                    database.getArgumentVoteScore(questionID, argumentID, function(score2) {
+                        // One up vote
+                        assert.equal(1, score2);
+                        database.setArgumentVote(questionID, argumentID, 'Hey', db.VoteType.UP, function() {
+                            database.getArgumentVoteScore(questionID, argumentID, function(score3) {
+                                // Two up votes
+                                assert.equal(2, score3);
+                                done();
+                            });
+                        });
+                    });
+                });
+            });
+        });
+
+        it('Should return 0 for a non existant argument', function(done) {
+            database.getArgumentVoteScore(questionID, 0, function(score) {
+                assert.equal(0, score);
+                done();
+            });
         });
     });
 

@@ -54,9 +54,7 @@ var Database = function(dbName){
                         'title VARCHAR(256) NOT NULL,' +
                         'text VARCHAR(4096) NOT NULL,' +
                         'date TIMESTAMP DEFAULT now(),' +
-                        'submitter VARCHAR(64) NOT NULL REFERENCES ' + userTable + ',' +
-                        'downVoteCount INTEGER DEFAULT 0 CHECK (downVoteCount >= 0),' +
-                        'upVoteCount INTEGER DEFAULT 0 CHECK (upVoteCount >= 0)' +
+                        'submitter VARCHAR(64) NOT NULL REFERENCES ' + userTable +
                     ');' +
                     'CREATE TABLE IF NOT EXISTS ' + argumentTable + ' (' +
                         'id BIGSERIAL,' +
@@ -65,18 +63,16 @@ var Database = function(dbName){
                         'text VARCHAR(4096) NOT NULL,' +
                         'date TIMESTAMP DEFAULT now(),' +
                         'submitter VARCHAR(64) NOT NULL REFERENCES ' + userTable + ',' +
-                        'downVoteCount INTEGER DEFAULT 0 CHECK (downVoteCount >= 0),' +
-                        'upVoteCount INTEGER DEFAULT 0 CHECK (upVoteCount >= 0),' +
                         'PRIMARY KEY (id, questionID)' +
                     ');' +
                     'CREATE TABLE IF NOT EXISTS ' + questionVoteTable + ' (' +
                         'questionID BIGINT NOT NULL REFERENCES ' + questionTable + ',' +
                         'username VARCHAR(64) NOT NULL REFERENCES ' + userTable + ',' +
-                        'vote BOOLEAN NOT NULL,' +
+                        'vote SMALLINT NOT NULL CHECK (vote = -1 OR vote = 1),' +
                         'PRIMARY KEY (questionID, username)' +
                     ');' +
                     'CREATE OR REPLACE FUNCTION ' +
-                        'upsertQuestionVote(qid BIGINT, usr VARCHAR(64), v BOOLEAN) ' +
+                        'upsertQuestionVote(qid BIGINT, usr VARCHAR(64), v SMALLINT) ' +
                         'RETURNS VOID AS $$ ' +
                     'BEGIN ' +
                         'LOOP ' +
@@ -98,12 +94,12 @@ var Database = function(dbName){
                         'questionID BIGINT NOT NULL,' +
                         'argumentID BIGINT NOT NULL,' +
                         'username VARCHAR(64) NOT NULL REFERENCES ' + userTable + ',' +
-                        'vote BOOLEAN NOT NULL,' +
+                        'vote SMALLINT NOT NULL CHECK (vote = -1 OR vote = 1),' +
                         'FOREIGN KEY (questionID, argumentID) REFERENCES ' + argumentTable + ' (questionID, id),' +
                         'PRIMARY KEY (questionID, argumentID, username)' +
                     ');' +
                     'CREATE OR REPLACE FUNCTION ' +
-                        'upsertArgumentVote(qid BIGINT, aid BIGINT, usr VARCHAR(64), v BOOLEAN) ' +
+                        'upsertArgumentVote(qid BIGINT, aid BIGINT, usr VARCHAR(64), v SMALLINT) ' +
                         'RETURNS VOID AS $$ ' +
                     'BEGIN ' +
                         'LOOP ' +
@@ -248,7 +244,7 @@ var Database = function(dbName){
                     throw new Error('Error creating query');
                 }
                 client.query(
-                    'SELECT title, text, date, submitter, downVoteCount, upVoteCount ' +
+                    'SELECT title, text, date, submitter ' +
                         'FROM ' + questionTable + ' WHERE id = $1;',
                     [id],
                     function(error, result) {
@@ -294,7 +290,7 @@ var Database = function(dbName){
                     throw new Error('Error creating query');
                 }
                 client.query(
-                    'SELECT id, title, text, date, submitter, downVoteCount, upVoteCount ' +
+                    'SELECT id, title, text, date, submitter ' +
                         'FROM ' + questionTable + ' WHERE date >= $1 ' +
                         'ORDER BY date DESC ' +
                         'LIMIT $2 OFFSET $3;',
@@ -369,7 +365,7 @@ var Database = function(dbName){
                     throw new Error('Error creating query');
                 }
                 client.query(
-                    'SELECT type, text, date, submitter, downVoteCount, upVoteCount ' +
+                    'SELECT type, text, date, submitter ' +
                         'FROM ' + argumentTable + ' WHERE questionID = $1 AND id = $2;',
                     [questionID, id],
                     function(error, result) {
@@ -424,7 +420,7 @@ var Database = function(dbName){
                     queryArgs.push(type);
                 }
                 client.query(
-                    'SELECT id, type, text, date, submitter, downVoteCount, upVoteCount ' +
+                    'SELECT id, type, text, date, submitter ' +
                         'FROM ' + argumentTable + whereClause +
                         'ORDER BY date DESC ' +
                         'LIMIT $3 OFFSET $4;',
@@ -470,11 +466,7 @@ var Database = function(dbName){
                         if (result.rows.length <= 0) {
                             vote = VoteType.NONE;
                         } else {
-                            if (result.rows[0].vote) {
-                                vote = VoteType.UP;
-                            } else {
-                                vote = VoteType.DOWN;
-                            }
+                            vote = result.rows[0].vote;
                         }
                         getDone(vote);
                     }
@@ -498,10 +490,9 @@ var Database = function(dbName){
                         console.error(error);
                         throw new Error('Error creating query');
                     }
-                    upVote = vote === VoteType.UP;
                     client.query(
                         'SELECT upsertQuestionVote($1, $2, $3)',
-                        [questionID, username, upVote],
+                        [questionID, username, vote],
                         function(error, result) {
                             done();
                             if (error) {
@@ -561,11 +552,7 @@ var Database = function(dbName){
                         if (result.rows.length <= 0) {
                             vote = VoteType.NONE;
                         } else {
-                            if (result.rows[0].vote) {
-                                vote = VoteType.UP;
-                            } else {
-                                vote = VoteType.DOWN;
-                            }
+                            vote = result.rows[0].vote;
                         }
                         getDone(vote);
                     }
@@ -592,10 +579,9 @@ var Database = function(dbName){
                         console.error(error);
                         throw new Error('Error creating query');
                     }
-                    upVote = vote === VoteType.UP;
                     client.query(
                         'SELECT upsertArgumentVote($1, $2, $3, $4)',
-                        [questionID, argumentID, username, upVote],
+                        [questionID, argumentID, username, vote],
                         function(error, result) {
                             done();
                             if (error) {
@@ -634,6 +620,56 @@ var Database = function(dbName){
         }
     };
 
+    self.getQuestionVoteScore = function(questionID, getDone) {
+        pg.connect(
+            config,
+            function(error, client, done) {
+                if (error) {
+                    console.error(error);
+                    throw new Error('Error creating query');
+                }
+                client.query(
+                    'SELECT sum(vote) AS score FROM ' + questionVoteTable + ' WHERE questionID = $1;',
+                    [questionID],
+                    function(error, result) {
+                        done();
+                        if (error) {
+                            console.error(error);
+                            throw new Error('Could not get question vote score');
+                        }
+                        var score = result.rows[0].score;
+                        getDone(score === null ? 0 : score);
+                    }
+                );
+            }
+        );
+    }
+
+    self.getArgumentVoteScore = function(questionID, argumentID, getDone) {
+        pg.connect(
+            config,
+            function(error, client, done) {
+                if (error) {
+                    console.error(error);
+                    throw new Error('Error creating query');
+                }
+                client.query(
+                    'SELECT sum(vote) AS score FROM ' + argumentVoteTable + ' WHERE questionID = $1 AND argumentID = $2;',
+                    [questionID, argumentID],
+                    function(error, result) {
+                        done();
+                        if (error) {
+                            console.error(error);
+                            throw new Error('Could not get argument vote score');
+                        }
+                        var score = result.rows[0].score;
+                        getDone(score === null ? 0 : score);
+                    }
+                );
+            }
+        );
+    }
+
     // For testing only
     self.rawQuery = function(query) {
         pg.connect(config, query);
@@ -653,27 +689,22 @@ var User = function(username, salt, password, email) {
 
 };
 
-var Question = function(id, title, text, date, submitter, downVoteCount, upVoteCount) {
+var Question = function(id, title, text, date, submitter) {
     var self = this;
     self.id = id;
     self.title = title;
     self.text = text;
     self.date = date;
     self.submitter = submitter;
-    self.downVoteCount = downVoteCount;
-    self.upVoteCount = upVoteCount;
-    self.argTableName = 'argTable_' + id;
 };
 
-var Argument = function(id, type, text, date, submitter, downVoteCount, upVoteCount) {
+var Argument = function(id, type, text, date, submitter) {
     var self = this;
     self.id = id;
     self.type = type;
     self.text = text;
     self.date = date;
     self.submitter = submitter;
-    self.downVoteCount = downVoteCount;
-    self.upVoteCount = upVoteCount;
 };
 
 var ArgumentType = Object.freeze({
@@ -683,8 +714,8 @@ var ArgumentType = Object.freeze({
 
 var VoteType = Object.freeze({
     "UP": 1,
-    "DOWN": 2,
-    "NONE": 3
+    "DOWN": -1,
+    "NONE": 0
 });
 
 function stringEmpty(string) {
