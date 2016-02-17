@@ -491,7 +491,7 @@ var Database = function(dbName){
                             done();
                             if (error) {
                                 console.error(error);
-                                throw new Error('Could set question vote');
+                                throw new Error('Could remove question vote');
                             }
                             setDone();
                         }
@@ -503,12 +503,100 @@ var Database = function(dbName){
         }
     };
 
-    self.getArgumentVote = function(questionID, argumentID, username, callback) {
-        callback(VoteType.NONE);
+    self.getArgumentVote = function(questionID, argumentID, username, getDone) {
+        pg.connect(
+            config,
+            function(error, client, done) {
+                if (error) {
+                    console.error(error);
+                    throw new Error('Error creating query');
+                }
+                client.query(
+                    'SELECT vote FROM ' + argumentVoteTable + ' WHERE questionID = $1 AND argumentID = $2 AND username = $3;',
+                    [questionID, argumentID, username],
+                    function(error, result) {
+                        done();
+                        if (error) {
+                            console.error(error);
+                            throw new Error('Could not get argument vote');
+                        }
+                        var vote;
+                        if (result.rows.length <= 0) {
+                            vote = VoteType.NONE;
+                        } else {
+                            if (result.rows[0].vote) {
+                                vote = VoteType.UP;
+                            } else {
+                                vote = VoteType.DOWN;
+                            }
+                        }
+                        getDone(vote);
+                    }
+                );
+            }
+        );
     };
 
-    self.setArgumentVote = function(questionID, argumentID, username, vote, callback) {
-        callback();
+    self.setArgumentVote = function(questionID, argumentID, username, vote, setDone) {
+        if (questionID === undefined) {
+            throw new Error('question ID is undefined');
+        }
+        if (argumentID === undefined) {
+            throw new Error('argument ID is undefined');
+        }
+        if (stringEmpty(username)) {
+            throw new Error('username is empty');
+        }
+        if (vote === VoteType.UP || vote === VoteType.DOWN) {
+            pg.connect(
+                config,
+                function(error, client, done) {
+                    if (error) {
+                        console.error(error);
+                        throw new Error('Error creating query');
+                    }
+                    upVote = vote === VoteType.UP;
+                    client.query(
+                        'INSERT INTO ' + argumentVoteTable + ' (questionID, argumentID, username, vote)' +
+                            'VALUES ($1, $2, $3, $4)' +
+                            'ON CONFLICT (questionID, argumentID, username) DO UPDATE SET vote = EXCLUDED.vote',
+                        [questionID, argumentID, username, upVote],
+                        function(error, result) {
+                            done();
+                            if (error) {
+                                console.error(error);
+                                throw new Error('Could set argument vote');
+                            }
+                            setDone();
+                        }
+                    );
+                }
+            );
+        } else if (vote === VoteType.NONE) {
+            pg.connect(
+                config,
+                function(error, client, done) {
+                    if (error) {
+                        console.error(error);
+                        throw new Error('Error creating query');
+                    }
+                    client.query(
+                        'DELETE FROM ' + argumentVoteTable + ' WHERE questionID = $1 AND argumentID = $2 AND username = $3',
+                        [questionID, argumentID, username],
+                        function(error, result) {
+                            done();
+                            if (error) {
+                                console.error(error);
+                                throw new Error('Could remove argument vote');
+                            }
+                            setDone();
+                        }
+                    );
+                }
+            );
+        } else {
+            throw new Error('vote type is neither up, down or none');
+        }
     };
 
     // For testing only

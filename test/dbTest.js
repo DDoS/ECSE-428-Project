@@ -525,6 +525,91 @@ describe('Database', function() {
         });
     });
 
+    describe('setArgumentVote(questionID, argumentID, username, vote, setDone)', function() {
+        var questionID = undefined;
+        var argumentID = undefined;
+
+        before(function(done) {
+            database.createUser('Im', 'tired', 'of@coming.up', function(user) {
+                database.createUser('with', 'original', 'names@for.testing', function(user) {
+                    database.createQuestion('JUST UPVOTE THIS SHIT', 'NO EFFORT', 'Im', function(question) {
+                        questionID = question.id;
+                        database.createArgument(questionID, db.ArgumentType.CON, 'LOL NO', 'with', function(argument){
+                            argumentID = argument.id;
+                            done();
+                        });
+                    });
+                });
+            });
+        });
+
+        it('Should insert a new row in the argument vote table when vote is up or down', function(done) {
+            database.setArgumentVote(questionID, argumentID, 'Im', db.VoteType.DOWN, function() {
+                database.getArgumentVote(questionID, argumentID, 'Im', function(vote) {
+                    assert.equal(db.VoteType.DOWN, vote);
+                    // Update the vote
+                    database.setArgumentVote(questionID, argumentID, 'Im', db.VoteType.UP, function() {
+                        database.getArgumentVote(questionID, argumentID, 'Im', function(updated) {
+                            assert.equal(db.VoteType.UP, updated);
+                            done();
+                        });
+                    });
+                });
+            });
+        });
+
+        it('Should insert delete the row in the questions vote table when vote is none', function(done) {
+            database.setArgumentVote(questionID, argumentID, 'with', db.VoteType.DOWN, function() {
+                database.getArgumentVote(questionID, argumentID, 'with', function(vote) {
+                    assert.equal(db.VoteType.DOWN, vote);
+                    // Delete the vote
+                    database.setArgumentVote(questionID, argumentID, 'with', db.VoteType.NONE, function() {
+                        database.getArgumentVote(questionID, argumentID, 'with', function(deleted) {
+                            assert.equal(db.VoteType.NONE, deleted);
+                            done();
+                        });
+                    });
+                });
+            });
+        });
+
+        it('Should not allow an undefined question ID', function() {
+            assert.throws(
+                function() {
+                    database.setArgumentVote(undefined, argumentID, 'Im', db.VoteType.UP, function() {});
+                },
+                Error, 'question ID is undefined'
+            );
+        });
+
+        it('Should not allow an undefined argument ID', function() {
+            assert.throws(
+                function() {
+                    database.setArgumentVote(questionID, undefined, 'Im', db.VoteType.UP, function() {});
+                },
+                Error, 'argument ID is undefined'
+            );
+        });
+
+        it('Should not allow an empty username', function() {
+            assert.throws(
+                function() {
+                    database.setArgumentVote(questionID, argumentID, '', db.VoteType.UP, function() {});
+                },
+                Error, 'username is empty'
+            );
+        });
+
+        it('Should not allow an invalid vote type', function() {
+            assert.throws(
+                function() {
+                    database.setArgumentVote(questionID, argumentID, 'Im', undefined, function() {});
+                },
+                Error, 'vote type is neither up, down or none'
+            );
+        });
+    });
+
     after(function(deleteDone) {
         // Delete the all the genrated tables
         database.rawQuery(function(error, client, done) {
