@@ -17,12 +17,10 @@ describe("GET and POST", function(){
             req.app.get('db').createQuestion("title", "text", "baizhong", function (question) {
             });
         });
-        console.log('POST'+ postQ);
         var getQ = router.get('/create', function (req, res) {
             req.app.get('db').createQuestion(undefined,undefined, page * 10, function (questions) {
             });
         });
-        console.log('GET'+ getQ);
         assert.equal(postQ, getQ);
         done();
     });

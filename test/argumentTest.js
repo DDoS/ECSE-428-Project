@@ -17,12 +17,10 @@ describe("GET and POST", function(){
             req.app.get('db').createArgument(questionID,db.ArgumentType.PRO,"test text",'baizhong',function(arguments) {
             });
         });
-        console.log('POST'+ postQ);
         var getQ = router.get('/create', function (req, res) {
             req.app.get('db').getNewArguments(questionID,db.ArgumentType.PRO, undefined, undefined, undefined, function(arguments) {
             });
         });
-        console.log('GET'+ getQ);
         assert.equal(postQ, getQ);
         done();
     });
