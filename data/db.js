@@ -28,7 +28,7 @@ var Database = function(dbName){
     };
 
     self.initialize = function(initDone) {
-        // Create the user, moderator, admin and question tables if needed
+        // Create tables and functions
         pg.connect(
             config,
             function(error, client, done) {
@@ -75,6 +75,25 @@ var Database = function(dbName){
                         'vote BOOLEAN NOT NULL,' +
                         'PRIMARY KEY (questionID, username)' +
                     ');' +
+                    'CREATE OR REPLACE FUNCTION ' +
+                        'upsertQuestionVote(qid BIGINT, usr VARCHAR(64), v BOOLEAN) ' +
+                        'RETURNS VOID AS $$ ' +
+                    'BEGIN ' +
+                        'LOOP ' +
+                            'UPDATE ' + questionVoteTable + ' SET vote = v ' +
+                                'WHERE questionID = qid AND username = usr; ' +
+                            'IF found THEN ' +
+                                'RETURN; ' +
+                            'END IF; ' +
+                            'BEGIN ' +
+                                'INSERT INTO ' + questionVoteTable + ' (questionID, username, vote) ' +
+                                    'VALUES (qid, usr, v); ' +
+                                'RETURN; ' +
+                            'EXCEPTION WHEN unique_violation THEN ' +
+                            'END; ' +
+                        'END LOOP; ' +
+                    'END; ' +
+                    '$$ LANGUAGE plpgsql;' +
                     'CREATE TABLE IF NOT EXISTS ' + argumentVoteTable + ' (' +
                         'questionID BIGINT NOT NULL,' +
                         'argumentID BIGINT NOT NULL,' +
@@ -82,7 +101,26 @@ var Database = function(dbName){
                         'vote BOOLEAN NOT NULL,' +
                         'FOREIGN KEY (questionID, argumentID) REFERENCES ' + argumentTable + ' (questionID, id),' +
                         'PRIMARY KEY (questionID, argumentID, username)' +
-                    ');',
+                    ');' +
+                    'CREATE OR REPLACE FUNCTION ' +
+                        'upsertArgumentVote(qid BIGINT, aid BIGINT, usr VARCHAR(64), v BOOLEAN) ' +
+                        'RETURNS VOID AS $$ ' +
+                    'BEGIN ' +
+                        'LOOP ' +
+                            'UPDATE ' + argumentVoteTable + ' SET vote = v ' +
+                                'WHERE questionID = qid AND argumentID = aid AND username = usr; ' +
+                            'IF found THEN ' +
+                                'RETURN; ' +
+                            'END IF; ' +
+                            'BEGIN ' +
+                                'INSERT INTO ' + argumentVoteTable + ' (questionID, argumentID, username, vote) ' +
+                                    'VALUES (qid, aid, usr, v); ' +
+                                'RETURN; ' +
+                            'EXCEPTION WHEN unique_violation THEN ' +
+                            'END; ' +
+                        'END LOOP; ' +
+                    'END; ' +
+                    '$$ LANGUAGE plpgsql;',
                     function(error, result) {
                         done();
                         if (error) {
@@ -462,8 +500,7 @@ var Database = function(dbName){
                     }
                     upVote = vote === VoteType.UP;
                     client.query(
-                        'INSERT INTO ' + questionVoteTable + ' (questionID, username, vote) VALUES ($1, $2, $3)' +
-                            'ON CONFLICT (questionID, username) DO UPDATE SET vote = EXCLUDED.vote',
+                        'SELECT upsertQuestionVote($1, $2, $3)',
                         [questionID, username, upVote],
                         function(error, result) {
                             done();
@@ -557,9 +594,7 @@ var Database = function(dbName){
                     }
                     upVote = vote === VoteType.UP;
                     client.query(
-                        'INSERT INTO ' + argumentVoteTable + ' (questionID, argumentID, username, vote)' +
-                            'VALUES ($1, $2, $3, $4)' +
-                            'ON CONFLICT (questionID, argumentID, username) DO UPDATE SET vote = EXCLUDED.vote',
+                        'SELECT upsertArgumentVote($1, $2, $3, $4)',
                         [questionID, argumentID, username, upVote],
                         function(error, result) {
                             done();
