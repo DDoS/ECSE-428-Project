@@ -38,23 +38,40 @@ router.post('/create', function(req, res) {
 });
 
 router.get('/find', function(req, res) {
+    var dbInst = req.app.get('db');
 
     var page;
-
-    if(req.query.page)
+    if (req.query.page) {
         page = req.query.page - 1;
-    else
-       page = 0;
+    } else {
+        page = 0;
+    }
 
+    dbInst.getNewQuestions(undefined, undefined, page * 10, function(questions) {
+        async.each(questions, function(question, callback) {
+            dbInst.getQuestionVoteScore(question.id, function(questionVoteScore) {
+                question.voteScore = questionVoteScore;
+                if (req.user) {
+                    dbInst.getQuestionVote(question.id, req.user.username, function(questionVote) {
+                        question.upVoted = questionVote === db.VoteType.UP;
+                        question.downVoted = questionVote === db.VoteType.DOWN;
 
-    req.app.get('db').getNewQuestions(undefined,undefined, page * 10, function (questions) {
-        console.log(questions);
-        res.render('questions/find', {
-            title: 'All Questions',
-            questions: questions,
-            currPage: page + 1,
-            hasNextPage: questions.length == 10
+                        callback();
+                    });
+                } else {
+                    question.upVoted = false;
+                    question.downVoted = false;
 
+                    callback();
+                }
+            });
+        }, function() {
+            res.render('questions/find', {
+                title: 'All Questions',
+                questions: questions,
+                currPage: page + 1,
+                hasNextPage: questions.length == 10
+            });
         });
     });
 });
@@ -101,6 +118,13 @@ router.post('/pa', function(req, res) {
 });
 
 router.get('/view', function(req, res) {
+    function error() {
+        req.flash('errors', {
+            msg: 'Failed to load question. Please try again.'
+        });
+        res.redirect('/questions/find');
+    }
+
     var dbInst = req.app.get('db');
 
     var page;
@@ -110,22 +134,61 @@ router.get('/view', function(req, res) {
         page = 0;
     }
 
-    function error() {
-        req.flash('errors', {
-            msg: 'Failed to load question. Please try again.'
-        });
-        res.redirect('/questions/find');
-    }
-
     try {
-        dbInst.getQuestion(req.query.q, function (question) {
+        dbInst.getQuestion(req.query.q, function(question) {
             if (!question) {
                 error();
                 return;
             }
 
-            dbInst.getNewArguments(question.id, db.ArgumentType.PRO, undefined, undefined, page * 10, function (argsFor) {
-                dbInst.getNewArguments(question.id, db.ArgumentType.CON, undefined, undefined, page * 10, function (argsAgainst) {
+            dbInst.getQuestionVoteScore(question.id, function(questionVoteScore) {
+                question.voteScore = questionVoteScore;
+
+                dbInst.getNewArguments(question.id, undefined, undefined, undefined, page * 10, function(args) {
+                    // Sort arguments into separate arrays for "for" and "against"
+                    var argsFor = [];
+                    var argsAgainst = [];
+                    for (var i = 0; i < args.length; i++) {
+                        if (args[i].type === db.ArgumentType.PRO) {
+                            argsFor.push(args[i]);
+                        } else {
+                            argsAgainst.push(args[i]);
+                        }
+                    }
+
+                    async.each(args, function(argument, callback) {
+                        dbInst.getArgumentVoteScore(question.id, argument.id, function(argumentVoteScore) {
+                            argument.voteScore = argumentVoteScore;
+                            callback();
+                        });
+                    }, function() {
+                        if (req.user) {
+                            dbInst.getQuestionVote(question.id, req.user.username, function(questionVote) {
+                                question.upVoted = questionVote === db.VoteType.UP;
+                                question.downVoted = questionVote === db.VoteType.DOWN;
+
+                                async.each(args, function(argument, callback) {
+                                    dbInst.getArgumentVote(question.id, argument.id, req.user.username, function(argumentVote) {
+                                        argument.upVoted = argumentVote === db.VoteType.UP;
+                                        argument.downVoted = argumentVote === db.VoteType.DOWN;
+                                        callback();
+                                    });
+                                }, function() {
+                                    render();
+                                });
+                            });
+                        } else {
+                            question.upVoted = false;
+                            question.downVoted = false;
+
+                            for (var i = 0; i < args.length; i++) {
+                                args[i].upVoted = false;
+                                args[i].downVoted = false;
+                            }
+
+                            render();
+                        }
+                    });
 
                     function render() {
                         res.render('questions/view', {
@@ -136,34 +199,6 @@ router.get('/view', function(req, res) {
                             currArgs: page + 1,
                             hasNextArgs: argsFor.length == 10 || argsAgainst.length == 10
                         });
-                    }
-
-                    if (req.user) {
-                        dbInst.getQuestionVote(question.id, req.user.username, function(questionVote) {
-                            question.upVoted = questionVote === db.VoteType.UP;
-                            question.downVoted = questionVote === db.VoteType.DOWN;
-
-                            async.each(argsFor.concat(argsAgainst), function(argument, callback) {
-                                dbInst.getArgumentVote(question.id, argument.id, req.user.username, function(argumentVote) {
-                                    argument.upVoted = argumentVote === db.VoteType.UP;
-                                    argument.downVoted = questionVote === db.VoteType.DOWN;
-                                    callback();
-                                });
-                            }, function() {
-                                render();
-                            });
-                        });
-                    } else {
-                        question.upVoted = false;
-                        question.downVoted = false;
-
-                        var args = argsFor.concat(argsAgainst);
-                        for (var i = 0; i < args.length; i++) {
-                            args[i].upVoted = false;
-                            args[i].downVoted = false;
-                        }
-
-                        render();
                     }
                 });
             });
@@ -186,7 +221,7 @@ router.post('/vote', function(req, res) {
         });
         res.redirect('/users/login');
         return;
-    } else if (req.body.vote !== "up" && req.body.vote !== "down") {
+    } else if (req.body.vote !== "up" && req.body.vote !== "down" && req.body.vote !== "none") {
         req.flash('errors', {
             msg: 'No vote specified. Please try voting again.'
         });

@@ -13,6 +13,8 @@ const moderatorTable = 'Moderators';
 const adminTable = 'Admins';
 const questionTable = 'Questions';
 const argumentTable = 'Arguments';
+const questionVoteTable = 'QuestionVotes';
+const argumentVoteTable = 'ArgumentVotes';
 
 var Database = function(dbName){
     var self = this;
@@ -26,7 +28,7 @@ var Database = function(dbName){
     };
 
     self.initialize = function(initDone) {
-        // Create the user, moderator, admin and question tables if needed
+        // Create tables and functions
         pg.connect(
             config,
             function(error, client, done) {
@@ -52,21 +54,69 @@ var Database = function(dbName){
                         'title VARCHAR(256) NOT NULL,' +
                         'text VARCHAR(4096) NOT NULL,' +
                         'date TIMESTAMP DEFAULT now(),' +
-                        'submitter VARCHAR(64) NOT NULL REFERENCES ' + userTable + ',' +
-                        'downVoteCount INTEGER DEFAULT 0 CHECK (downVoteCount >= 0),' +
-                        'upVoteCount INTEGER DEFAULT 0 CHECK (upVoteCount >= 0)' +
+                        'submitter VARCHAR(64) NOT NULL REFERENCES ' + userTable +
                     ');' +
                     'CREATE TABLE IF NOT EXISTS ' + argumentTable + ' (' +
-                        'id SERIAL,' +
+                        'id BIGSERIAL,' +
                         'questionID BIGINT NOT NULL REFERENCES ' + questionTable + ',' +
                         'type BOOLEAN NOT NULL,' +
                         'text VARCHAR(4096) NOT NULL,' +
                         'date TIMESTAMP DEFAULT now(),' +
                         'submitter VARCHAR(64) NOT NULL REFERENCES ' + userTable + ',' +
-                        'downVoteCount INTEGER DEFAULT 0 CHECK (downVoteCount >= 0),' +
-                        'upVoteCount INTEGER DEFAULT 0 CHECK (upVoteCount >= 0),' +
                         'PRIMARY KEY (id, questionID)' +
-                    ');',
+                    ');' +
+                    'CREATE TABLE IF NOT EXISTS ' + questionVoteTable + ' (' +
+                        'questionID BIGINT NOT NULL REFERENCES ' + questionTable + ',' +
+                        'username VARCHAR(64) NOT NULL REFERENCES ' + userTable + ',' +
+                        'vote SMALLINT NOT NULL CHECK (vote = -1 OR vote = 1),' +
+                        'PRIMARY KEY (questionID, username)' +
+                    ');' +
+                    'CREATE OR REPLACE FUNCTION ' +
+                        'upsertQuestionVote(qid BIGINT, usr VARCHAR(64), v SMALLINT) ' +
+                        'RETURNS VOID AS $$ ' +
+                    'BEGIN ' +
+                        'LOOP ' +
+                            'UPDATE ' + questionVoteTable + ' SET vote = v ' +
+                                'WHERE questionID = qid AND username = usr; ' +
+                            'IF found THEN ' +
+                                'RETURN; ' +
+                            'END IF; ' +
+                            'BEGIN ' +
+                                'INSERT INTO ' + questionVoteTable + ' (questionID, username, vote) ' +
+                                    'VALUES (qid, usr, v); ' +
+                                'RETURN; ' +
+                            'EXCEPTION WHEN unique_violation THEN ' +
+                            'END; ' +
+                        'END LOOP; ' +
+                    'END; ' +
+                    '$$ LANGUAGE plpgsql;' +
+                    'CREATE TABLE IF NOT EXISTS ' + argumentVoteTable + ' (' +
+                        'questionID BIGINT NOT NULL,' +
+                        'argumentID BIGINT NOT NULL,' +
+                        'username VARCHAR(64) NOT NULL REFERENCES ' + userTable + ',' +
+                        'vote SMALLINT NOT NULL CHECK (vote = -1 OR vote = 1),' +
+                        'FOREIGN KEY (questionID, argumentID) REFERENCES ' + argumentTable + ' (questionID, id),' +
+                        'PRIMARY KEY (questionID, argumentID, username)' +
+                    ');' +
+                    'CREATE OR REPLACE FUNCTION ' +
+                        'upsertArgumentVote(qid BIGINT, aid BIGINT, usr VARCHAR(64), v SMALLINT) ' +
+                        'RETURNS VOID AS $$ ' +
+                    'BEGIN ' +
+                        'LOOP ' +
+                            'UPDATE ' + argumentVoteTable + ' SET vote = v ' +
+                                'WHERE questionID = qid AND argumentID = aid AND username = usr; ' +
+                            'IF found THEN ' +
+                                'RETURN; ' +
+                            'END IF; ' +
+                            'BEGIN ' +
+                                'INSERT INTO ' + argumentVoteTable + ' (questionID, argumentID, username, vote) ' +
+                                    'VALUES (qid, aid, usr, v); ' +
+                                'RETURN; ' +
+                            'EXCEPTION WHEN unique_violation THEN ' +
+                            'END; ' +
+                        'END LOOP; ' +
+                    'END; ' +
+                    '$$ LANGUAGE plpgsql;',
                     function(error, result) {
                         done();
                         if (error) {
@@ -194,7 +244,7 @@ var Database = function(dbName){
                     throw new Error('Error creating query');
                 }
                 client.query(
-                    'SELECT title, text, date, submitter, downVoteCount, upVoteCount ' +
+                    'SELECT title, text, date, submitter ' +
                         'FROM ' + questionTable + ' WHERE id = $1;',
                     [id],
                     function(error, result) {
@@ -209,8 +259,7 @@ var Database = function(dbName){
                         } else {
                             question = new Question(
                                 id, result.rows[0].title, result.rows[0].text, result.rows[0].date,
-                                // column names aren't case sentitive, so vote counts are all lower case
-                                result.rows[0].submitter, result.rows[0].downvotecount, result.rows[0].upvotecount
+                                result.rows[0].submitter
                             );
                         }
                         getDone(question);
@@ -240,7 +289,7 @@ var Database = function(dbName){
                     throw new Error('Error creating query');
                 }
                 client.query(
-                    'SELECT id, title, text, date, submitter, downVoteCount, upVoteCount ' +
+                    'SELECT id, title, text, date, submitter ' +
                         'FROM ' + questionTable + ' WHERE date >= $1 ' +
                         'ORDER BY date DESC ' +
                         'LIMIT $2 OFFSET $3;',
@@ -255,7 +304,7 @@ var Database = function(dbName){
                         result.rows.forEach(function(row, index, array) {
                             questions.push(new Question(
                                 row.id, row.title, row.text, row.date,
-                                row.submitter, row.downvotecount, row.upvotecount
+                                row.submitter
                             ));
                         });
                         getDone(questions);
@@ -315,7 +364,7 @@ var Database = function(dbName){
                     throw new Error('Error creating query');
                 }
                 client.query(
-                    'SELECT type, text, date, submitter, downVoteCount, upVoteCount ' +
+                    'SELECT type, text, date, submitter ' +
                         'FROM ' + argumentTable + ' WHERE questionID = $1 AND id = $2;',
                     [questionID, id],
                     function(error, result) {
@@ -330,7 +379,7 @@ var Database = function(dbName){
                         } else {
                             argument = new Argument(
                                 id, result.rows[0].type, result.rows[0].text, result.rows[0].date,
-                                result.rows[0].submitter, result.rows[0].downvotecount, result.rows[0].upvotecount
+                                result.rows[0].submitter
                             );
                         }
                         getDone(argument);
@@ -370,7 +419,7 @@ var Database = function(dbName){
                     queryArgs.push(type);
                 }
                 client.query(
-                    'SELECT id, type, text, date, submitter, downVoteCount, upVoteCount ' +
+                    'SELECT id, type, text, date, submitter ' +
                         'FROM ' + argumentTable + whereClause +
                         'ORDER BY date DESC ' +
                         'LIMIT $3 OFFSET $4;',
@@ -385,7 +434,7 @@ var Database = function(dbName){
                         result.rows.forEach(function(row, index, array) {
                             args.push(new Argument(
                                 row.id, row.type, row.text, row.date,
-                                row.submitter, row.downvotecount, row.upvotecount
+                                row.submitter
                             ));
                         });
                         getDone(args);
@@ -395,20 +444,229 @@ var Database = function(dbName){
         );
     };
 
-    self.getQuestionVote = function(questionId, username, callback) {
-        callback(VoteType.NONE);
+    self.getQuestionVote = function(questionID, username, getDone) {
+        pg.connect(
+            config,
+            function(error, client, done) {
+                if (error) {
+                    console.error(error);
+                    throw new Error('Error creating query');
+                }
+                client.query(
+                    'SELECT vote FROM ' + questionVoteTable + ' WHERE questionID = $1 AND username = $2;',
+                    [questionID, username],
+                    function(error, result) {
+                        done();
+                        if (error) {
+                            console.error(error);
+                            throw new Error('Could not get question vote');
+                        }
+                        var vote;
+                        if (result.rows.length <= 0) {
+                            vote = VoteType.NONE;
+                        } else {
+                            vote = result.rows[0].vote;
+                        }
+                        getDone(vote);
+                    }
+                );
+            }
+        );
     };
 
-    self.getArgumentVote = function(questionId, argumentId, username, callback) {
-        callback(VoteType.NONE);
+    self.setQuestionVote = function(questionID, username, vote, setDone) {
+        if (questionID === undefined) {
+            throw new Error('question ID is undefined');
+        }
+        if (stringEmpty(username)) {
+            throw new Error('username is empty');
+        }
+        if (vote === VoteType.UP || vote === VoteType.DOWN) {
+            pg.connect(
+                config,
+                function(error, client, done) {
+                    if (error) {
+                        console.error(error);
+                        throw new Error('Error creating query');
+                    }
+                    client.query(
+                        'SELECT upsertQuestionVote($1, $2, $3)',
+                        [questionID, username, vote],
+                        function(error, result) {
+                            done();
+                            if (error) {
+                                console.error(error);
+                                throw new Error('Could set question vote');
+                            }
+                            setDone();
+                        }
+                    );
+                }
+            );
+        } else if (vote === VoteType.NONE) {
+            pg.connect(
+                config,
+                function(error, client, done) {
+                    if (error) {
+                        console.error(error);
+                        throw new Error('Error creating query');
+                    }
+                    client.query(
+                        'DELETE FROM ' + questionVoteTable + ' WHERE questionID = $1 AND username = $2',
+                        [questionID, username],
+                        function(error, result) {
+                            done();
+                            if (error) {
+                                console.error(error);
+                                throw new Error('Could remove question vote');
+                            }
+                            setDone();
+                        }
+                    );
+                }
+            );
+        } else {
+            throw new Error('vote type is neither up, down or none');
+        }
     };
 
-    self.setQuestionVote = function(questionId, username, vote, callback) {
-        callback();
+    self.getArgumentVote = function(questionID, argumentID, username, getDone) {
+        pg.connect(
+            config,
+            function(error, client, done) {
+                if (error) {
+                    console.error(error);
+                    throw new Error('Error creating query');
+                }
+                client.query(
+                    'SELECT vote FROM ' + argumentVoteTable + ' WHERE questionID = $1 AND argumentID = $2 AND username = $3;',
+                    [questionID, argumentID, username],
+                    function(error, result) {
+                        done();
+                        if (error) {
+                            console.error(error);
+                            throw new Error('Could not get argument vote');
+                        }
+                        var vote;
+                        if (result.rows.length <= 0) {
+                            vote = VoteType.NONE;
+                        } else {
+                            vote = result.rows[0].vote;
+                        }
+                        getDone(vote);
+                    }
+                );
+            }
+        );
     };
 
-    self.setArgumentVote = function(questionId, argumentId, username, vote, callback) {
-        callback();
+    self.setArgumentVote = function(questionID, argumentID, username, vote, setDone) {
+        if (questionID === undefined) {
+            throw new Error('question ID is undefined');
+        }
+        if (argumentID === undefined) {
+            throw new Error('argument ID is undefined');
+        }
+        if (stringEmpty(username)) {
+            throw new Error('username is empty');
+        }
+        if (vote === VoteType.UP || vote === VoteType.DOWN) {
+            pg.connect(
+                config,
+                function(error, client, done) {
+                    if (error) {
+                        console.error(error);
+                        throw new Error('Error creating query');
+                    }
+                    client.query(
+                        'SELECT upsertArgumentVote($1, $2, $3, $4)',
+                        [questionID, argumentID, username, vote],
+                        function(error, result) {
+                            done();
+                            if (error) {
+                                console.error(error);
+                                throw new Error('Could set argument vote');
+                            }
+                            setDone();
+                        }
+                    );
+                }
+            );
+        } else if (vote === VoteType.NONE) {
+            pg.connect(
+                config,
+                function(error, client, done) {
+                    if (error) {
+                        console.error(error);
+                        throw new Error('Error creating query');
+                    }
+                    client.query(
+                        'DELETE FROM ' + argumentVoteTable + ' WHERE questionID = $1 AND argumentID = $2 AND username = $3',
+                        [questionID, argumentID, username],
+                        function(error, result) {
+                            done();
+                            if (error) {
+                                console.error(error);
+                                throw new Error('Could remove argument vote');
+                            }
+                            setDone();
+                        }
+                    );
+                }
+            );
+        } else {
+            throw new Error('vote type is neither up, down or none');
+        }
+    };
+
+    self.getQuestionVoteScore = function(questionID, getDone) {
+        pg.connect(
+            config,
+            function(error, client, done) {
+                if (error) {
+                    console.error(error);
+                    throw new Error('Error creating query');
+                }
+                client.query(
+                    'SELECT sum(vote) AS score FROM ' + questionVoteTable + ' WHERE questionID = $1;',
+                    [questionID],
+                    function(error, result) {
+                        done();
+                        if (error) {
+                            console.error(error);
+                            throw new Error('Could not get question vote score');
+                        }
+                        var score = result.rows[0].score;
+                        getDone(score === null ? 0 : score);
+                    }
+                );
+            }
+        );
+    };
+
+    self.getArgumentVoteScore = function(questionID, argumentID, getDone) {
+        pg.connect(
+            config,
+            function(error, client, done) {
+                if (error) {
+                    console.error(error);
+                    throw new Error('Error creating query');
+                }
+                client.query(
+                    'SELECT sum(vote) AS score FROM ' + argumentVoteTable + ' WHERE questionID = $1 AND argumentID = $2;',
+                    [questionID, argumentID],
+                    function(error, result) {
+                        done();
+                        if (error) {
+                            console.error(error);
+                            throw new Error('Could not get argument vote score');
+                        }
+                        var score = result.rows[0].score;
+                        getDone(score === null ? 0 : score);
+                    }
+                );
+            }
+        );
     };
 
     // For testing only
@@ -430,16 +688,22 @@ var User = function(username, salt, password, email) {
 
 };
 
-var Question = function(id, title, text, date, submitter, downVoteCount, upVoteCount) {
+var Question = function(id, title, text, date, submitter) {
     var self = this;
     self.id = id;
     self.title = title;
     self.text = text;
     self.date = date;
     self.submitter = submitter;
-    self.downVoteCount = downVoteCount;
-    self.upVoteCount = upVoteCount;
-    self.argTableName = 'argTable_' + id;
+};
+
+var Argument = function(id, type, text, date, submitter) {
+    var self = this;
+    self.id = id;
+    self.type = type;
+    self.text = text;
+    self.date = date;
+    self.submitter = submitter;
 };
 
 var ArgumentType = Object.freeze({
@@ -449,20 +713,9 @@ var ArgumentType = Object.freeze({
 
 var VoteType = Object.freeze({
     "UP": 1,
-    "DOWN": 2,
-    "NONE": 3
+    "DOWN": -1,
+    "NONE": 0
 });
-
-var Argument = function(id, type, text, date, submitter, downVoteCount, upVoteCount) {
-    var self = this;
-    self.id = id;
-    self.type = type;
-    self.text = text;
-    self.date = date;
-    self.submitter = submitter;
-    self.downVoteCount = downVoteCount;
-    self.upVoteCount = upVoteCount;
-}
 
 function stringEmpty(string) {
     return !string || string.trim().length === 0;

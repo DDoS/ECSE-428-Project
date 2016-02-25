@@ -1,6 +1,12 @@
-language: node_js
+language: "node_js"
 node_js:
   - "5.4"
+
+addons:
+  postgresql: "9.2"
+
+services:
+  - "postgresql"
 
 env:
     - "PGHOST=localhost PGPORT=5432 PGUSER=postgres"

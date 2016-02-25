@@ -34,8 +34,7 @@ block content
                     +question(question.id, question.title, question.text,
                               question.submitter,  question.date,
                               question.upVoted, question.downVoted,
-                              question.upVoteCount - question.downVoteCount,
-                              user)
+                              question.voteScore, user)
 
     .form-group
         +pagination(currPage, '/questions/find/')
