@@ -8,7 +8,7 @@ block content
         .col-md-12
             +question(question.id, question.text, question.submitter,
                       question.date, question.upVoted, question.downVoted,
-                      question.upVoteCount - question.downVoteCount, user)
+                      question.voteScore, user)
 
     .row
         .col-md-6
@@ -18,8 +18,7 @@ block content
                     +argument(question.id, argument.id, argument.text,
                               argument.submitter, argument.date,
                               argument.upVoted, argument.downVoted,
-                              argument.upVoteCount - argument.downVoteCount,
-                              user)
+                              argument.voteScore, user)
             else
                 p
                     | No arguments have yet been made in favour. Why don't you
@@ -31,8 +30,7 @@ block content
                     +argument(question.id, argument.id, argument.text,
                               argument.submitter, argument.date,
                               argument.upVoted, argument.downVoted,
-                              argument.upVoteCount - argument.downVoteCount,
-                              user)
+                              argument.voteScore, user)
             else
                 p
                     | No arguments have yet been made against. Why don't you
