@@ -259,8 +259,7 @@ var Database = function(dbName){
                         } else {
                             question = new Question(
                                 id, result.rows[0].title, result.rows[0].text, result.rows[0].date,
-                                // column names aren't case sentitive, so vote counts are all lower case
-                                result.rows[0].submitter, result.rows[0].downvotecount, result.rows[0].upvotecount
+                                result.rows[0].submitter
                             );
                         }
                         getDone(question);
@@ -305,7 +304,7 @@ var Database = function(dbName){
                         result.rows.forEach(function(row, index, array) {
                             questions.push(new Question(
                                 row.id, row.title, row.text, row.date,
-                                row.submitter, row.downvotecount, row.upvotecount
+                                row.submitter
                             ));
                         });
                         getDone(questions);
@@ -380,7 +379,7 @@ var Database = function(dbName){
                         } else {
                             argument = new Argument(
                                 id, result.rows[0].type, result.rows[0].text, result.rows[0].date,
-                                result.rows[0].submitter, result.rows[0].downvotecount, result.rows[0].upvotecount
+                                result.rows[0].submitter
                             );
                         }
                         getDone(argument);
@@ -435,7 +434,7 @@ var Database = function(dbName){
                         result.rows.forEach(function(row, index, array) {
                             args.push(new Argument(
                                 row.id, row.type, row.text, row.date,
-                                row.submitter, row.downvotecount, row.upvotecount
+                                row.submitter
                             ));
                         });
                         getDone(args);
@@ -643,7 +642,7 @@ var Database = function(dbName){
                 );
             }
         );
-    }
+    };
 
     self.getArgumentVoteScore = function(questionID, argumentID, getDone) {
         pg.connect(
@@ -668,7 +667,7 @@ var Database = function(dbName){
                 );
             }
         );
-    }
+    };
 
     // For testing only
     self.rawQuery = function(query) {
