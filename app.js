@@ -112,7 +112,6 @@ app.set('initDb', function(done) {
             });
         })
     } else {
-        app.database = new db.Database();
         app.database.initialize(function() {
             console.log('Production database initialized');
             end();
