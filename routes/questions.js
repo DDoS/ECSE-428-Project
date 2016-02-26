@@ -107,14 +107,7 @@ router.post('/pa', isAuthenticated, function(req, res) {
 });
 
 router.get('/view', function(req, res) {
-    function error() {
-        req.flash('errors', {
-            msg: 'Failed to load question. Please try again.'
-        });
-        res.redirect('/questions/find');
-    }
-
-    var dbInst = req.app.get('db');
+    var database = req.app.get('db');
 
     var page;
     if (req.query.page) {
@@ -124,76 +117,93 @@ router.get('/view', function(req, res) {
     }
 
     try {
-        dbInst.getQuestion(req.query.q, function(question) {
+        database.getQuestion(req.query.q, function(question) {
             if (!question) {
                 error();
                 return;
             }
 
-            dbInst.getQuestionVoteScore(question.id, function(questionVoteScore) {
-                question.voteScore = questionVoteScore;
-
-                dbInst.getNewArguments(question.id, undefined, undefined, undefined, page * 10, function(args) {
-                    // Sort arguments into separate arrays for "for" and "against"
-                    var argsFor = [];
-                    var argsAgainst = [];
-                    for (var i = 0; i < args.length; i++) {
-                        if (args[i].type === db.ArgumentType.PRO) {
-                            argsFor.push(args[i]);
-                        } else {
-                            argsAgainst.push(args[i]);
-                        }
-                    }
-
-                    async.each(args, function(argument, callback) {
-                        dbInst.getArgumentVoteScore(question.id, argument.id, function(argumentVoteScore) {
-                            argument.voteScore = argumentVoteScore;
-                            callback();
-                        });
-                    }, function() {
-                        if (req.user) {
-                            dbInst.getQuestionVote(question.id, req.user.username, function(questionVote) {
-                                question.upVoted = questionVote === db.VoteType.UP;
-                                question.downVoted = questionVote === db.VoteType.DOWN;
-
-                                async.each(args, function(argument, callback) {
-                                    dbInst.getArgumentVote(question.id, argument.id, req.user.username, function(argumentVote) {
-                                        argument.upVoted = argumentVote === db.VoteType.UP;
-                                        argument.downVoted = argumentVote === db.VoteType.DOWN;
-                                        callback();
-                                    });
-                                }, function() {
-                                    render();
-                                });
+            getQuestionVoteScores(req, [question], database, function() {
+                getArguments(question, function(argsFor, argsAgainst, args) {
+                    getArgumentVoteScores(question, args, function() {
+                        getQuestionArgumentVoteStatuses(question, args, function() {
+                            res.render('questions/view', {
+                                title: "Question: " + question.title,
+                                question: question,
+                                argsFor: argsFor,
+                                argsAgainst: argsAgainst,
+                                currArgs: page + 1,
+                                hasNextArgs: argsFor.length == 10 ||
+                                             argsAgainst.length == 10
                             });
-                        } else {
-                            question.upVoted = false;
-                            question.downVoted = false;
-
-                            for (var i = 0; i < args.length; i++) {
-                                args[i].upVoted = false;
-                                args[i].downVoted = false;
-                            }
-
-                            render();
-                        }
+                        })
                     });
-
-                    function render() {
-                        res.render('questions/view', {
-                            title: "Question: " + question.title,
-                            question: question,
-                            argsFor: argsFor,
-                            argsAgainst: argsAgainst,
-                            currArgs: page + 1,
-                            hasNextArgs: argsFor.length == 10 || argsAgainst.length == 10
-                        });
-                    }
-                });
+                })
             });
         });
     } catch (err) {
         error();
+    }
+
+    function getArguments(question, done) {
+        database.getNewArguments(question.id, db.ArgumentType.PRO, undefined,
+            undefined, page * 10, function(argsFor) {
+                database.getNewArguments(question.id, db.ArgumentType.CON,
+                    undefined, undefined, page * 10, function(argsAgainst) {
+                        var args = argsFor.concat(argsAgainst);
+                        done(argsFor, argsAgainst, args);
+                });
+        });
+    }
+
+    function getArgumentVoteScores(question, args, done) {
+        async.each(args, function(argument, done) {
+            database.getArgumentVoteScore(question.id, argument.id,
+                function(argumentVoteScore) {
+                    argument.voteScore = argumentVoteScore;
+                    done();
+                });
+        }, done);
+    }
+
+    function getQuestionArgumentVoteStatuses(question, args, done) {
+        if (req.user) {
+            database.getQuestionVote(question.id, req.user.username,
+                function(questionVote) {
+                    question.upVoted = questionVote === db.VoteType.UP;
+                    question.downVoted = questionVote === db.VoteType.DOWN;
+
+                    async.each(args, function(argument, done) {
+                        database.getArgumentVote(question.id, argument.id,
+                            req.user.username, function(argumentVote) {
+                                argument.upVoted = argumentVote ===
+                                    db.VoteType.UP;
+                                argument.downVoted = argumentVote ===
+                                    db.VoteType.DOWN;
+                                done();
+                            });
+                    }, function() {
+                        done();
+                    });
+                });
+        } else {
+            question.upVoted = false;
+            question.downVoted = false;
+
+            for (var i = 0; i < args.length; i++) {
+                args[i].upVoted = false;
+                args[i].downVoted = false;
+            }
+
+            done();
+        }
+    }
+
+    function error() {
+        req.flash('errors', {
+            msg: 'Failed to load question. Please try again.'
+        });
+        res.redirect('/questions/find');
     }
 });
 
@@ -283,8 +293,8 @@ function isAuthenticated(req, res, next) {
     res.redirect('/users/login');
 }
 
-function getQuestionVoteScores(req, questions, database, callback) {
-    async.each(questions, function(question, callback) {
+function getQuestionVoteScores(req, questions, database, done) {
+    async.each(questions, function(question, done) {
         database.getQuestionVoteScore(question.id, function(questionVoteScore) {
             question.voteScore = questionVoteScore;
             if (req.isAuthenticated()) {
@@ -292,16 +302,16 @@ function getQuestionVoteScores(req, questions, database, callback) {
                     question.upVoted = questionVote === db.VoteType.UP;
                     question.downVoted = questionVote === db.VoteType.DOWN;
 
-                    callback();
+                    done();
                 });
             } else {
                 question.upVoted = false;
                 question.downVoted = false;
 
-                callback();
+                done();
             }
         });
-    }, callback);
+    }, done);
 }
 
 module.exports = router;
