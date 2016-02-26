@@ -56,15 +56,14 @@ router.get('/find', function(req, res) {
 });
 
 router.post('/search', function(req, res) {
-
     var filter = req.body.search;
 
-    if (filter.length == 0){
+    // TODO: Implement database access for search
+    if (filter.length === 0) {
         res.redirect('find');
-    }
-    else {
+    } else {
         res.render('questions/find', {
-            title: 'Results for "'+filter+'"',
+            title: 'Results for "' + filter + '"',
             filter: filter,
             questions: '',
             currPage: 1,
