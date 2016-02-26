@@ -11,30 +11,26 @@ router.get('/create', function(req, res) {
     });
 });
 
+router.post('/create', isAuthenticated, function(req, res) {
+    var database = req.app.get('db');
 
-router.post('/create', function(req, res) {
-    if (req.user === undefined) {
-        req.flash('errors', { msg: 'Please login before posting new question.' });
-        return res.redirect('/users/login');
+    req.assert('question', 'Question field is empty.').notEmpty();
+    req.assert('details', 'Details field is empty.').notEmpty();
 
-    }else{
-        req.assert('title', 'Title is empty.').notEmpty();
-        req.assert('text', 'Description is empty.').notEmpty();
+    var errors = req.validationErrors();
 
-        var errors = req.validationErrors();
+    if (errors) {
+        req.flash('errors', errors);
+        return res.redirect('create');
+    } else {
+        database.createQuestion(req.body.question, req.body.details,
+                                req.user.username, success);
 
-        if (errors) {
-            req.flash('errors', errors);
-            return res.redirect('/questions/create');
-        }else {
-            req.app.get('db').createQuestion(req.body.title, req.body.text, req.user.username, function (question) {
-                //console.log(question);
-                req.flash('success', {msg: 'New question posted!'});
-                res.redirect('/');
-            });
+        function success(question) {
+            req.flash('success', {msg: 'New question created.'});
+            res.redirect('view?q=' + question.id);
         }
     }
-
 });
 
 router.get('/find', function(req, res) {
@@ -266,5 +262,13 @@ router.post('/vote', function(req, res) {
         res.redirect(req.get('referer'));
     }
 });
+
+function isAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+        return next();
+    }
+    req.flash('errors', {msg: 'Please login before performing that action.'});
+    res.redirect('/users/login');
+}
 
 module.exports = router;
