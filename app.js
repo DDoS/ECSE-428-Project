@@ -49,11 +49,13 @@ app.use(function(req, res, next) {
     next();
 });
 
-app.use(csurf());
-app.use(function(req, res, next) {
-    res.locals.csrfToken = req.csrfToken();
-    next();
-});
+if (app.get('env') !== "test") {
+    app.use(csurf());
+    app.use(function(req, res, next) {
+        res.locals.csrfToken = req.csrfToken();
+        next();
+    });
+}
 
 app.use('/', routes);
 app.use('/users', users);
@@ -92,10 +94,24 @@ app.use(function(err, req, res, next) {
 });
 
 // Create and initialize the DB
-app.database = new db.Database(process.env.DBNAME_PROD);
-app.database.initialize(function() {
-    console.log("Database is ready");
+app.set('initDb', function(done) {
+    if (app.get("env") === "test") {
+        app.database = new db.Database(process.env.DBNAME_TEST);
+        app.database.clear(function() {
+            console.log("Test database cleared and initialized");
+            app.database.initialize(function() {
+                app.set('db', app.database);
+                done();
+            });
+        })
+    } else {
+        app.database = new db.Database(process.env.DBNAME_PROD);
+        app.database.initialize(function() {
+            console.log("Production database initialized");
+            app.set('db', app.database);
+            done();
+        });
+    }
 });
-app.set('db', app.database);
 
 module.exports = app;
