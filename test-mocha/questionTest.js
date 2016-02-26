@@ -38,6 +38,15 @@ describe('/questions', function() {
     });
 
     describe('/questions/create', function() {
+        it('should show the "Create New Question" page', function(done) {
+            request.get('/questions/create')
+                .end(function(err, res) {
+                    assert.ok(res.text.indexOf('Create New Question') !== -1,
+                        'response should contain "Create New Question"');
+                    done();
+                });
+        });
+
         it('should fail to create a question with no question', function(done) {
             request.post('/questions/create')
                 .send({question: '', details: 'details'})
@@ -84,15 +93,27 @@ describe('/questions', function() {
 
         it('should successfully create a question with question and details', function(done) {
             request.post('/questions/create')
-                .send({question: 'question', details: 'details'})
+                .send({question: 'question_test', details: 'details_test'})
                 .end(function(err, res) {
                     var matches = res.header.location.match(/^view\?q=([0-9]+)$/);
                     assert.ok(matches !== null, 'redirect to "view?q={qid}" expected');
-                    database.getQuestion(matches[1], function(question) {
-                        assert.equal(question.title, 'question');
-                        assert.equal(question.text, 'details');
-                        done();
-                    });
+                    dbValidation();
+
+                    function dbValidation() {
+                        database.getQuestion(matches[1], function(question) {
+                            assert.equal(question.title, 'question_test');
+                            assert.equal(question.text, 'details_test');
+                            pageValidation();
+                        });
+                    }
+
+                    function pageValidation() {
+                        request.get('/questions/' + res.header.location)
+                            .expect(200)
+                            .end(function() {
+                                done();
+                            })
+                    }
                 });
         });
     });
