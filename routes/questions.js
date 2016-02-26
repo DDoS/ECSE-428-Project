@@ -108,7 +108,6 @@ router.post('/pa', function(req, res) {
             var argType = (req.body.post_arg === 'pro');
 
             req.app.get('db').createArgument(req.query.q, argType, req.body.argument, req.user.username, function (argument) {
-                console.log(argument);
                 argType ? req.flash('success', {msg: 'New agree argument posted!'}) : req.flash('success', {msg: 'New disagree argument posted!'});
                 res.redirect(req.get('referer'));
 
