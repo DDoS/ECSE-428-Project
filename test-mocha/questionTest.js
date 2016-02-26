@@ -181,7 +181,7 @@ describe('/questions', function() {
                 assert.ok(question, 'question with ID ' + qid + ' should exist');
                 request.post('/questions/pa?q=' + qid)
                     .set('Referer', 'referer_test')
-                    .send({'argument': ''})
+                    .send({'argument': '', type: 'pro'})
                     .end(function(err, res) {
                         assert.ok(res.header.location.indexOf('referer_test') !== -1,
                             'redirect to referer expected');
@@ -199,7 +199,7 @@ describe('/questions', function() {
                 assert.ok(question, 'question with ID ' + qid + ' should exist');
                 request.post('/questions/pa?q=' + qid)
                     .set('Referer', 'referer_test')
-                    .send({'argument': 'test_argument_for'})
+                    .send({argument: 'test_argument_for', type: 'pro'})
                     .end(function(err, res) {
                         assert.ok(res.header.location.indexOf('referer_test') !== -1,
                             'redirect to referer expected');
@@ -217,7 +217,7 @@ describe('/questions', function() {
                 assert.ok(question, 'question with ID ' + qid + ' should exist');
                 request.post('/questions/pa?q=' + qid)
                     .set('Referer', 'referer_test')
-                    .send({'argument': 'test_argument_against'})
+                    .send({argument: 'test_argument_against', type: 'con'})
                     .end(function(err, res) {
                         assert.ok(res.header.location.indexOf('referer_test') !== -1,
                             'redirect to referer expected');

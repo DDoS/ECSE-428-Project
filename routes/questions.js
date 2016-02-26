@@ -152,9 +152,9 @@ router.post('/pa', isAuthenticated, function(req, res) {
 
     function createArgument(done, error) {
         var type;
-        if (req.body.post_arg === 'pro') {
+        if (req.body.type === 'pro') {
             type = db.ArgumentType.PRO;
-        } else if (req.body.post_arg === 'con') {
+        } else if (req.body.type === 'con') {
             type = db.ArgumentType.CON;
         } else {
             return error();
