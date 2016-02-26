@@ -9,6 +9,20 @@ block content
             +question(question.id, question.text, question.submitter,
                       question.date, question.upVoted, question.downVoted,
                       question.voteScore, user)
+    .row
+        .col-md-12
+            form(method='POST', action='search')
+                input(type='hidden', name='_csrf', value=csrfToken)
+                .form-group
+                    .input-group
+                        if filter === undefined
+                            input.form-control(name='search', id='search', placeholder='Search for arguments...', autofocus=true)
+                        else
+                            input.form-control(name='search', id='search', placeholder='Search for arguments...', value=filter)
+                        span.input-group-btn
+                            button.btn.btn-success(type='submit')
+                                |   Search
+                                i.fa.fa-search
 
     .row
         .col-md-6
