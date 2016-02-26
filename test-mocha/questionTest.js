@@ -1,5 +1,6 @@
 var assert = require('assert');
 
+var async = require('async');
 var dotenv = require('dotenv');
 var session = require('supertest-session');
 
@@ -109,12 +110,63 @@ describe('/questions', function() {
 
                     function pageValidation() {
                         request.get('/questions/' + res.header.location)
-                            .expect(200)
-                            .end(function() {
+                            .end(function(err, res) {
+                                assert.ok(res.text.indexOf('question_test') !== -1,
+                                    'response should contain "question_test"');
+                                assert.ok(res.text.indexOf('details_test') !== -1,
+                                    'response should contain "details_test"');
+                                assert.ok(res.text.indexOf('Submitted by test') !== -1,
+                                    'response should contain "Submitted by test"');
                                 done();
                             })
                     }
                 });
+        });
+    });
+
+    describe('/questions/find', function() {
+        it('should show the "All Questions" page', function(done) {
+            request.get('/questions/find')
+                .end(function(err, res) {
+                    assert.ok(res.text.indexOf('question_test') !== -1,
+                        'response should contain "question_test"');
+                    assert.ok(res.text.indexOf('details_test') !== -1,
+                        'response should contain "details_test"');
+                    done();
+                });
+        });
+
+        it('should display questions on the correct pages', function(done) {
+            var questionData = [];
+            for (var i = 1; i <= 30; i++) {
+                questionData.push({
+                    question: "question" + i,
+                    details: "details" + i
+                })
+            }
+
+            async.eachSeries(questionData, function(questionData, callback) {
+                database.createQuestion(questionData.question, questionData.details, "test", function() {
+                    callback();
+                })
+            }, function() {
+                request.get('/questions/find?page=1')
+                    .end(function(err, res) {
+                        assert.ok(res.text.indexOf('question25') !== -1,
+                            'response should contain "question25"');
+                        request.get('/questions/find?page=2')
+                            .end(function(err, res) {
+                                assert.ok(res.text.indexOf('question15') !== -1,
+                                    'response should contain "question15"');
+                                request.get('/questions/find?page=3')
+                                    .end(function(err, res) {
+                                        assert.ok(res.text.indexOf('question5') !== -1,
+                                            'response should contain "question5"');
+                                        done();
+                                    });
+                            });
+                    });
+            })
         });
     });
 

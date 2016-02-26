@@ -34,7 +34,7 @@ router.post('/create', isAuthenticated, function(req, res) {
 });
 
 router.get('/find', function(req, res) {
-    var dbInst = req.app.get('db');
+    var database = req.app.get('db');
 
     var page;
     if (req.query.page) {
@@ -43,25 +43,8 @@ router.get('/find', function(req, res) {
         page = 0;
     }
 
-    dbInst.getNewQuestions(undefined, undefined, page * 10, function(questions) {
-        async.each(questions, function(question, callback) {
-            dbInst.getQuestionVoteScore(question.id, function(questionVoteScore) {
-                question.voteScore = questionVoteScore;
-                if (req.user) {
-                    dbInst.getQuestionVote(question.id, req.user.username, function(questionVote) {
-                        question.upVoted = questionVote === db.VoteType.UP;
-                        question.downVoted = questionVote === db.VoteType.DOWN;
-
-                        callback();
-                    });
-                } else {
-                    question.upVoted = false;
-                    question.downVoted = false;
-
-                    callback();
-                }
-            });
-        }, function() {
+    database.getNewQuestions(undefined, undefined, page * 10, function(questions) {
+        getQuestionVoteScores(req, questions, database, function() {
             res.render('questions/find', {
                 title: 'All Questions',
                 questions: questions,
@@ -287,6 +270,27 @@ function isAuthenticated(req, res, next) {
     }
     req.flash('errors', {msg: 'Please login before performing that action.'});
     res.redirect('/users/login');
+}
+
+function getQuestionVoteScores(req, questions, database, callback) {
+    async.each(questions, function(question, callback) {
+        database.getQuestionVoteScore(question.id, function(questionVoteScore) {
+            question.voteScore = questionVoteScore;
+            if (req.isAuthenticated()) {
+                database.getQuestionVote(question.id, req.user.username, function(questionVote) {
+                    question.upVoted = questionVote === db.VoteType.UP;
+                    question.downVoted = questionVote === db.VoteType.DOWN;
+
+                    callback();
+                });
+            } else {
+                question.upVoted = false;
+                question.downVoted = false;
+
+                callback();
+            }
+        });
+    }, callback);
 }
 
 module.exports = router;
