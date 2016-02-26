@@ -20,7 +20,6 @@ var arguments = require('./routes/arguments');
 var questions = require('./routes/questions');
 
 dotenv.load({ path: __dirname + '/.env' });
-var passportConf = require('./config/passport');
 
 var app = express();
 app.locals.moment = moment;
@@ -42,6 +41,8 @@ app.use(session({
 app.use(flash());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
+require('./config/passport')(app);
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(function(req, res, next) {
