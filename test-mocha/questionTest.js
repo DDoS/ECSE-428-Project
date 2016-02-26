@@ -18,8 +18,6 @@ describe('questions', function() {
 
         app.get('initDb')(function() {
             server = app.listen(app.get('port'), app.get('ipaddress'), function() {
-                console.log("Server listening on " + server.address().address + ":" +
-                    server.address().port);
                 request = session(server);
                 done();
             });
