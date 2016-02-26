@@ -115,7 +115,7 @@ mixin argument(qid, aid, text, submitter, date, upVoted, downVoted, count)
         .panel-footer
             span.text-muted(id='a' + aid + '_meta')
                 | Submitted by #{submitter} on
-                | #{moment(date.toISOString()).format('YYYY-MM-DD HH:m:s')}
+                | #{moment(date.toISOString()).format('YYYY-MM-DD HH:mm:ss')}
 
 mixin pagination(currArgs, hasNextArgs, base)
     ul.pagination

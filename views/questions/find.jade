@@ -70,7 +70,7 @@ mixin question(id, title, text, submitter, date, upVoted, downVoted, count, user
         .panel-footer
             span.text-muted(id='q' + id + '_meta')
                 | Submitted by #{submitter} on
-                | #{moment(date.toISOString()).format('YYYY-MM-DD HH:m:s')}
+                | #{moment(date.toISOString()).format('YYYY-MM-DD HH:mm:ss')}
 
 mixin pagination(curr, base)
     ul.pagination
