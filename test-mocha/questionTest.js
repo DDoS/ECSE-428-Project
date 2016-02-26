@@ -1,27 +1,53 @@
-/**
- * Created by Baizhong Zhang on 2016/2/5.
- */
-
-var db = require('../data/db');
 var assert = require('assert');
 var dotenv = require('dotenv');
+var session = require('supertest-session');
 
-var express = require('express');
-var router = express.Router();
+describe('questions', function() {
+    var app;
+    var server;
+    var request;
 
-//dotenv.load
+    before(function(done) {
+        dotenv.load({path: __dirname + '/../.env'});
+        process.env.NODE_ENV = 'test';
 
-describe("GET and POST", function(){
-    it('POST a question and should GET the same question by applying router.post and .get functions', function(done) {
-        var postQ = router.post('/create', function (req, res) {
-            req.app.get('db').createQuestion("title", "text", "baizhong", function (question) {
+        app = require('../app');
+
+        app.set('port', 8080);
+        app.set('ipaddress', '127.0.0.1');
+
+        app.get('initDb')(function() {
+            server = app.listen(app.get('port'), app.get('ipaddress'), function() {
+                console.log("Server listening on " + server.address().address + ":" +
+                    server.address().port);
+                request = session(server);
+                done();
             });
         });
-        var getQ = router.get('/create', function (req, res) {
-            req.app.get('db').createQuestion(undefined,undefined, page * 10, function (questions) {
-            });
+    });
+
+    before(function(done) {
+        app.get('db').createUser('test', 'testpass123', 'test@test.com', function() {
+            request.post('/users/login')
+                .send({username: 'test', password: 'testpass123'})
+                .end(function() {
+                    done();
+                });
         });
-        assert.equal(postQ, getQ);
+    });
+
+    describe('/create', function() {
+        it('should fail to create a question with no title', function(done) {
+            request.post('/questions/create')
+                .send({'title': '', text: 'text'})
+                .end(function() {
+                    done();
+                });
+        });
+    });
+
+    after(function(done) {
+        server.close();
         done();
     });
 });
