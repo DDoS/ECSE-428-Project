@@ -170,6 +170,53 @@ describe('/questions', function() {
         });
     });
 
+    describe('/questions/pa', function() {
+        it('should fail to post an argument with no text', function(done) {
+            request.post('/questions/pa?q=1')
+                .set('Referer', 'referer_test')
+                .send({'argument': ''})
+                .end(function(err, res) {
+                    assert.ok(res.header.location.indexOf('referer_test') !== -1,
+                        'redirect to referer expected');
+                    request.get('/questions/view?q=1').end(function(err, res) {
+                        assert.ok(res.text.indexOf('Argument field is empty.') !== -1,
+                            'response should contain "Argument field is empty."');
+                        done();
+                    });
+                });
+        });
+
+        it('should successfully post an argument in favour', function(done) {
+            request.post('/questions/pa?q=1')
+                .set('Referer', 'referer_test')
+                .send({'argument': 'test_argument_for'})
+                .end(function(err, res) {
+                    assert.ok(res.header.location.indexOf('referer_test') !== -1,
+                        'redirect to referer expected');
+                    request.get('/questions/view?q=1').end(function(err, res) {
+                        assert.ok(res.text.indexOf('test_argument_for') !== -1,
+                            'response should contain "test_argument_for"');
+                        done();
+                    });
+                });
+        });
+
+        it('should successfully post an argument against', function(done) {
+            request.post('/questions/pa?q=1')
+                .set('Referer', 'referer_test')
+                .send({'argument': 'test_argument_against'})
+                .end(function(err, res) {
+                    assert.ok(res.header.location.indexOf('referer_test') !== -1,
+                        'redirect to referer expected');
+                    request.get('/questions/view?q=1').end(function(err, res) {
+                        assert.ok(res.text.indexOf('test_argument_against') !== -1,
+                            'response should contain "test_argument_against"');
+                        done();
+                    });
+                });
+        });
+    });
+
     after(function(done) {
         app.get('db').clear(function() {
             server.close();

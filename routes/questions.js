@@ -16,21 +16,17 @@ router.post('/create', isAuthenticated, function(req, res) {
 
     req.assert('question', 'Question field is empty.').notEmpty();
     req.assert('details', 'Details field is empty.').notEmpty();
-
     var errors = req.validationErrors();
-
     if (errors) {
         req.flash('errors', errors);
         return res.redirect('create');
-    } else {
-        database.createQuestion(req.body.question, req.body.details,
-                                req.user.username, success);
+    }
 
-        function success(question) {
+    database.createQuestion(req.body.question, req.body.details,
+        req.user.username, function(question) {
             req.flash('success', {msg: 'New question created.'});
             res.redirect('view?q=' + question.id);
-        }
-    }
+        });
 });
 
 router.get('/find', function(req, res) {
@@ -72,25 +68,41 @@ router.post('/search', function(req, res) {
     }
 });
 
-router.post('/pa', function(req, res) {
-    if (req.user === undefined) {
-        req.flash('errors', { msg: 'Please login before posting new argument.' });
-        return res.redirect('/users/login');
+router.post('/pa', isAuthenticated, function(req, res) {
+    var database = req.app.get('db');
 
-    }else {
-        if (req.body.argument == "") {
-            req.flash('errors', { msg: 'Argument is empty.' });
-            return res.redirect(req.get('referer'));
+    req.assert('argument', 'Argument field is empty.').notEmpty();
+    var errors = req.validationErrors();
+    if (errors) {
+        req.flash('errors', errors);
+        return res.redirect(req.get('referer'));
+    }
 
-        }else {
-            var argType = (req.body.post_arg === 'pro');
+    var proArg = (req.body.post_arg === 'pro');
+    try {
+        database.createArgument(req.query.q, proArg, req.body.argument,
+            req.user.username, function (argument) {
+            if (!argument) {
+                error();
+                return;
+            }
 
-            req.app.get('db').createArgument(req.query.q, argType, req.body.argument, req.user.username, function (argument) {
-                argType ? req.flash('success', {msg: 'New agree argument posted!'}) : req.flash('success', {msg: 'New disagree argument posted!'});
-                res.redirect(req.get('referer'));
+            if (proArg) {
+                req.flash('success', {msg: 'Argument in favour posted.'});
+            } else {
+                req.flash('success', {msg: 'Argument against posted.'});
+            }
+            res.redirect(req.get('referer'));
+        });
+    } catch (err) {
+        error();
+    }
 
-            });
-        }
+    function error() {
+        req.flash('errors', {
+            msg: 'Failed to create argument. Please try again.'
+        });
+        res.redirect(req.get('referer'));
     }
 });
 
