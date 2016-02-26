@@ -1,9 +1,11 @@
 var assert = require('assert');
+
 var dotenv = require('dotenv');
 var session = require('supertest-session');
 
-describe('questions', function() {
+describe('/questions', function() {
     var app;
+    var database;
     var server;
     var request;
 
@@ -18,6 +20,7 @@ describe('questions', function() {
 
         app.get('initDb')(function() {
             server = app.listen(app.get('port'), app.get('ipaddress'), function() {
+                database = app.get('db');
                 request = session(server);
                 done();
             });
@@ -34,18 +37,70 @@ describe('questions', function() {
         });
     });
 
-    describe('/create', function() {
-        it('should fail to create a question with no title', function(done) {
+    describe('/questions/create', function() {
+        it('should fail to create a question with no question', function(done) {
             request.post('/questions/create')
-                .send({'title': '', text: 'text'})
-                .end(function() {
-                    done();
+                .send({question: '', details: 'details'})
+                .end(function(err, res) {
+                    assert.equal(res.header.location, 'create',
+                                 'redirect to "create" expected');
+                    request.get('/questions/create').end(function(err, res) {
+                        assert.ok(res.text.indexOf('Question field is empty.') !== -1,
+                                  'response should contain "Question field is empty."');
+                        done();
+                    });
+                });
+        });
+
+        it('should fail to create a question with no details', function(done) {
+            request.post('/questions/create')
+                .send({question: 'question', details: ''})
+                .end(function(err, res) {
+                    assert.equal(res.header.location, 'create',
+                        'redirect to "create" expected');
+                    request.get('/questions/create').end(function(err, res) {
+                        assert.ok(res.text.indexOf('Details field is empty.') !== -1,
+                            'response should contain "Details field is empty."');
+                        done();
+                    });
+                });
+        });
+
+        it('should fail to create a question with neither question nor details', function(done) {
+            request.post('/questions/create')
+                .send({question: '', details: ''})
+                .end(function(err, res) {
+                    assert.equal(res.header.location, 'create',
+                        'redirect to "create" expected');
+                    request.get('/questions/create').end(function(err, res) {
+                        assert.ok(res.text.indexOf('Question field is empty.') !== -1,
+                            'response should contain "Question field is empty."');
+                        assert.ok(res.text.indexOf('Details field is empty.') !== -1,
+                            'response should contain "Details field is empty."');
+                        done();
+                    });
+                });
+        });
+
+        it('should successfully create a question with question and details', function(done) {
+            request.post('/questions/create')
+                .send({question: 'question', details: 'details'})
+                .end(function(err, res) {
+                    var matches = res.header.location.match(/^view\?q=([0-9]+)$/);
+                    assert.ok(matches !== null, 'redirect to "view?q={qid}" expected');
+                    database.getQuestion(matches[1], function(question) {
+                        assert.equal(question.title, 'question');
+                        assert.equal(question.text, 'details');
+                        done();
+                    });
                 });
         });
     });
 
     after(function(done) {
-        server.close();
-        done();
+        app.get('db').clear(function() {
+            server.close();
+            done();
+        });
     });
 });
