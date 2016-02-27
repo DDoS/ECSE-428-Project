@@ -81,15 +81,45 @@ router.post('/search', function(req, res) {
     var filter = req.body.search;
 
     if (filter.length == 0){
+        req.flash('errors', { msg: 'Search field is empty!' });
         res.redirect('find');
     }
     else {
-        res.render('questions/find', {
-            title: 'Results for "'+filter+'"',
-            filter: filter,
-            questions: '',
-            currPage: 1,
-            hasNextPage: false
+        var dbInst = req.app.get('db');
+
+        var page;
+        if (req.query.page) {
+            page = req.query.page - 1;
+        } else {
+            page = 0;
+        }
+
+        dbInst.getNewQuestions(undefined, undefined, page * 10, function(questions) {
+            async.each(questions, function(question, callback) {
+                dbInst.getQuestionVoteScore(question.id, function(questionVoteScore) {
+                    question.voteScore = questionVoteScore;
+                    if (req.user) {
+                        dbInst.getQuestionVote(question.id, req.user.username, function(questionVote) {
+                            question.upVoted = questionVote === db.VoteType.UP;
+                            question.downVoted = questionVote === db.VoteType.DOWN;
+
+                            callback();
+                        });
+                    } else {
+                        question.upVoted = false;
+                        question.downVoted = false;
+
+                        callback();
+                    }
+                });
+            }, function() {
+                res.render('questions/find', {
+                    title: 'Results for "'+filter+'"',
+                    questions: questions,
+                    currPage: page + 1,
+                    hasNextPage: questions.length == 10
+                });
+            });
         });
     }
 });
