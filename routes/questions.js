@@ -100,7 +100,7 @@ router.get('/find', function(req, res) {
     }
 });
 
-router.post('/search', function(req, res) {
+router.post('/find', function(req, res) {
 
     // Client input validation
     var searchString = req.body.search;
@@ -230,6 +230,44 @@ router.get('/view', function(req, res) {
 
     // Get specified question and display to user
     getQuestion(function(question, argsFor, argsAgainst) {
+
+        if(req.query.sortType != undefined) {
+            switch (req.query.sortType) {
+                case "dateAsc":
+                    argsFor.sort(function (a, b) {
+                        return new Date(a.date) - new Date(b.date);
+                    });
+                    argsAgainst.sort(function (a, b) {
+                        return new Date(a.date) - new Date(b.date);
+                    });
+                    break;
+                case "dateDes":
+                    argsFor.sort(function (a, b) {
+                        return new Date(b.date) - new Date(a.date);
+                    });
+                    argsAgainst.sort(function (a, b) {
+                        return new Date(b.date) - new Date(a.date);
+                    });
+                    break;
+                case "voteAsc":
+                    argsFor.sort(function (a, b) {
+                        return a.voteScore - b.voteScore;
+                    });
+                    argsAgainst.sort(function (a, b) {
+                        return a.voteScore - b.voteScore;
+                    });
+                    break;
+                case "voteDes":
+                    argsFor.sort(function (a, b) {
+                        return b.voteScore - a.voteScore;
+                    });
+                    argsAgainst.sort(function (a, b) {
+                        return b.voteScore - a.voteScore;
+                    });
+                    break;
+            }
+        }
+
         res.render('questions/view', {
             title: "Question: " + question.title,
             question: question,
