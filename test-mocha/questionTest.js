@@ -305,6 +305,62 @@ describe('/questions', function() {
     });
 
     describe('/questions/vote', function() {
+        it('should fail to vote when logged out', function(done) {
+            async.waterfall([
+                function(done) {
+                    request.get('/users/logout')
+                        .end(function() {
+                            done();
+                        });
+                },
+                function(done) {
+                    // Initialize database with test question
+                    database.createQuestion('vote logged out test question',
+                        'vote logged out test details', username,
+                        function(question) {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Try to upvote the question
+                    request.post('/questions/vote?q=' + question.id)
+                        .send({
+                            vote: 'up'
+                        })
+                        .end(function(err, res) {
+                            done(undefined, question, err, res);
+                        });
+                },
+                function(question, err, res, done) {
+                    // Verify that the user was redirected to /users/login
+                    var location = res.header.location;
+                    assert.ok(location.indexOf('/users/login') !== -1,
+                        'redirect to /users/login expected');
+
+                    request.get(location)
+                        .end(function(err, res) {
+                            done(undefined, question, err, res)
+                        });
+                },
+                function(question, err, res, done) {
+                    // Verify that the next page the user visits contains the
+                    // appropriate flash message
+                    assert.ok(res.text.indexOf('Please login before' +
+                            ' performing that action.') !== -1,
+                        'response should contain "Please login before' +
+                        ' performing that action."');
+                    done();
+                }, function(done) {
+                    request.post('/users/login')
+                        .send({username: 'test', password: 'testpass123'})
+                        .end(function() {
+                            done();
+                        });
+                }
+            ], done)
+        });
+
         it('should successfully upvote a question', function(done) {
             async.waterfall([
                 function(done) {
