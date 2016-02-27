@@ -7,10 +7,10 @@ Feature: Logging Into an Account
 
 Scenario: Successful Login with Username
     Given I open the site "/users/login"
-    When I set "kaichen" to the inputfield "#username"
-    When I set "pokemon" to the inputfield "#password"
+    When I set "test" to the inputfield "#username"
+    When I set "testpass123" to the inputfield "#password"
     And I click on the button ".btn.btn-primary"
-    Then I expect that the title is "HOME - Mayhem"
+    Then I expect that the title is "Home - Mayhem"
 
 Scenario: Login Attempt with Invalid Username
     Given I open the site "/users/login"

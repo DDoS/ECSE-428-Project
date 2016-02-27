@@ -7,4 +7,4 @@ Feature: Finding New Questions
     
 Scenario: Finding All New Questions
 	Given I open the site "/questions/find"
-	Then I expect that the title is "View Questions - Mayhem"
+	Then I expect that the title is "All Questions - Mayhem"

@@ -62,10 +62,10 @@ block content
                                               placeholder="What's your argument?")
                     .form-group
                         .btn-group
-                            button.btn.btn-default(name='type', type='submit', value='pro')
+                            button.btn.btn-default(name='type', type='submit', value='pro', id='pro')
                                 i.fa.fa-label.fa-paper-plane
                                 | For
-                            button.btn.btn-default(name='type', type='submit', value='con')
+                            button.btn.btn-default(name='type', type='submit', value='con', id='con')
                                 i.fa.fa-label.fa-paper-plane
                                 | Against
 
@@ -103,7 +103,7 @@ mixin question(id, text, submitter, date, upVoted, downVoted, count, user)
                 | #{moment(date.toISOString()).format('YYYY-MM-DD HH:m:s')}
 
 mixin argument(qid, aid, text, submitter, date, upVoted, downVoted, count)
-    .panel.panel-default
+    .panel.panel-default(id='argContainer')
         .panel-body
             .vote-group
                 form(method='POST', action='/questions/vote?q=#{qid}&a=#{aid}')

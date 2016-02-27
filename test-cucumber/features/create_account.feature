@@ -5,8 +5,6 @@ Feature: Creating an Account
     In order to create and vote on questions, arguments, and question categories, as well as make use of the other benefits of account registration
     I should be able to create an account
 
-# To test create new account, remove "@Pending"
-@Pending
 Scenario: Successfully Creating an Account
     Given I open the site "/users/create"
     When I set "kaichen" to the inputfield "#username"

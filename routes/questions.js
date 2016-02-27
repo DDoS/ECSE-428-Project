@@ -100,6 +100,67 @@ router.get('/find', function(req, res) {
     }
 });
 
+router.get('/search', function(req, res) {
+
+    // Client input validation
+    req.assert('search', 'Search field is empty.').notEmpty();
+    var errors = req.validationErrors();
+    if (errors) {
+        req.flash('errors', errors);
+        return res.redirect('find');
+    }
+    // Search is not empty
+    else {
+        var searchString = req.body.search;
+        var keywords = searchString.split(" ");
+        
+        var database = req.app.get('db');
+
+        // Pagination
+        var page = req.query.page ? req.query.page - 1 : 0;
+
+        // Retrieve questions mathching keyword from database and display them
+        getQuestionsByKeywords(function(questions) {
+            res.render('questions/find', {
+                title: 'Results for "' + searchString + '"',
+                searchString: searchString,
+                questions: questions,
+                currPage: page + 1,
+                hasNextPage: questions.length == 10
+            });
+        // On database error, redirect back to home page
+        }, function() {
+            req.flash('errors', {
+                msg: 'Failed to show search results. Please try again.'
+            });
+            res.redirect('/questions/find');
+        });
+
+        function getQuestionsByKeywords(done, error) {
+            try {
+                database.getQuestionsByKeywords(undefined, undefined, page * 10, keywords,
+                    function(questions) {
+                        async.each(questions, function(question, done) {
+                            getQuestionVoteScoreAndStatus(req, database, question,
+                                done,
+                                function() {
+                                    throw new Error();
+                                });
+                        }, function(err) {
+                            if (!err) {
+                                done(questions);
+                            } else {
+                                error();
+                            }
+                        });
+                });
+            } catch (err) {
+                error();
+            }
+        }
+    }
+});
+
 router.post('/search', function(req, res) {
 
     // Client input validation
@@ -123,6 +184,7 @@ router.post('/search', function(req, res) {
         getQuestionsByKeywords(function(questions) {
             res.render('questions/find', {
                 title: 'Results for "' + searchString + '"',
+                searchString: searchString,
                 questions: questions,
                 currPage: page + 1,
                 hasNextPage: questions.length == 10
