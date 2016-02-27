@@ -21,14 +21,14 @@ Feature: Search for a Question
     Scenario: [Normal] Obtain question search results using one keyword
         When I set "details" to the inputfield "#search"
         And I click on the button "#submitSearch"
-        Then I expect the url to contain "/questions/search"
+        Then I expect the url to contain "/questions/find"
         And I expect that element "body" contains the partial text "test_question_question"
         And I expect that element "body" contains the partial text "test question details"
 
     Scenario: [Alternate] Obtain question search results using multiple keywords
         When I set "test question details" to the inputfield "#search"
         And I click on the button "#submitSearch"
-        Then I expect the url to contain "/questions/search"
+        Then I expect the url to contain "/questions/find"
         And I expect that element "body" contains the partial text "test_question_question"
         And I expect that element "body" contains the partial text "test question details"
 
@@ -41,5 +41,5 @@ Feature: Search for a Question
     Scenario: [Error] Obtain question search results failed due to no matches
         When I set "no_expected_matches" to the inputfield "#search"
         And I click on the button "#submitSearch"
-        Then I expect the url to contain "/questions/search"
+        Then I expect the url to contain "/questions/find"
         And I expect that element "#noQuestionMsg" contains the text "No results found."

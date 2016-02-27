@@ -100,7 +100,7 @@ router.get('/find', function(req, res) {
     }
 });
 
-router.post('/search', function(req, res) {
+router.post('/find', function(req, res) {
 
     // Client input validation
     var searchString = req.body.search;
