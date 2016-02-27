@@ -317,21 +317,21 @@ router.post('/vote', isAuthenticated, function(req, res) {
 
     function upVote() {
         req.flash('success', {
-            msg: 'Upvote recorded!'
+            msg: 'Upvote recorded.'
         });
         res.redirect(req.get('referer'));
     }
 
     function downVote() {
         req.flash('success', {
-            msg: 'Downvote recorded!'
+            msg: 'Downvote recorded.'
         });
         res.redirect(req.get('referer'));
     }
 
     function noVote() {
         req.flash('success', {
-            msg: 'Vote removal recorded!'
+            msg: 'Vote removal recorded.'
         });
         res.redirect(req.get('referer'));
     }
