@@ -6,17 +6,17 @@ Feature: Create an Argument
     I should be able to create an argument
 	
 Background: 
-	Given I open the url "http://mayhem-ecse428.rhcloud.com/users/login"
+	Given I open the site "/users/login"
 	When I set "henry" to the inputfield "#username"
 	When I set "1234" to the inputfield "#password"
 	And I press "Enter"
 	Then I expect that the title is "HOME - Mayhem"
 	And I expect that element ".alert.alert-success" becomes visible
-	And I open the url "http://mayhem-ecse428.rhcloud.com/questions/find"
+	And I open the site "/questions/find"
 	Then I expect that the title is "View Questions - Mayhem"
 	
 Scenario: Successfully Creating an Argument In Favour of a Question
-    Given I open the url "http://mayhem-ecse428.rhcloud.com/questions/view/?q=1"
+    Given I open the site "/questions/view/?q=1"
 	Then I expect that the title is "View A Question - Mayhem"
  	When I set "agree argument" to the inputfield "#create_argument"
  	And I click on the button "#pro"
@@ -24,7 +24,7 @@ Scenario: Successfully Creating an Argument In Favour of a Question
 	And I expect that element ".alert.alert-success" becomes visible
 
 Scenario: Successfully Creating an Argument Against a Question
-    Given I open the url "http://mayhem-ecse428.rhcloud.com/questions/view/?q=1"
+    Given I open the site "/questions/view/?q=1"
 	Then I expect that the title is "View A Question - Mayhem"
  	When I set "disagree argument" to the inputfield "#create_argument"
  	And I click on the button "#con"
@@ -32,7 +32,7 @@ Scenario: Successfully Creating an Argument Against a Question
 	And I expect that element ".alert.alert-success" becomes visible
 
 Scenario: Attempting to Create Argument with No Content
-    Given I open the url "http://mayhem-ecse428.rhcloud.com/questions/view/?q=1"
+    Given I open the site "/questions/view/?q=1"
 	Then I expect that the title is "View A Question - Mayhem"
  	And I click on the button "#pro"
  	Then I expect that the title is "View A Question - Mayhem"

@@ -6,5 +6,5 @@ Feature: Finding New Questions
     I should be able to view a list of all questions, or a list of all questions for a question category, in order of chronological 	age		
     
 Scenario: Finding All New Questions
-	Given I open the url "http://mayhem-ecse428.rhcloud.com/questions/find"
+	Given I open the site "/questions/find"
 	Then I expect that the title is "View Questions - Mayhem"

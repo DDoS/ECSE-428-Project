@@ -8,7 +8,7 @@ Feature: Creating an Account
 # To test create new account, remove "@Pending"
 @Pending
 Scenario: Successfully Creating an Account
-    Given I open the url "http://mayhem-ecse428.rhcloud.com/users/create"
+    Given I open the site "/users/create"
     When I set "kaichen" to the inputfield "#username"
     And I set "kaichen.wang@mail.mcgill.ca" to the inputfield "#email"
     And I set "password" to the inputfield "#password"
@@ -17,27 +17,27 @@ Scenario: Successfully Creating an Account
     Then I expect that the title is "Login - Mayhem"
 
 Scenario: Attempting to Create an Account with an Empty Email Address
-    Given I open the url "http://mayhem-ecse428.rhcloud.com/users/create"
+    Given I open the site "/users/create"
     When I set "test" to the inputfield "#username"
     And I click on the button ".btn.btn-success"
     Then I expect that the title is "Create Account - Mayhem"
     And I expect that element ".alert.alert-danger" becomes visible
 
 Scenario: Attempting to Create an Account with an Invalid Email Address
-    Given I open the url "http://mayhem-ecse428.rhcloud.com/users/create"
+    Given I open the site "/users/create"
     When I set "test" to the inputfield "#username"
     And I set "not.an.email.ca" to the inputfield "#email"
     And I click on the button ".btn.btn-success"
     Then I expect that the title is "Create Account - Mayhem"
 
 Scenario: Attempting to Create an Account with an Invalid Username
-    Given I open the url "http://mayhem-ecse428.rhcloud.com/users/create"
+    Given I open the site "/users/create"
     And I click on the button ".btn.btn-success"
 	Then I expect that the title is "Create Account - Mayhem"
 	And I expect that element ".alert.alert-danger" becomes visible
 
 Scenario: Attempting to Create an Account with an Already Taken Username
-    Given I open the url "http://mayhem-ecse428.rhcloud.com/users/create"
+    Given I open the site "/users/create"
     When I set "kaichen" to the inputfield "#username"
     And I set "kaichen.wang@mail.mcgill.ca" to the inputfield "#email"
     And I set "password" to the inputfield "#password"
@@ -47,7 +47,7 @@ Scenario: Attempting to Create an Account with an Already Taken Username
     And I expect that element ".alert.alert-danger" becomes visible
 
 Scenario: Attempting to Create an Account with a Invalid Password
-    Given I open the url "http://mayhem-ecse428.rhcloud.com/users/create"
+    Given I open the site "/users/create"
     When I set "test" to the inputfield "#username"
     And I set "kaichen.wang@mail.mcgill.ca" to the inputfield "#email"
     And I click on the button ".btn.btn-success"
@@ -55,7 +55,7 @@ Scenario: Attempting to Create an Account with a Invalid Password
 	And I expect that element ".alert.alert-danger" becomes visible
 
 Scenario: Attempting to Create an Account with Non-Matching Passwords
-    Given I open the url "http://mayhem-ecse428.rhcloud.com/users/create"
+    Given I open the site "/users/create"
     When I set "test" to the inputfield "#username"
     And I set "kaichen.wang@mail.mcgill.ca" to the inputfield "#email"
     And I set "password" to the inputfield "#password"

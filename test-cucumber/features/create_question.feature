@@ -6,7 +6,7 @@ Feature: Create a Question
     I should be able to create a question	
     
 Background: 
-	Given I open the url "http://mayhem-ecse428.rhcloud.com/users/login"
+	Given I open the site "/users/login"
 	When I set "henry" to the inputfield "#username"
 	When I set "1234" to the inputfield "#password"
 	And I press "Enter"
@@ -14,7 +14,7 @@ Background:
 	And I expect that element ".alert.alert-success" becomes visible
 	
 Scenario: Successfully Creating a Question with No Question Category
-    Given I open the url "http://mayhem-ecse428.rhcloud.com/questions/create"
+    Given I open the site "/questions/create"
     When I set "title" to the inputfield "#title"
 	And I set "text" to the inputfield "#text"
     And I click on the button ".btn.btn-success"
@@ -22,7 +22,7 @@ Scenario: Successfully Creating a Question with No Question Category
 	And I expect that element ".alert.alert-success" becomes visible
 	
 Scenario: Attempting to Create Question with No Content
-    Given I open the url "http://mayhem-ecse428.rhcloud.com/questions/create"
+    Given I open the site "/questions/create"
 	Then I expect that the title is "New Question - Mayhem"
  	When I set "title" to the inputfield "#title"
  	And I click on the button ".btn.btn-success"
@@ -30,7 +30,7 @@ Scenario: Attempting to Create Question with No Content
 	And I expect that element ".alert.alert-danger" becomes visible
 
 Scenario: Attempting to Create Question with No Title
-    Given I open the url "http://mayhem-ecse428.rhcloud.com/questions/create"
+    Given I open the site "/questions/create"
 	Then I expect that the title is "New Question - Mayhem"
 	When I set "text" to the inputfield "#text"
     And I click on the button ".btn.btn-success"
