@@ -37,14 +37,14 @@ block content
                               question.voteScore, user)
 
     .form-group
-        +pagination(currPage, '/questions/find/')
+        +pagination(currPage, '/questions/find')
 
 mixin question(id, title, text, submitter, date, upVoted, downVoted, count, user)
     .panel.panel-default
         .panel-heading
             h4
                 a(id='q' + id + '_title',
-                  href='/questions/view/?q=#{id}')= title
+                  href='/questions/view?q=#{id}')= title
         .panel-body
             .vote-group
                 form(method='POST', action='/questions/vote?q=#{id}')
