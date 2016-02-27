@@ -1,3 +1,6 @@
+var baseURL = 'localhost:8080';
+//var baseURL = 'http://mayhem-ecse428.rhcloud.com';
+
 exports.config = {
 
     /**
@@ -53,7 +56,7 @@ exports.config = {
      * - baseUrl: sets base url for `Given I open the site "/some/url.html"`
      */
     env: {
-        baseUrl: 'localhost:8080'
+        baseUrl: baseURL
     },
 
     /**
