@@ -1,14 +1,6 @@
 extends ../layout
 
 block content
-    script.
-        function auto_grow(element) {
-            if (element.scrollHeight > 50) {
-                element.style.height = "auto";
-                element.style.height = (element.scrollHeight + 15) + "px";
-            }
-        }
-
     .page-header
         h2 Question:
             span(id='q' + id + '_title')  #{question.title}
@@ -41,7 +33,7 @@ block content
                     +sortDropDownList('/questions/view?q=' + question.id)
     .row
         .col-md-6
-            h3#arg_favour Arguments in Favour
+            h3 Arguments in Favour
             if argsFor.length !== 0
                 each argument in argsFor
                     +argument(question.id, argument.id, argument.text,
@@ -53,7 +45,7 @@ block content
                     | No arguments have yet been made in favour. Why don't you
                     | write one?
         .col-md-6
-            h3#arg_against Arguments Against
+            h3 Arguments Against
             if argsAgainst.length !== 0
                 each argument in argsAgainst
                     +argument(question.id, argument.id, argument.text,

@@ -249,7 +249,6 @@ router.get('/view', function(req, res) {
                         return new Date(b.date) - new Date(a.date);
                     });
                     break;
-                    break;
                 case "voteAsc":
                     argsFor.sort(function (a, b) {
                         return a.voteScore - b.voteScore;
@@ -257,7 +256,6 @@ router.get('/view', function(req, res) {
                     argsAgainst.sort(function (a, b) {
                         return a.voteScore - b.voteScore;
                     });
-                    break;
                     break;
                 case "voteDes":
                     argsFor.sort(function (a, b) {
