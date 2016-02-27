@@ -371,9 +371,18 @@ var Database = function(dbName){
                     console.error(error);
                     throw new Error('Error creating query');
                 }
+                var whereClause = ' WHERE date >= $1 ';
+                if (typeof(keywords) === "string") {
+                    var keywordArray = keywords.split(" ");
+                    var searchQuery = keywordArray[0];
+                    for (var i = 1; i<keywordArray.length; i++) {
+                        searchQuery += '|' + keywordArray[i];
+                    }
+                    whereClause += "AND to_tsvector(text) @@ to_tsquery('" + searchQuery + "')";
+                }
                 client.query(
                     'SELECT id, title, text, date, submitter ' +
-                        'FROM ' + questionTable + ' WHERE date >= $1 ' +
+                        'FROM ' + questionTable + whereClause +
                         'ORDER BY date DESC ' +
                         'LIMIT $2 OFFSET $3;',
                     [since, limit, offset],

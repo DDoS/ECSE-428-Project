@@ -5,8 +5,7 @@ var db = require('../../data/db');
 
 var WebdriverIO = require('webdriverio'),
     merge = require('deepmerge'),
-    config = require('../support/configure'),
-    BeforeHook;
+    config = require('../support/configure');
 
 BeforeHook = module.exports = function (done) {
     var that = this;

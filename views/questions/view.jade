@@ -105,7 +105,7 @@ mixin question(id, text, submitter, date, upVoted, downVoted, count, user)
                 | #{moment(date.toISOString()).format('YYYY-MM-DD HH:m:s')}
 
 mixin argument(qid, aid, text, submitter, date, upVoted, downVoted, count)
-    .panel.panel-default
+    .panel.panel-default(id='argContainer')
         .panel-body
             .vote-group
                 form(method='POST', action='/questions/vote?q=#{qid}&a=#{aid}')
