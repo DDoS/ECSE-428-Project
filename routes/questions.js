@@ -58,17 +58,18 @@ router.get('/find', function(req, res) {
 
     var database = req.app.get('db');
 
-    var searchString,
-        pageTitle;
+    var pageTitle = 'All Questions';
 
-    // Check if there is a valid search query
-    if (req.query.search === '' || req.query.search == undefined) {
-        searchString = undefined;
-        pageTitle = 'All Questions';
-    }
-    else{
-        searchString = req.query.search;
-        pageTitle = 'Results for "' + searchString + '"';
+    // Check if search query exists
+    if (req.query.search != undefined){
+        // Check if search query is empty (or only whitespace)
+        if (req.query.search === '' || !/\S/.test(req.query.search)) {
+            req.query.search = undefined;
+            req.flash('errors', {msg: 'Search field is empty.'});
+        }
+        else {
+            pageTitle = 'Results for "' + req.query.search + '"';
+        }
     }
 
     // Pagination
@@ -78,7 +79,7 @@ router.get('/find', function(req, res) {
     getNewQuestions(function(questions) {
         res.render('questions/find', {
             title: pageTitle,
-            searchString: searchString,
+            searchString: req.query.search,
             questions: questions,
             currPage: page + 1,
             hasNextPage: questions.length == 10
@@ -93,7 +94,7 @@ router.get('/find', function(req, res) {
 
     function getNewQuestions(done, error) {
         try {
-            database.getNewQuestions(undefined, undefined, page * 10, searchString,
+            database.getNewQuestions(undefined, undefined, page * 10, req.query.search,
                 function(questions) {
                     async.each(questions, function(question, done) {
                         getQuestionVoteScoreAndStatus(req, database, question,
