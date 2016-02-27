@@ -55,15 +55,30 @@ router.post('/create', isAuthenticated, function(req, res) {
 });
 
 router.get('/find', function(req, res) {
+
     var database = req.app.get('db');
+
+    var searchString,
+        pageTitle;
+
+    // Check if there is a valid search query
+    if (req.query.search === '' || req.query.search == undefined) {
+        searchString = undefined;
+        pageTitle = 'All Questions';
+    }
+    else{
+        searchString = req.query.search;
+        pageTitle = 'Results for "' + searchString + '"';
+    }
 
     // Pagination
     var page = req.query.page ? req.query.page - 1 : 0;
 
-    // Retrieve latest questions from database and display them
+    // Retrieve questions mathching keyword from database and display them
     getNewQuestions(function(questions) {
         res.render('questions/find', {
-            title: 'All Questions',
+            title: pageTitle,
+            searchString: searchString,
             questions: questions,
             currPage: page + 1,
             hasNextPage: questions.length == 10
@@ -71,14 +86,14 @@ router.get('/find', function(req, res) {
     // On database error, redirect back to home page
     }, function() {
         req.flash('errors', {
-            msg: 'Failed to show questions. Please try again.'
+            msg: 'Failed to show search results. Please try again.'
         });
-        res.redirect('/');
+        res.redirect('/questions/find');
     });
 
     function getNewQuestions(done, error) {
         try {
-            database.getNewQuestions(undefined, undefined, page * 10,
+            database.getNewQuestions(undefined, undefined, page * 10, searchString,
                 function(questions) {
                     async.each(questions, function(question, done) {
                         getQuestionVoteScoreAndStatus(req, database, question,
@@ -96,73 +111,6 @@ router.get('/find', function(req, res) {
             });
         } catch (err) {
             error();
-        }
-    }
-});
-
-router.post('/find', function(req, res) {
-
-    // Client input validation
-    var searchString = req.body.search;
-
-    req.assert('search', 'Search field is empty.').notEmpty();
-    var errors = req.validationErrors();
-    if (errors) {
-        req.flash('errors', errors);
-        return res.redirect('find');
-    }
-    // Checks for whitespace
-    else if (searchString == null || !/\S/.test(searchString)){
-        req.flash('errors', {
-            msg: 'Search field is empty.'
-        });
-        return res.redirect('find');
-    }
-    // Search is not empty
-    else {
-        var database = req.app.get('db');
-
-        // Pagination
-        var page = req.query.page ? req.query.page - 1 : 0;
-
-        // Retrieve questions mathching keyword from database and display them
-        getQuestionsByKeywords(function(questions) {
-            res.render('questions/find', {
-                title: 'Results for "' + searchString + '"',
-                searchString: searchString,
-                questions: questions,
-                currPage: page + 1,
-                hasNextPage: questions.length == 10
-            });
-        // On database error, redirect back to home page
-        }, function() {
-            req.flash('errors', {
-                msg: 'Failed to show search results. Please try again.'
-            });
-            res.redirect('/questions/find');
-        });
-
-        function getQuestionsByKeywords(done, error) {
-            try {
-                database.getQuestionsByKeywords(undefined, undefined, page * 10, searchString,
-                    function(questions) {
-                        async.each(questions, function(question, done) {
-                            getQuestionVoteScoreAndStatus(req, database, question,
-                                done,
-                                function() {
-                                    throw new Error();
-                                });
-                        }, function(err) {
-                            if (!err) {
-                                done(questions);
-                            } else {
-                                error();
-                            }
-                        });
-                });
-            } catch (err) {
-                error();
-            }
         }
     }
 });
