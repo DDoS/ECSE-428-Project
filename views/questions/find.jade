@@ -15,18 +15,18 @@ block content
                         autofocus=searchString === undefined
                         value=searchString)
                         span.input-group-btn
-                            button.btn.btn-default(type='submit')
+                            button.btn.btn-default(type='submit', id='submitSearch')
                                 i.fa.fa-search
 
     if questions.length == 0
         .row
             .col-md-12
-                p
+                p(id='noQuestionMsg')
                     if searchString === undefined
                         | No questions have been submitted. Why not write one of
                         | your own?
                     else
-                        | No results found
+                        | No results found.
     else
         .row
             each question in questions

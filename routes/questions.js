@@ -103,16 +103,23 @@ router.get('/find', function(req, res) {
 router.post('/search', function(req, res) {
 
     // Client input validation
+    var searchString = req.body.search;
+
     req.assert('search', 'Search field is empty.').notEmpty();
     var errors = req.validationErrors();
     if (errors) {
         req.flash('errors', errors);
         return res.redirect('find');
     }
+    // Checks for whitespace
+    else if (searchString == null || !/\S/.test(searchString)){
+        req.flash('errors', {
+            msg: 'Search field is empty.'
+        });
+        return res.redirect('find');
+    }
     // Search is not empty
     else {
-        var searchString = req.body.search;
-        
         var database = req.app.get('db');
 
         // Pagination
