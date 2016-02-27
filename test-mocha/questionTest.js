@@ -13,6 +13,10 @@ describe('/questions', function() {
     var request;
     var qid;
 
+    var username = "test";
+    var password = "testpass123";
+    var email = "test@test.com";
+
     before(function(done) {
         dotenv.load({path: __dirname + '/../.env'});
         process.env.NODE_ENV = 'test';
@@ -32,7 +36,7 @@ describe('/questions', function() {
     });
 
     before(function(done) {
-        app.get('db').createUser('test', 'testpass123', 'test@test.com', function() {
+        app.get('db').createUser(username, password, email, function() {
             request.post('/users/login')
                 .send({username: 'test', password: 'testpass123'})
                 .end(function() {
@@ -297,6 +301,778 @@ describe('/questions', function() {
                         });
                 });
             });
+        });
+    });
+
+    describe('/questions/vote', function() {
+        it('should successfully upvote a question', function(done) {
+            async.waterfall([
+                function(done) {
+                    // Initialize database with test question
+                    database.createQuestion('upvote question test question',
+                        'upvote question test details', username,
+                        function(question) {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Try to upvote the question
+                    request.post('/questions/vote?q=' + question.id)
+                        .set('Referer', 'referer_test')
+                        .send({
+                            vote: 'up'
+                        })
+                        .end(function(err, res) {
+                            done(undefined, question, err, res);
+                        });
+                },
+                function(question, err, res, done) {
+                    // Verify that the user was redirected to referrer
+                    var location = res.header.location;
+                    assert.ok(location.indexOf('referer_test') !== -1,
+                        'redirect to referer expected');
+
+                    request.get('/questions/view?q=' + question.id)
+                        .end(function(err, res) {
+                            done(undefined, question, err, res)
+                        });
+                },
+                function(question, err, res, done) {
+                    // Verify that the next page the user visits contains the
+                    // appropriate flash message
+                    assert.ok(res.text.indexOf('Upvote recorded.') !== -1,
+                        'response should contain "Upvote recorded."');
+
+                    database.getQuestionVoteScore(question.id,
+                        function(score) {
+                            done(undefined, score);
+                        }
+                    );
+                },
+                function(score, done) {
+                    // Verify that the score is 1
+                    assert.equal(score, 1, 'vote score should equal 1');
+                    done();
+                }
+            ], done);
+        });
+
+        it('should successfully downvote a question', function(done) {
+            async.waterfall([
+                function(done) {
+                    // Initialize database with test question
+                    database.createQuestion('downvote question test question',
+                        'downvote question test details', username,
+                        function(question) {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Try to downvote the question
+                    request.post('/questions/vote?q=' + question.id)
+                        .set('Referer', 'referer_test')
+                        .send({
+                            vote: 'down'
+                        })
+                        .end(function(err, res) {
+                            done(undefined, question, err, res);
+                        });
+                },
+                function(question, err, res, done) {
+                    // Verify that the user was redirected to referrer
+                    var location = res.header.location;
+                    assert.ok(location.indexOf('referer_test') !== -1,
+                        'redirect to referer expected');
+
+                    request.get('/questions/view?q=' + question.id)
+                        .end(function(err, res) {
+                            done(undefined, question, err, res)
+                        });
+                },
+                function(question, err, res, done) {
+                    // Verify that the next page the user visits contains the
+                    // appropriate flash message
+                    assert.ok(res.text.indexOf('Downvote recorded.') !== -1,
+                        'response should contain "Downvote recorded."');
+
+                    database.getQuestionVoteScore(question.id,
+                        function(score) {
+                            done(undefined, score);
+                        }
+                    );
+                },
+                function(score, done) {
+                    // Verify that the score is -1
+                    assert.equal(score, -1, 'vote score should equal -1');
+                    done();
+                }
+            ], done);
+        });
+
+        it('should successfully novote an upvoted question', function(done) {
+            async.waterfall([
+                function(done) {
+                    // Initialize database with test question
+                    database.createQuestion(
+                        'novote upvoted question test question',
+                        'novote upvoted question test details', username,
+                        function(question) {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Upvote the question
+                    database.setQuestionVote(question.id, username,
+                        db.VoteType.UP,
+                        function() {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Try to novote the question
+                    request.post('/questions/vote?q=' + question.id)
+                        .set('Referer', 'referer_test')
+                        .send({
+                            vote: 'none'
+                        })
+                        .end(function(err, res) {
+                            done(undefined, question, err, res);
+                        });
+                },
+                function(question, err, res, done) {
+                    // Verify that the user was redirected to referrer
+                    var location = res.header.location;
+                    assert.ok(location.indexOf('referer_test') !== -1,
+                        'redirect to referer expected');
+
+                    request.get('/questions/view?q=' + question.id)
+                        .end(function(err, res) {
+                            done(undefined, question, err, res)
+                        });
+                },
+                function(question, err, res, done) {
+                    // Verify that the next page the user visits contains the
+                    // appropriate flash message
+                    assert.ok(res.text.indexOf('Vote removal recorded.') !== -1,
+                        'response should contain "Vote removal recorded."');
+
+                    database.getQuestionVoteScore(question.id,
+                        function(score) {
+                            done(undefined, score);
+                        }
+                    );
+                },
+                function(score, done) {
+                    // Verify that the score is 0
+                    assert.equal(score, 0, 'vote score should equal 0');
+                    done();
+                }
+            ], done);
+        });
+
+        it('should successfully novote a downvoted question', function(done) {
+            async.waterfall([
+                function(done) {
+                    // Initialize database with test question
+                    database.createQuestion(
+                        'novote downvoted question test question',
+                        'novote downvoted question test details', username,
+                        function(question) {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Downvote the question
+                    database.setQuestionVote(question.id, username,
+                        db.VoteType.DOWN,
+                        function() {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Try to novote the question
+                    request.post('/questions/vote?q=' + question.id)
+                        .set('Referer', 'referer_test')
+                        .send({
+                            vote: 'none'
+                        })
+                        .end(function(err, res) {
+                            done(undefined, question, err, res);
+                        });
+                },
+                function(question, err, res, done) {
+                    // Verify that the user was redirected to referrer
+                    var location = res.header.location;
+                    assert.ok(location.indexOf('referer_test') !== -1,
+                        'redirect to referer expected');
+
+                    request.get('/questions/view?q=' + question.id)
+                        .end(function(err, res) {
+                            done(undefined, question, err, res)
+                        });
+                },
+                function(question, err, res, done) {
+                    // Verify that the next page the user visits contains the
+                    // appropriate flash message
+                    assert.ok(res.text.indexOf('Vote removal recorded.') !== -1,
+                        'response should contain "Vote removal recorded."');
+
+                    database.getQuestionVoteScore(question.id,
+                        function(score) {
+                            done(undefined, score);
+                        }
+                    );
+                },
+                function(score, done) {
+                    // Verify that the score is 0
+                    assert.equal(score, 0, 'vote score should equal 0');
+                    done();
+                }
+            ], done);
+        });
+
+        it('should successfully upvote a downvoted question', function(done) {
+            async.waterfall([
+                function(done) {
+                    // Initialize database with test question
+                    database.createQuestion(
+                        'upvote downvoted question test question',
+                        'upvote downvoted question test details', username,
+                        function(question) {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Downvote the question
+                    database.setQuestionVote(question.id, username,
+                        db.VoteType.DOWN,
+                        function() {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Try to upvote the question
+                    request.post('/questions/vote?q=' + question.id)
+                        .set('Referer', 'referer_test')
+                        .send({
+                            vote: 'up'
+                        })
+                        .end(function(err, res) {
+                            done(undefined, question, err, res);
+                        });
+                },
+                function(question, err, res, done) {
+                    // Verify that the user was redirected to referrer
+                    var location = res.header.location;
+                    assert.ok(location.indexOf('referer_test') !== -1,
+                        'redirect to referer expected');
+
+                    request.get('/questions/view?q=' + question.id)
+                        .end(function(err, res) {
+                            done(undefined, question, err, res)
+                        });
+                },
+                function(question, err, res, done) {
+                    // Verify that the next page the user visits contains the
+                    // appropriate flash message
+                    assert.ok(res.text.indexOf('Upvote recorded.') !== -1,
+                        'response should contain "Upvote recorded."');
+
+                    database.getQuestionVoteScore(question.id,
+                        function(score) {
+                            done(undefined, score);
+                        }
+                    );
+                },
+                function(score, done) {
+                    // Verify that the score is 1
+                    assert.equal(score, 1, 'vote score should equal 1');
+                    done();
+                }
+            ], done);
+        });
+
+        it('should successfully downvote an upvoted question', function(done) {
+            async.waterfall([
+                function(done) {
+                    // Initialize database with test question
+                    database.createQuestion(
+                        'downvote upvoted question test question',
+                        'downvote upvoted question test details', username,
+                        function(question) {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Upvote the question
+                    database.setQuestionVote(question.id, username,
+                        db.VoteType.UP,
+                        function() {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Try to downvote the question
+                    request.post('/questions/vote?q=' + question.id)
+                        .set('Referer', 'referer_test')
+                        .send({
+                            vote: 'down'
+                        })
+                        .end(function(err, res) {
+                            done(undefined, question, err, res);
+                        });
+                },
+                function(question, err, res, done) {
+                    // Verify that the user was redirected to referrer
+                    var location = res.header.location;
+                    assert.ok(location.indexOf('referer_test') !== -1,
+                        'redirect to referer expected');
+
+                    request.get('/questions/view?q=' + question.id)
+                        .end(function(err, res) {
+                            done(undefined, question, err, res)
+                        });
+                },
+                function(question, err, res, done) {
+                    // Verify that the next page the user visits contains the
+                    // appropriate flash message
+                    assert.ok(res.text.indexOf('Downvote recorded.') !== -1,
+                        'response should contain "Downvote recorded."');
+
+                    database.getQuestionVoteScore(question.id,
+                        function(score) {
+                            done(undefined, score);
+                        }
+                    );
+                },
+                function(score, done) {
+                    // Verify that the score is -1
+                    assert.equal(score, -1, 'vote score should equal -1');
+                    done();
+                }
+            ], done);
+        });
+
+        it('should successfully upvote an argument', function(done) {
+            async.waterfall([
+                function(done) {
+                    // Initialize database with test question
+                    database.createQuestion('upvote argument test question',
+                        'upvote argument test details', username,
+                        function(question) {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Initialize database with test argument
+                    database.createArgument(question.id, db.ArgumentType.PRO,
+                        'upvote argument test argument', username,
+                        function(argument) {
+                            done(undefined, question, argument);
+                        })
+                },
+                function(question, argument, done) {
+                    // Try to upvote the argument
+                    request.post('/questions/vote?q=' + question.id + '&a=' +
+                        argument.id)
+                        .set('Referer', 'referer_test')
+                        .send({
+                            vote: 'up'
+                        })
+                        .end(function(err, res) {
+                            done(undefined, question, argument, err, res);
+                        });
+                },
+                function(question, argument, err, res, done) {
+                    // Verify that the user was redirected to referrer
+                    var location = res.header.location;
+                    assert.ok(location.indexOf('referer_test') !== -1,
+                        'redirect to referer expected');
+
+                    request.get('/questions/view?q=' + question.id)
+                        .end(function(err, res) {
+                            done(undefined, question, argument, err, res)
+                        });
+                },
+                function(question, argument, err, res, done) {
+                    // Verify that the next page the user visits contains the
+                    // appropriate flash message
+                    assert.ok(res.text.indexOf('Upvote recorded.') !== -1,
+                        'response should contain "Upvote recorded."');
+
+                    database.getArgumentVoteScore(question.id, argument.id,
+                        function(score) {
+                            done(undefined, score);
+                        }
+                    );
+                },
+                function(score, done) {
+                    // Verify that the score is 1
+                    assert.equal(score, 1, 'vote score should equal 1');
+                    done();
+                }
+            ], done);
+        });
+
+        it('should successfully downvote an argument', function(done) {
+            async.waterfall([
+                function(done) {
+                    // Initialize database with test question
+                    database.createQuestion('downvote argument test question',
+                        'downvote argument test details', username,
+                        function(question) {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Initialize database with test argument
+                    database.createArgument(question.id, db.ArgumentType.PRO,
+                        'downvote argument test argument', username,
+                        function(argument) {
+                            done(undefined, question, argument);
+                        })
+                },
+                function(question, argument, done) {
+                    // Try to upvote the argument
+                    request.post('/questions/vote?q=' + question.id + '&a=' +
+                            argument.id)
+                        .set('Referer', 'referer_test')
+                        .send({
+                            vote: 'down'
+                        })
+                        .end(function(err, res) {
+                            done(undefined, question, argument, err, res);
+                        });
+                },
+                function(question, argument, err, res, done) {
+                    // Verify that the user was redirected to referrer
+                    var location = res.header.location;
+                    assert.ok(location.indexOf('referer_test') !== -1,
+                        'redirect to referer expected');
+
+                    request.get('/questions/view?q=' + question.id)
+                        .end(function(err, res) {
+                            done(undefined, question, argument, err, res)
+                        });
+                },
+                function(question, argument, err, res, done) {
+                    // Verify that the next page the user visits contains the
+                    // appropriate flash message
+                    assert.ok(res.text.indexOf('Downvote recorded.') !== -1,
+                        'response should contain "Downvote recorded."');
+
+                    database.getArgumentVoteScore(question.id, argument.id,
+                        function(score) {
+                            done(undefined, score);
+                        }
+                    );
+                },
+                function(score, done) {
+                    // Verify that the score is -1
+                    assert.equal(score, -1, 'vote score should equal -1');
+                    done();
+                }
+            ], done);
+        });
+
+        it('should successfully novote an upvoted argument', function(done) {
+            async.waterfall([
+                function(done) {
+                    // Initialize database with test question
+                    database.createQuestion(
+                        'novote upvoted argument test question',
+                        'novote upvoted argument test details', username,
+                        function(question) {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Initialize database with test argument
+                    database.createArgument(question.id, db.ArgumentType.PRO,
+                        'novote upvoted argument test argument', username,
+                        function(argument) {
+                            done(undefined, question, argument);
+                        })
+                },
+                function(question, argument, done) {
+                    // Upvote the argument
+                    database.setArgumentVote(question.id, argument.id, username,
+                        db.VoteType.UP,
+                        function() {
+                            done(undefined, question, argument);
+                        }
+                    );
+                },
+                function(question, argument, done) {
+                    // Try to novote the argument
+                    request.post('/questions/vote?q=' + question.id + '&a=' +
+                            argument.id)
+                        .set('Referer', 'referer_test')
+                        .send({
+                            vote: 'none'
+                        })
+                        .end(function(err, res) {
+                            done(undefined, question, argument, err, res);
+                        });
+                },
+                function(question, argument, err, res, done) {
+                    // Verify that the user was redirected to referrer
+                    var location = res.header.location;
+                    assert.ok(location.indexOf('referer_test') !== -1,
+                        'redirect to referer expected');
+
+                    request.get('/questions/view?q=' + question.id)
+                        .end(function(err, res) {
+                            done(undefined, question, argument, err, res)
+                        });
+                },
+                function(question, argument, err, res, done) {
+                    // Verify that the next page the user visits contains the
+                    // appropriate flash message
+                    assert.ok(res.text.indexOf('Vote removal recorded.') !== -1,
+                        'response should contain "Vote removal recorded."');
+
+                    database.getArgumentVoteScore(question.id, argument.id,
+                        function(score) {
+                            done(undefined, score);
+                        }
+                    );
+                },
+                function(score, done) {
+                    // Verify that the score is 0
+                    assert.equal(score, 0, 'vote score should equal 0');
+                    done();
+                }
+            ], done);
+        });
+
+        it('should successfully novote a downvoted argument', function(done) {
+            async.waterfall([
+                function(done) {
+                    // Initialize database with test question
+                    database.createQuestion('novote downvoted argument test question',
+                        'novote downvoted argument test details', username,
+                        function(question) {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Initialize database with test argument
+                    database.createArgument(question.id, db.ArgumentType.PRO,
+                        'novote downvoted argument test argument', username,
+                        function(argument) {
+                            done(undefined, question, argument);
+                        })
+                },
+                function(question, argument, done) {
+                    // Downvote the argument
+                    database.setArgumentVote(question.id, argument.id, username,
+                        db.VoteType.DOWN,
+                        function() {
+                            done(undefined, question, argument);
+                        }
+                    );
+                },
+                function(question, argument, done) {
+                    // Try to novote the argument
+                    request.post('/questions/vote?q=' + question.id + '&a=' +
+                            argument.id)
+                        .set('Referer', 'referer_test')
+                        .send({
+                            vote: 'none'
+                        })
+                        .end(function(err, res) {
+                            done(undefined, question, argument, err, res);
+                        });
+                },
+                function(question, argument, err, res, done) {
+                    // Verify that the user was redirected to referrer
+                    var location = res.header.location;
+                    assert.ok(location.indexOf('referer_test') !== -1,
+                        'redirect to referer expected');
+
+                    request.get('/questions/view?q=' + question.id)
+                        .end(function(err, res) {
+                            done(undefined, question, argument, err, res)
+                        });
+                },
+                function(question, argument, err, res, done) {
+                    // Verify that the next page the user visits contains the
+                    // appropriate flash message
+                    assert.ok(res.text.indexOf('Vote removal recorded.') !== -1,
+                        'response should contain "Vote removal recorded."');
+
+                    database.getArgumentVoteScore(question.id, argument.id,
+                        function(score) {
+                            done(undefined, score);
+                        }
+                    );
+                },
+                function(score, done) {
+                    // Verify that the score is 0
+                    assert.equal(score, 0, 'vote score should equal 0');
+                    done();
+                }
+            ], done);
+        });
+
+        it('should successfully upvote a downvoted argument', function(done) {
+            async.waterfall([
+                function(done) {
+                    // Initialize database with test question
+                    database.createQuestion(
+                        'upvote downvoted argument test question',
+                        'upvote downvoted argument test details', username,
+                        function(question) {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Initialize database with test argument
+                    database.createArgument(question.id, db.ArgumentType.PRO,
+                        'upvote downvoted argument test argument', username,
+                        function(argument) {
+                            done(undefined, question, argument);
+                        })
+                },
+                function(question, argument, done) {
+                    // Downvote the argument
+                    database.setArgumentVote(question.id, argument.id, username,
+                        db.VoteType.DOWN,
+                        function() {
+                            done(undefined, question, argument);
+                        }
+                    );
+                },
+                function(question, argument, done) {
+                    // Try to upvote the argument
+                    request.post('/questions/vote?q=' + question.id + '&a=' +
+                            argument.id)
+                        .set('Referer', 'referer_test')
+                        .send({
+                            vote: 'up'
+                        })
+                        .end(function(err, res) {
+                            done(undefined, question, argument, err, res);
+                        });
+                },
+                function(question, argument, err, res, done) {
+                    // Verify that the user was redirected to referrer
+                    var location = res.header.location;
+                    assert.ok(location.indexOf('referer_test') !== -1,
+                        'redirect to referer expected');
+
+                    request.get('/questions/view?q=' + question.id)
+                        .end(function(err, res) {
+                            done(undefined, question, argument, err, res)
+                        });
+                },
+                function(question, argument, err, res, done) {
+                    // Verify that the next page the user visits contains the
+                    // appropriate flash message
+                    assert.ok(res.text.indexOf('Upvote recorded.') !== -1,
+                        'response should contain "Upvote recorded."');
+
+                    database.getArgumentVoteScore(question.id, argument.id,
+                        function(score) {
+                            done(undefined, score);
+                        }
+                    );
+                },
+                function(score, done) {
+                    // Verify that the score is 1
+                    assert.equal(score, 1, 'vote score should equal 1');
+                    done();
+                }
+            ], done);
+        });
+
+
+        it('should successfully downvote an upvoted argument', function(done) {
+            async.waterfall([
+                function(done) {
+                    // Initialize database with test question
+                    database.createQuestion(
+                        'downvote upvoted argument test question',
+                        'downvote upvoted argument test details', username,
+                        function(question) {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Initialize database with test argument
+                    database.createArgument(question.id, db.ArgumentType.PRO,
+                        'downvote upvoted argument test argument', username,
+                        function(argument) {
+                            done(undefined, question, argument);
+                        })
+                },
+                function(question, argument, done) {
+                    // Upvote the argument
+                    database.setArgumentVote(question.id, argument.id, username,
+                        db.VoteType.UP,
+                        function() {
+                            done(undefined, question, argument);
+                        }
+                    );
+                },
+                function(question, argument, done) {
+                    // Try to downvote the argument
+                    request.post('/questions/vote?q=' + question.id + '&a=' +
+                            argument.id)
+                        .set('Referer', 'referer_test')
+                        .send({
+                            vote: 'down'
+                        })
+                        .end(function(err, res) {
+                            done(undefined, question, argument, err, res);
+                        });
+                },
+                function(question, argument, err, res, done) {
+                    // Verify that the user was redirected to referrer
+                    var location = res.header.location;
+                    assert.ok(location.indexOf('referer_test') !== -1,
+                        'redirect to referer expected');
+
+                    request.get('/questions/view?q=' + question.id)
+                        .end(function(err, res) {
+                            done(undefined, question, argument, err, res)
+                        });
+                },
+                function(question, argument, err, res, done) {
+                    // Verify that the next page the user visits contains the
+                    // appropriate flash message
+                    assert.ok(res.text.indexOf('Downvote recorded.') !== -1,
+                        'response should contain "Downvote recorded."');
+
+                    database.getArgumentVoteScore(question.id, argument.id,
+                        function(score) {
+                            done(undefined, score);
+                        }
+                    );
+                },
+                function(score, done) {
+                    // Verify that the score is -1
+                    assert.equal(score, -1, 'vote score should equal -1');
+                    done();
+                }
+            ], done);
         });
     });
 
