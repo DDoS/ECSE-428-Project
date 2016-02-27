@@ -25,6 +25,9 @@ module.exports = function (dict) {
         .then(/^I expect that (element|inputfield) "$string"( not)* contains the text "$string"$/,
             require('../support/check/checkContent'))
 
+        .then(/^I expect that (element|inputfield) "$string"( not)* contains the partial text "$string"$/,
+            require('../support/check/checkPartialContent'))
+
         .then(/^I expect that (element|inputfield) "$string" does( not)* contain any text$/,
             require('../support/check/checkContent'))
 

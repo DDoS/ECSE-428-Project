@@ -77,14 +77,16 @@ block content
                 form(method='POST', action='/questions/pa?q=#{question.id}')
                     input(type='hidden', name='_csrf', value=csrfToken)
                     .form-group
-                        textarea.form-control(name='argument', rows='5',
+                        textarea.form-control(id='argument', name='argument', rows='5',
                                               placeholder="What's your argument?")
                     .form-group
                         .btn-group
-                            button.btn.btn-default(name='type', type='submit', value='pro', id='pro')
+                            button.btn.btn-primary(id='pro', name='type',
+                                                   type='submit', value='pro')
                                 i.fa.fa-label.fa-paper-plane
                                 | For
-                            button.btn.btn-default(name='type', type='submit', value='con', id='con')
+                            button.btn.btn-danger(id='con', name='type',
+                                                  type='submit', value='con')
                                 i.fa.fa-label.fa-paper-plane
                                 | Against
 
