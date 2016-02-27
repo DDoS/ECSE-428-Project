@@ -13,14 +13,14 @@ block content
 
     .row
         .col-sm-12
-            form(method='POST', action='search')
-                input(type='hidden', name='_csrf', value=csrfToken)
+            form(method='GET', action='/questions/view')
+                input(type='hidden', name='q', value=question.id)
                 .form-group
                     .input-group
                         input.form-control(id='search', name='search',
-                                           placeholder='Search for arguments...',
-                                           autofocus=filter === undefined
-                                           value=filter)
+                                           placeholder= 'Search for arguments...',
+                                           autofocus=searchQuery === undefined
+                                           value=searchQuery)
                         span.input-group-btn
                             button.btn.btn-default(type='submit')
                                 i.fa.fa-search
