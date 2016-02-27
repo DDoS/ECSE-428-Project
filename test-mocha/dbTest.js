@@ -350,7 +350,7 @@ describe('Database', function() {
 
         it('Should return at most the 10 newest arguments in descending date, when no type, date, limit or offset is defined',
             function(done) {
-                database.getNewArguments(questionID, undefined, undefined, undefined, undefined, function(args) {
+                database.getNewArguments(questionID, undefined, undefined, undefined, undefined, undefined, function (args) {
                     assert.equal(10, args.length);
                     assert(isSorted(args));
                     done();
@@ -360,7 +360,7 @@ describe('Database', function() {
 
         it('Should return the newest arguments in descending date, up to a given limit, when no type, date or offset is defined',
             function(done) {
-                database.getNewArguments(questionID, undefined, undefined, 5, undefined, function(args) {
+                database.getNewArguments(questionID, undefined, undefined, 5, undefined, undefined, function (args) {
                     assert.equal(5, args.length);
                     assert(isSorted(args));
                     done();
@@ -370,10 +370,10 @@ describe('Database', function() {
 
         it('Should return the newest arguments in descending date, before the given date, up to a given limit when no type or offset is given',
             function(done) {
-                database.getNewArguments(questionID, undefined, someDate, 20, undefined, function(args) {
+                database.getNewArguments(questionID, undefined, someDate, 20, undefined, undefined, function (args) {
                     assert.equal(numberAfterThatDate, args.length);
                     assert(isSorted(args));
-                    args.forEach(function(argument, index, array) {
+                    args.forEach(function (argument, index, array) {
                         assert(argument.date >= someDate);
                     });
                     done();
@@ -383,20 +383,20 @@ describe('Database', function() {
 
         it('Should return the newest arguments in descending date, up to a given limit, starting at a given offset, when no type or date is defined',
             function(done) {
-                database.getNewArguments(questionID, undefined, undefined, 10, 0, function(args) {
+                database.getNewArguments(questionID, undefined, undefined, 10, 0, undefined, function (args) {
                     // Get the first 10 arguments
                     assert.equal(10, args.length);
                     assert(isSorted(args));
                     // Get the other 10
-                    database.getNewArguments(questionID, undefined, undefined, 10, 10, function(restOfArguments) {
+                    database.getNewArguments(questionID, undefined, undefined, 10, 10, undefined, function (restOfArguments) {
                         assert.equal(10, restOfArguments.length);
                         // Append both argument arrays
-                        args.forEach(function(argument, index, array) {
+                        args.forEach(function (argument, index, array) {
                             array.push(restOfArguments[index]);
                         });
                         assert(isSorted(args));
                         // Assert no duplicates, all arguments have been returned once
-                        args.forEach(function(argument, index, array) {
+                        args.forEach(function (argument, index, array) {
                             assert(index == 0 || argument != array[index - 1]);
                         });
                         done();
@@ -407,25 +407,25 @@ describe('Database', function() {
 
         it('Should return at most the 10 newest arguments in descending date for the given type, when no date, limit or offset is defined',
             function(done) {
-                database.getNewArguments(questionID, db.ArgumentType.PRO, undefined, undefined, undefined, function(proArgs) {
+                database.getNewArguments(questionID, db.ArgumentType.PRO, undefined, undefined, undefined, undefined, function (proArgs) {
                     assert.equal(10, proArgs.length);
                     assert(isSorted(proArgs));
-                    proArgs.forEach(function(argument, index, array) {
+                    proArgs.forEach(function (argument, index, array) {
                         assert.strictEqual(db.ArgumentType.PRO, argument.type);
                     });
                     // Now check the con args
-                    database.getNewArguments(questionID, db.ArgumentType.CON, undefined, undefined, undefined, function(conArgs) {
+                    database.getNewArguments(questionID, db.ArgumentType.CON, undefined, undefined, undefined, undefined, function (conArgs) {
                         assert.equal(10, conArgs.length);
                         assert(isSorted(conArgs));
-                        conArgs.forEach(function(argument, index, array) {
+                        conArgs.forEach(function (argument, index, array) {
                             assert.strictEqual(db.ArgumentType.CON, argument.type);
                         });
                         // Append both argument arrays
-                        proArgs.forEach(function(argument, index, array) {
+                        proArgs.forEach(function (argument, index, array) {
                             array.push(conArgs[index]);
                         });
                         // Assert no duplicates, all arguments have been returned once
-                        proArgs.sort().forEach(function(argument, index, array) {
+                        proArgs.sort().forEach(function (argument, index, array) {
                             assert(index == 0 || argument != array[index - 1]);
                         });
                         done();

@@ -472,7 +472,7 @@ var Database = function(dbName){
         );
     };
 
-    self.getNewArguments = function(questionID, type, since, limit, offset, getDone) {
+    self.getNewArguments = function (questionID, type, since, limit, offset, keywords, getDone) {
         if (questionID === undefined) {
             throw new Error('question ID is undefined');
         }
@@ -500,6 +500,14 @@ var Database = function(dbName){
                 if (type === ArgumentType.CON || type === ArgumentType.PRO) {
                     whereClause += 'AND type = $5 ';
                     queryArgs.push(type);
+                }
+                if (typeof(keywords) === "string") {
+                    var keywordArray = keywords.split(" ");
+                    var searchQuery = keywordArray[0];
+                    for (var i = 1; i<keywordArray.length; i++) {
+                        searchQuery += '|' + keywordArray[i];
+                    }
+                    whereClause += "AND to_tsvector(text) @@ to_tsquery('" + searchQuery + "')";
                 }
                 client.query(
                     'SELECT id, type, text, date, submitter ' +

@@ -251,28 +251,24 @@ router.get('/view', function(req, res) {
     }
 
     function getArguments(question, done) {
-        database.getNewArguments(question.id, db.ArgumentType.PRO, undefined,
-            undefined, page * 10,
-            function(argsFor) {
-                database.getNewArguments(question.id, db.ArgumentType.CON,
-                    undefined, undefined, page * 10,
-                    function(argsAgainst) {
-                        var arguments = argsFor.concat(argsAgainst);
-                        async.each(arguments,
-                            function(argument, done) {
-                                getArgumentVoteScoreAndStatus(question, argument,
-                                    done,
-                                    function() {
-                                        throw new Error();
-                                    });
-                            }, function(err) {
-                                if (!err) {
-                                    done(argsFor, argsAgainst);
-                                } else {
-                                    error();
-                                }
+        database.getNewArguments(question.id, db.ArgumentType.PRO, undefined, undefined, page * 10, undefined, function (argsFor) {
+            database.getNewArguments(question.id, db.ArgumentType.CON, undefined, undefined, page * 10, undefined, function (argsAgainst) {
+                var arguments = argsFor.concat(argsAgainst);
+                async.each(arguments,
+                    function (argument, done) {
+                        getArgumentVoteScoreAndStatus(question, argument,
+                            done,
+                            function () {
+                                throw new Error();
                             });
-                });
+                    }, function (err) {
+                        if (!err) {
+                            done(argsFor, argsAgainst);
+                        } else {
+                            error();
+                        }
+                    });
+            });
         });
     }
 
