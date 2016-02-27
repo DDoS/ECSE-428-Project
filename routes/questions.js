@@ -111,45 +111,53 @@ router.post('/search', function(req, res) {
     }
     // Search is not empty
     else {
-        var filter = req.body.search;
-        var dbInst = req.app.get('db');
+        var searchString = req.body.search;
+        var keywords = searchString.split(" ");
+        
+        var database = req.app.get('db');
 
-        var page;
-        if (req.query.page) {
-            page = req.query.page - 1;
-        } else {
-            page = 0;
-        }
+        // Pagination
+        var page = req.query.page ? req.query.page - 1 : 0;
 
-        dbInst.getNewQuestions(undefined, undefined, page * 10, function(questions) {
-            async.each(questions, function(question, callback) {
-                dbInst.getQuestionVoteScore(question.id, function(questionVoteScore) {
-                    question.voteScore = questionVoteScore;
-                    if (req.user) {
-                        dbInst.getQuestionVote(question.id, req.user.username, function(questionVote) {
-                            question.upVoted = questionVote === db.VoteType.UP;
-                            question.downVoted = questionVote === db.VoteType.DOWN;
-
-                            callback();
-                        });
-                    } else {
-                        question.upVoted = false;
-                        question.downVoted = false;
-
-                        callback();
-                    }
-                });
-            }, function() {
-                res.render('questions/find', {
-                    title: 'Results for "'+filter+'"',
-                    questions: questions,
-                    currPage: page + 1,
-                    hasNextPage: questions.length == 10
-                });
+        // Retrieve questions mathching keyword from database and display them
+        getQuestionsByKeywords(function(questions) {
+            res.render('questions/find', {
+                title: 'Results for "' + searchString + '"',
+                questions: questions,
+                currPage: page + 1,
+                hasNextPage: questions.length == 10
             });
+        // On database error, redirect back to home page
+        }, function() {
+            req.flash('errors', {
+                msg: 'Failed to show search results. Please try again.'
+            });
+            res.redirect('/questions/find');
         });
-    }
 
+        function getQuestionsByKeywords(done, error) {
+            try {
+                database.getQuestionsByKeywords(undefined, undefined, page * 10, keywords,
+                    function(questions) {
+                        async.each(questions, function(question, done) {
+                            getQuestionVoteScoreAndStatus(req, database, question,
+                                done,
+                                function() {
+                                    throw new Error();
+                                });
+                        }, function(err) {
+                            if (!err) {
+                                done(questions);
+                            } else {
+                                error();
+                            }
+                        });
+                });
+            } catch (err) {
+                error();
+            }
+        }
+    }
 });
 
 router.post('/pa', isAuthenticated, function(req, res) {

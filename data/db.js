@@ -352,7 +352,7 @@ var Database = function(dbName){
         );
     };
 
-    self.getQuestionsByKeyword = function(since, limit, offset, keywords, getDone) {
+    self.getQuestionsByKeywords = function(since, limit, offset, keywords, getDone) {
         if (since === undefined) {
             since = SMALLEST_DATE;
         } else if (since > new Date()) {
