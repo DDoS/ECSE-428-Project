@@ -276,6 +276,10 @@ router.post('/pa', isAuthenticated, function(req, res) {
 router.get('/view', function(req, res) {
     var database = req.app.get('db');
 
+    if (req.query.search === '') {
+        req.query.search = undefined;
+    }
+
     // Pagination
     var page = req.query.page ? req.query.page - 1 : 0;
 
@@ -287,7 +291,8 @@ router.get('/view', function(req, res) {
             argsFor: argsFor,
             argsAgainst: argsAgainst,
             currArgs: page + 1,
-            hasNextArgs: argsFor.length == 10 || argsAgainst.length == 10
+            hasNextArgs: argsFor.length == 10 || argsAgainst.length == 10,
+            searchQuery: req.query.search
         });
     // On database error, redirect to find page
     }, function() {
@@ -313,8 +318,8 @@ router.get('/view', function(req, res) {
     }
 
     function getArguments(question, done) {
-        database.getNewArguments(question.id, db.ArgumentType.PRO, undefined, undefined, page * 10, undefined, function (argsFor) {
-            database.getNewArguments(question.id, db.ArgumentType.CON, undefined, undefined, page * 10, undefined, function (argsAgainst) {
+        database.getNewArguments(question.id, db.ArgumentType.PRO, undefined, undefined, page * 10, req.query.search, function (argsFor) {
+            database.getNewArguments(question.id, db.ArgumentType.CON, undefined, undefined, page * 10, req.query.search, function (argsAgainst) {
                 var arguments = argsFor.concat(argsAgainst);
                 async.each(arguments,
                     function (argument, done) {

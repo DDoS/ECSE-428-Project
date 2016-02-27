@@ -11,173 +11,354 @@ describe('/questions', function() {
     var database;
     var server;
     var request;
-    var qid;
 
+    // Test credentials used to create account
     var username = "test";
     var password = "testpass123";
     var email = "test@test.com";
 
     before(function(done) {
+        // Load environment variables, include testing environment variables
         dotenv.load({path: __dirname + '/../.env'});
         process.env.NODE_ENV = 'test';
 
+        // Initialize app
         app = require('../app');
-
         app.set('port', 8080);
         app.set('ipaddress', '127.0.0.1');
 
-        app.get('initDb')(function() {
-            server = app.listen(app.get('port'), app.get('ipaddress'), function() {
+        async.series([
+            function(done) {
+                // Initialize database
+                app.get('initDb')(done);
+            },
+            function(done) {
+                // Launch app server
+                server = app.listen(app.get('port'), app.get('ipaddress'),
+                    done);
+            },
+            function(done) {
+                // Create local variables for database and HTTP request object
                 database = app.get('db');
                 request = session(server);
                 done();
-            });
-        });
-    });
-
-    before(function(done) {
-        app.get('db').createUser(username, password, email, function() {
-            request.post('/users/login')
-                .send({username: 'test', password: 'testpass123'})
-                .end(function() {
+            },
+            function(done) {
+                // Create test user
+                database.createUser(username, password, email, function() {
                     done();
                 });
-        });
+            },
+            function(done) {
+                // Log into test user account
+                request.post('/users/login')
+                    .send({
+                        username: 'test',
+                        password: 'testpass123'
+                    })
+                    .end(function() {
+                        done();
+                    });
+            }
+        ], done);
     });
 
-    describe('/questions/create', function() {
-        it('should show the "Create New Question" page', function(done) {
-            request.get('/questions/create')
-                .end(function(err, res) {
-                    assert.ok(res.text.indexOf('Create New Question') !== -1,
-                        'response should contain "Create New Question"');
-                    done();
-                });
-        });
-
-        it('should fail to create a question with no question', function(done) {
-            request.post('/questions/create')
-                .send({question: '', details: 'details'})
-                .end(function(err, res) {
-                    assert.equal(res.header.location, 'create',
-                                 'redirect to "create" expected');
-                    request.get('/questions/create').end(function(err, res) {
-                        assert.ok(res.text.indexOf('Question field is empty.') !== -1,
-                                  'response should contain "Question field is empty."');
-                        done();
-                    });
-                });
-        });
-
-        it('should fail to create a question with no details', function(done) {
-            request.post('/questions/create')
-                .send({question: 'question', details: ''})
-                .end(function(err, res) {
-                    assert.equal(res.header.location, 'create',
-                        'redirect to "create" expected');
-                    request.get('/questions/create').end(function(err, res) {
-                        assert.ok(res.text.indexOf('Details field is empty.') !== -1,
-                            'response should contain "Details field is empty."');
-                        done();
-                    });
-                });
-        });
-
-        it('should fail to create a question with neither question nor details', function(done) {
-            request.post('/questions/create')
-                .send({question: '', details: ''})
-                .end(function(err, res) {
-                    assert.equal(res.header.location, 'create',
-                        'redirect to "create" expected');
-                    request.get('/questions/create').end(function(err, res) {
-                        assert.ok(res.text.indexOf('Question field is empty.') !== -1,
-                            'response should contain "Question field is empty."');
-                        assert.ok(res.text.indexOf('Details field is empty.') !== -1,
-                            'response should contain "Details field is empty."');
-                        done();
-                    });
-                });
-        });
-
-        it('should successfully create a question with question and details', function(done) {
-            request.post('/questions/create')
-                .send({question: 'question_test', details: 'details_test'})
-                .end(function(err, res) {
-                    var matches = res.header.location.match(/^view\?q=([0-9]+)$/);
-                    assert.ok(matches !== null, 'redirect to "view?q={qid}" expected');
-                    qid = matches[1];
-
-                    dbValidation();
-
-                    function dbValidation() {
-                        database.getQuestion(qid, function(question) {
-                            assert.equal(question.title, 'question_test');
-                            assert.equal(question.text, 'details_test');
-                            pageValidation();
-                        });
-                    }
-
-                    function pageValidation() {
-                        request.get('/questions/' + res.header.location)
-                            .end(function(err, res) {
-                                assert.ok(res.text.indexOf('question_test') !== -1,
-                                    'response should contain "question_test"');
-                                assert.ok(res.text.indexOf('details_test') !== -1,
-                                    'response should contain "details_test"');
-                                assert.ok(res.text.indexOf('Submitted by test') !== -1,
-                                    'response should contain "Submitted by test"');
-                                done();
-                            });
-                    }
-                });
-        });
-    });
+    /**
+     * /questions/find
+     */
 
     describe('/questions/find', function() {
-        it('should show the "All Questions" page', function(done) {
-            request.get('/questions/find')
-                .end(function(err, res) {
-                    assert.ok(res.text.indexOf('question_test') !== -1,
-                        'response should contain "question_test"');
-                    assert.ok(res.text.indexOf('details_test') !== -1,
-                        'response should contain "details_test"');
+        it('should successfully load the "All Questions" page', function(done) {
+            async.waterfall([
+                function(done) {
+                    // Initialize database with test question
+                    database.createQuestion('all questions test question',
+                        'all questions test details', username,
+                        function(question) {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Load find page
+                    request.get('/questions/find')
+                        .end(function(err, res) {
+                            done(undefined, question, err, res);
+                        });
+                },
+                function(question, err, res, done) {
+                    // Verify that all information is displayed
+                    assert.ok(
+                        res.text.indexOf(question.title) !== -1,
+                        'response should contain "' + question.title + '"');
+                    assert.ok(
+                        res.text.indexOf(question.text) !== -1,
+                        'response should contain "' + question.text + '"');
                     done();
-                });
+                }
+            ], done);
         });
 
         it('should display questions on the correct pages', function(done) {
-            var questionData = [];
-            for (var i = 1; i <= 30; i++) {
-                questionData.push({
-                    question: "question" + i,
-                    details: "details" + i
-                })
-            }
-
-            async.eachSeries(questionData, function(questionData, callback) {
-                database.createQuestion(questionData.question, questionData.details, "test", function() {
-                    callback();
-                })
-            }, function() {
-                request.get('/questions/find?page=1')
-                    .end(function(err, res) {
-                        assert.ok(res.text.indexOf('question25') !== -1,
-                            'response should contain "question25"');
-                        request.get('/questions/find?page=2')
-                            .end(function(err, res) {
-                                assert.ok(res.text.indexOf('question15') !== -1,
-                                    'response should contain "question15"');
-                                request.get('/questions/find?page=3')
-                                    .end(function(err, res) {
-                                        assert.ok(res.text.indexOf('question5') !== -1,
-                                            'response should contain "question5"');
-                                        done();
-                                    });
-                            });
+            async.waterfall([
+                function(done) {
+                    // Initialize database with test questions in favour
+                    var i = 1;
+                    var questions = [];
+                    async.whilst(function() {
+                        return i <= 30;
+                    }, function(done) {
+                        database.createQuestion(
+                            'view questions test question title ' + i,
+                            'view questions test question text ' + i,
+                            username,
+                            function(question) {
+                                questions.push(question);
+                                i++;
+                                done();
+                            })
+                    }, function() {
+                        done(undefined, questions);
                     });
-            });
+                },
+                function(questions, done) {
+                    // Get page 1
+                    request.get('/questions/find?page=1')
+                        .end(function(err, res) {
+                            done(undefined, questions, err, res);
+                        });
+                },
+                function(questions, err, res, done) {
+                    // Verify that all appropriate questions are displayed on
+                    // page 1
+                    for (var i = 29; i >= 20; i--) {
+                        assert.ok(
+                            res.text.indexOf(questions[i].text) !== -1,
+                            'response should contain "' +
+                            questions[i].text + '"');
+                    }
+                    done(undefined, questions);
+                },
+                function(questions, done) {
+                    // Get page 2
+                    request.get('/questions/find?page=2')
+                        .end(function(err, res) {
+                            done(undefined, questions, err, res);
+                        });
+                },
+                function(questions, err, res, done) {
+                    // Verify that all appropriate questions are displayed on
+                    // page 2
+                    for (var i = 19; i >= 10; i--) {
+                        assert.ok(
+                            res.text.indexOf(questions[i].text) !== -1,
+                            'response should contain "' +
+                            questions[i].text + '"');
+                    }
+                    done(undefined, questions);
+                },
+                function(questions, done) {
+                    // Get page 3
+                    request.get('/questions/find?page=3')
+                        .end(function(err, res) {
+                            done(undefined, questions, err, res);
+                        });
+                },
+                function(questions, err, res, done) {
+                    // Verify that all appropriate questions are displayed on
+                    // page 3
+                    for (var i = 9; i >= 0; i--) {
+                        assert.ok(
+                            res.text.indexOf(questions[i].text) !== -1,
+                            'response should contain "' +
+                            questions[i].text + '"');
+                    }
+                    done(undefined, questions);
+                }
+            ], done);
         });
     });
+
+    /**
+     * /questions/create
+     */
+
+    describe('/questions/create', function() {
+        it('should show the "Create New Question" page', function(done) {
+            async.waterfall([
+                function(done) {
+                    // Try to load the page
+                    request.get('/questions/create')
+                        .end(function(err, res) {
+                             done(undefined, err, res);
+                        });
+                },
+                function(err, res, done) {
+                    // Verify that the page contains "Create New Question"
+                    assert.ok(res.text.indexOf('Create New Question') !== -1,
+                        'response should contain "Create New Question"');
+                    done();
+                }
+            ], done);
+        });
+
+        it('should fail to create a question with no question', function(done) {
+            async.waterfall([
+                function(done) {
+                    // Try to post argument
+                    request.post('/questions/create')
+                        .send({
+                            question: '',
+                            details: 'details'
+                        })
+                        .end(function(err, res) {
+                            done(undefined, err, res);
+                        })
+                },
+                function(err, res, done) {
+                    // Verify that user is redirected to "create"
+                    assert.equal(res.header.location, 'create',
+                        'redirect to "create" expected');
+
+                    request.get('/questions/create')
+                        .end(function(err, res) {
+                            done(undefined, err, res);
+                        });
+                },
+                function(err, res, done) {
+                    // Verify that proper flash is shown
+                    assert.ok(
+                        res.text.indexOf('Question field is empty.') !== -1,
+                        'response should contain "Question field is empty."');
+                    done();
+                }
+            ], done);
+        });
+
+        it('should fail to create a question with no details', function(done) {
+            async.waterfall([
+                function(done) {
+                    // Try to post argument
+                    request.post('/questions/create')
+                        .send({
+                            question: 'question',
+                            details: ''
+                        })
+                        .end(function(err, res) {
+                            done(undefined, err, res);
+                        })
+                },
+                function(err, res, done) {
+                    // Verify that user is redirected to "create"
+                    assert.equal(res.header.location, 'create',
+                        'redirect to "create" expected');
+
+                    request.get('/questions/create')
+                        .end(function(err, res) {
+                            done(undefined, err, res);
+                        });
+                },
+                function(err, res, done) {
+                    // Verify that proper flash is shown
+                    assert.ok(
+                        res.text.indexOf('Details field is empty.') !== -1,
+                        'response should contain "Details field is empty."');
+                    done();
+                }
+            ], done);
+        });
+
+        it('should fail to create a question with no question or details',
+            function(done) {
+                async.waterfall([
+                    function(done) {
+                        // Try to post question
+                        request.post('/questions/create')
+                            .send({
+                                question: '',
+                                details: ''
+                            })
+                            .end(function(err, res) {
+                                done(undefined, err, res);
+                            })
+                    },
+                    function(err, res, done) {
+                        // Verify that user is redirected to "create"
+                        assert.equal(res.header.location, 'create',
+                            'redirect to "create" expected');
+
+                        request.get('/questions/create')
+                            .end(function(err, res) {
+                                done(undefined, err, res);
+                            });
+                    },
+                    function(err, res, done) {
+                        // Verify that proper flash is shown
+                        assert.ok(
+                            res.text.indexOf('Question field is empty.') !== -1,
+                            'response should contain "Question field is' +
+                            ' empty."');
+                        assert.ok(
+                            res.text.indexOf('Details field is empty.') !== -1,
+                            'response should contain "Details field is' +
+                            ' empty."');
+                        done();
+                    }
+                ], done);
+            }
+        );
+
+        it('should successfully create a question with question and details', function(done) {
+            async.waterfall([
+                function(done) {
+                    // Try to post question
+                    var question = 'post question test question';
+                    var details = 'post question test details';
+                    request.post('/questions/create')
+                        .send({
+                            question: question,
+                            details: details
+                        })
+                        .end(function(err, res) {
+                            done(undefined, question, details, err, res);
+                        })
+                },
+                function(question, details, err, res, done) {
+                    // Verify that user is redirected to "view?q={qid}"
+                    var matches = res.header.location.match(
+                        /^view\?q=([0-9]+)$/);
+                    assert.ok(matches !== null,
+                        'redirect to "view?q={qid}" expected');
+
+                    database.getQuestion(matches[1], function(questionObj) {
+                        done(undefined, questionObj, question, details, res);
+                    });
+                },
+                function(questionObj, question, details, res, done) {
+                    // Database validation
+                    assert.equal(questionObj.title, question);
+                    assert.equal(questionObj.text, details);
+
+                    request.get('/questions/' + res.header.location)
+                        .end(function(err, res) {
+                            done(undefined, question, details, err, res);
+                        });
+                },
+                function(question, details, err, res, done) {
+                    // Verify that proper information is shown
+                    assert.ok(res.text.indexOf(question) !== -1,
+                        'response should contain "' + question + '"');
+                    assert.ok(res.text.indexOf(details) !== -1,
+                        'response should contain "' + details + '"');
+                    done();
+                }
+            ], done);
+        });
+    });
+
+    /**
+     * /questions/pa
+     */
 
     describe('/questions/pa', function() {
         it('should fail to post an argument when logged out', function(done) {
@@ -233,7 +414,10 @@ describe('/questions', function() {
                 }, function(done) {
                     // Log back in
                     request.post('/users/login')
-                        .send({username: 'test', password: 'testpass123'})
+                        .send({
+                            username: 'test',
+                            password: 'testpass123'
+                        })
                         .end(function() {
                             done();
                         });
@@ -254,7 +438,7 @@ describe('/questions', function() {
                 },
                 function(question, done) {
                     // Try to post argument
-                    request.post('/questions/pa?q=' + qid)
+                    request.post('/questions/pa?q=' + question.id)
                         .set('Referer', 'referer_test')
                         .send({
                             argument: '',
@@ -381,6 +565,10 @@ describe('/questions', function() {
         });
     });
 
+    /**
+     * /questions/view
+     */
+
     describe('/questions/view', function() {
         it('should successfully load a question with arguments', function(done) {
             async.waterfall([
@@ -411,6 +599,7 @@ describe('/questions', function() {
                         })
                 },
                 function(question, argumentFor, argumentAgainst, done) {
+                    // Load question page
                     request.get('/questions/view?q=' + question.id)
                         .end(function(err, res) {
                             done(undefined, question, argumentFor,
@@ -564,6 +753,10 @@ describe('/questions', function() {
         });
     });
 
+    /**
+     * /questions/vote
+     */
+
     describe('/questions/vote', function() {
         it('should fail to vote when logged out', function(done) {
             async.waterfall([
@@ -615,7 +808,10 @@ describe('/questions', function() {
                 }, function(done) {
                     // Log back in
                     request.post('/users/login')
-                        .send({username: 'test', password: 'testpass123'})
+                        .send({
+                            username: 'test',
+                            password: 'testpass123'
+                        })
                         .end(function() {
                             done();
                         });
@@ -1321,7 +1517,6 @@ describe('/questions', function() {
             ], done);
         });
 
-
         it('should successfully downvote an upvoted argument', function(done) {
             async.waterfall([
                 function(done) {
@@ -1396,9 +1591,18 @@ describe('/questions', function() {
     });
 
     after(function(done) {
-        app.get('db').clear(function() {
-            server.close();
-            done();
-        });
+        async.series([
+            function(done) {
+                // Empty test database
+                database.clear(function() {
+                    done();
+                });
+            },
+            function(done) {
+                // Shutdown server
+                server.close();
+                done();
+            }
+        ], done);
     });
 });
