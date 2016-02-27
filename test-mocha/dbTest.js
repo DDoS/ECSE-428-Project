@@ -79,7 +79,6 @@ describe('Database', function() {
                     'EDIT 3: I am blown away by all the gold. Thanks everyone!',
                 'Bloke',
                 function(question) {
-                    assert.equal(1, question.id);
                     assert.equal('DAE Bernie Sanders?', question.title);
                     assert.equal(
                         'FEEL THE BERN!\n' +

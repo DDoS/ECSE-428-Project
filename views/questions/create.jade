@@ -1,33 +1,24 @@
 extends ../layout
 
 block content
-
-
     .page-header
-        h3 Post New Question
-
-
-    script.
-        function auto_grow(element) {
-            if (element.scrollHeight > 80) {
-                element.style.height = "auto";
-                element.style.height = (element.scrollHeight + 15) + "px";
-            }
-        }
+        h2 #{title}
 
     form.form-horizontal(method='POST')
         input(type='hidden', name='_csrf', value=csrfToken)
         .form-group
-            label.col-sm-3.control-label(for='title') Title
-            .col-sm-7
-                input.form-control(type='title', name='title', id='title', placeholder='Question Title', autofocus=false)
+            label.col-sm-2.control-label Question
+            .col-sm-10
+                input.form-control(id='question', name='question',
+                                   placeholder="What's your question?",
+                                   autofocus=true)
         .form-group
-            label.col-sm-3.control-label(for='text') Details
-            .col-sm-7
-                textarea.form-control(style="height:auto; min-height:80px;resize: none; overflow: hidden;",onkeyup='auto_grow(this)',id='text',name='text',placeholder='What do you want to argue?', autofocus=false)
+            label.col-sm-2.control-label Details
+            .col-sm-10
+                textarea.form-control(id='details', name='details', rows='10',
+                                      placeholder="What's the context of the question? Do you have an opinion?")
         .form-group
-            .col-sm-offset-3.col-sm-7
-                button.col-sm-3.btn.btn-success(type='submit')
+            .col-sm-offset-2.col-sm-10
+                button.btn.btn-success(type='submit')
                     i.fa.fa-label.fa-paper-plane
                     | Post
-

@@ -52,7 +52,8 @@
     "q": "~1.4.1",
     "selenium-standalone": "^4.9.0",
     "webdriverio": "~3.4.0",
-    "yadda": "~0.16.0"
+    "yadda": "~0.16.0",
+    "supertest-session": "2.0.1"
   },
   "bundleDependencies": [],
   "private": true,
