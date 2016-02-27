@@ -237,70 +237,184 @@ describe('/questions', function() {
 
     describe('/questions/view', function() {
         it('should successfully load a question with arguments', function(done) {
-            database.getQuestion(qid, function(question) {
-                assert.ok(question, 'question with ID ' + qid + ' should exist');
-                request.get('/questions/view?q=' + qid)
-                    .end(function(err, res) {
-                        assert.ok(res.text.indexOf('question_test') !== -1,
-                            'response should contain "question_test"');
-                        assert.ok(res.text.indexOf('details_test') !== -1,
-                            'response should contain "details_test"');
-                        assert.ok(res.text.indexOf('Submitted by test') !== -1,
-                            'response should contain "Submitted by test"');
-                        assert.ok(res.text.indexOf('test_argument_for') !== -1,
-                            'response should contain "test_argument_for"');
-                        assert.ok(res.text.indexOf('test_argument_against') !== -1,
-                            'response should contain "test_argument_for"');
-                        done();
-                    });
-            });
+            async.waterfall([
+                function(done) {
+                    // Initialize database with test question
+                    database.createQuestion('view question test question',
+                        'view question test details', username,
+                        function(question) {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Initialize database with test argument in favour
+                    database.createArgument(question.id, db.ArgumentType.PRO,
+                        'view question test argument pro', username,
+                        function(argumentFor) {
+                            done(undefined, question, argumentFor);
+                        })
+                },
+                function(question, argumentFor, done) {
+                    // Initialize database with test argument against
+                    database.createArgument(question.id, db.ArgumentType.CON,
+                        'view question test argument con', username,
+                        function(argumentAgainst) {
+                            done(undefined, question, argumentFor,
+                                argumentAgainst);
+                        })
+                },
+                function(question, argumentFor, argumentAgainst, done) {
+                    request.get('/questions/view?q=' + question.id)
+                        .end(function(err, res) {
+                            done(undefined, question, argumentFor,
+                                argumentAgainst, err, res);
+                        });
+                },
+                function(question, argumentFor, argumentAgainst, err, res,
+                         done) {
+                    // Verify that all information is displayed
+                    assert.ok(
+                        res.text.indexOf(question.title) !== -1,
+                        'response should contain "' + question.title + '"');
+                    assert.ok(
+                        res.text.indexOf(question.text) !== -1,
+                        'response should contain "' + question.text + '"');
+                    assert.ok(
+                        res.text.indexOf(argumentFor.text) !== -1,
+                        'response should contain "' + argumentFor.text + '"');
+                    assert.ok(
+                        res.text.indexOf(argumentAgainst.text) !== -1,
+                        'response should contain "' + argumentAgainst.text +
+                        '"');
+                    done();
+                }
+            ], done);
         });
 
         it('should display arguments on the correct pages', function(done) {
-            var argumentData = [];
-            for (var i = 1; i <= 30; i++) {
-                argumentData.push({
-                    type: db.ArgumentType.PRO,
-                    text: "for_argument" + i
-                });
-            }
-            for (var i = 1; i <= 30; i++) {
-                argumentData.push({
-                    type: db.ArgumentType.CON,
-                    text: "against_argument" + i
-                });
-            }
-            database.getQuestion(qid, function(question) {
-                assert.ok(question, 'question with ID ' + qid + ' should exist');
-                async.eachSeries(argumentData, function(argumentData, callback) {
-                    database.createArgument(qid, argumentData.type, argumentData.text, "test", function() {
-                        callback();
-                    })
-                }, function() {
-                    request.get('/questions/view?q=' + qid + '&page=1')
+            async.waterfall([
+                function(done) {
+                    // Initialize database with test question
+                    database.createQuestion('view arguments test question',
+                        'view arguments test details', username,
+                        function(question) {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Initialize database with test argument in favour
+                    var i = 1;
+                    var argumentsFor = [];
+                    async.whilst(function() {
+                        return i <= 30;
+                    }, function(done) {
+                        database.createArgument(question.id,
+                            db.ArgumentType.PRO,
+                            'view arguments test argument pro ' + i, username,
+                            function(argumentFor) {
+                                argumentsFor.push(argumentFor);
+                                i++;
+                                done();
+                            })
+                    }, function() {
+                       done(undefined, question, argumentsFor);
+                    });
+                },
+                function(question, argumentsFor, done) {
+                    // Initialize database with test argument against
+                    var i = 1;
+                    var argumentsAgainst = [];
+                    async.whilst(function() {
+                        return i <= 30;
+                    }, function(done) {
+                        database.createArgument(question.id,
+                            db.ArgumentType.CON,
+                            'view arguments test argument con ' + i, username,
+                            function(argumentAgainst) {
+                                argumentsAgainst.push(argumentAgainst);
+                                i++;
+                                done();
+                            })
+                    }, function() {
+                        done(undefined, question, argumentsFor,
+                            argumentsAgainst);
+                    });
+                },
+                function(question, argumentsFor, argumentsAgainst, done) {
+                    // Get page 1
+                    request.get('/questions/view?q=' + question.id + "&page=1")
                         .end(function(err, res) {
-                            assert.ok(res.text.indexOf('for_argument25') !== -1,
-                                'response should contain "for_argument25"');
-                            assert.ok(res.text.indexOf('against_argument25') !== -1,
-                                'response should contain "against_argument25"');
-                            request.get('/questions/view?q=' + qid + '&page=2')
-                                .end(function(err, res) {
-                                    assert.ok(res.text.indexOf('for_argument15') !== -1,
-                                        'response should contain "for_argument15"');
-                                    assert.ok(res.text.indexOf('against_argument15') !== -1,
-                                        'response should contain "against_argument15"');
-                                    request.get('/questions/view?q=' + qid + '&page=3')
-                                        .end(function(err, res) {
-                                            assert.ok(res.text.indexOf('for_argument5') !== -1,
-                                                'response should contain "for_argument5"');
-                                            assert.ok(res.text.indexOf('against_argument5') !== -1,
-                                                'response should contain "against_argument5"');
-                                            done();
-                                        });
-                                });
+                            done(undefined, question, argumentsFor,
+                                argumentsAgainst, err, res);
                         });
-                });
-            });
+                },
+                function(question, argumentsFor, argumentsAgainst, err, res,
+                         done) {
+                    // Verify that all appropriate arguments are displayed on
+                    // page 1
+                    for (var i = 29; i >= 20; i--) {
+                        assert.ok(
+                            res.text.indexOf(argumentsFor[i].text) !== -1,
+                            'response should contain "' +
+                            argumentsFor[i].text + '"');
+                        assert.ok(
+                            res.text.indexOf(argumentsAgainst[i].text) !== -1,
+                            'response should contain "' +
+                            argumentsAgainst[i].text + '"');
+                    }
+                    done(undefined, question, argumentsFor, argumentsAgainst);
+                },
+                function(question, argumentsFor, argumentsAgainst, done) {
+                    // Get page 2
+                    request.get('/questions/view?q=' + question.id + "&page=2")
+                        .end(function(err, res) {
+                            done(undefined, question, argumentsFor,
+                                argumentsAgainst, err, res);
+                        });
+                },
+                function(question, argumentsFor, argumentsAgainst, err, res,
+                         done) {
+                    // Verify that all appropriate arguments are displayed on
+                    // page 2
+                    for (var i = 19; i >= 10; i--) {
+                        assert.ok(
+                            res.text.indexOf(argumentsFor[i].text) !== -1,
+                            'response should contain "' +
+                            argumentsFor[i].text + '"');
+                        assert.ok(
+                            res.text.indexOf(argumentsAgainst[i].text) !== -1,
+                            'response should contain "' +
+                            argumentsAgainst[i].text + '"');
+                    }
+                    done(undefined, question, argumentsFor, argumentsAgainst);
+                },
+                function(question, argumentsFor, argumentsAgainst, done) {
+                    // Get page 3
+                    request.get('/questions/view?q=' + question.id + "&page=3")
+                        .end(function(err, res) {
+                            done(undefined, question, argumentsFor,
+                                argumentsAgainst, err, res);
+                        });
+                },
+                function(question, argumentsFor, argumentsAgainst, err, res,
+                         done) {
+                    // Verify that all appropriate arguments are displayed on
+                    // page 3
+                    for (var i = 9; i >= 0; i--) {
+                        assert.ok(
+                            res.text.indexOf(argumentsFor[i].text) !== -1,
+                            'response should contain "' +
+                            argumentsFor[i].text + '"');
+                        assert.ok(
+                            res.text.indexOf(argumentsAgainst[i].text) !== -1,
+                            'response should contain "' +
+                            argumentsAgainst[i].text + '"');
+                    }
+                    done(undefined, question, argumentsFor, argumentsAgainst);
+                }
+            ], done);
         });
     });
 
@@ -308,6 +422,7 @@ describe('/questions', function() {
         it('should fail to vote when logged out', function(done) {
             async.waterfall([
                 function(done) {
+                    // Log out
                     request.get('/users/logout')
                         .end(function() {
                             done();
@@ -352,6 +467,7 @@ describe('/questions', function() {
                         ' performing that action."');
                     done();
                 }, function(done) {
+                    // Log back in
                     request.post('/users/login')
                         .send({username: 'test', password: 'testpass123'})
                         .end(function() {
@@ -919,7 +1035,8 @@ describe('/questions', function() {
             async.waterfall([
                 function(done) {
                     // Initialize database with test question
-                    database.createQuestion('novote downvoted argument test question',
+                    database.createQuestion(
+                        'novote downvoted argument test question',
                         'novote downvoted argument test details', username,
                         function(question) {
                             done(undefined, question);
