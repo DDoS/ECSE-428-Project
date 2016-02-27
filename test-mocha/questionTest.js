@@ -180,58 +180,204 @@ describe('/questions', function() {
     });
 
     describe('/questions/pa', function() {
-        it('should fail to post an argument with no text', function(done) {
-            database.getQuestion(qid, function(question) {
-                assert.ok(question, 'question with ID ' + qid + ' should exist');
-                request.post('/questions/pa?q=' + qid)
-                    .set('Referer', 'referer_test')
-                    .send({'argument': '', type: 'pro'})
-                    .end(function(err, res) {
-                        assert.ok(res.header.location.indexOf('referer_test') !== -1,
-                            'redirect to referer expected');
-                        request.get('/questions/view?q=1').end(function(err, res) {
-                            assert.ok(res.text.indexOf('Argument field is empty.') !== -1,
-                                'response should contain "Argument field is empty."');
+        it('should fail to post an argument when logged out', function(done) {
+            async.waterfall([
+                function(done) {
+                    // Log out
+                    request.get('/users/logout')
+                        .end(function() {
                             done();
                         });
-                    });
-            });
+                },
+                function(done) {
+                    // Initialize database with test question
+                    database.createQuestion(
+                        'fail post argument logged out test question',
+                        'fail post argument logged out test details', username,
+                        function(question) {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Try to post argument
+                    request.post('/questions/pa?q=' + question.id)
+                        .set('Referer', 'referer_test')
+                        .send({
+                            argument: 'fail post argument logged out test arg',
+                            type: 'pro'
+                        })
+                        .end(function(err, res) {
+                            done(undefined, question, err, res);
+                        })
+                },
+                function(question, err, res, done) {
+                    // Verify that the user was redirected to /users/login
+                    var location = res.header.location;
+                    assert.ok(location.indexOf('/users/login') !== -1,
+                        'redirect to /users/login expected');
+
+                    request.get(location)
+                        .end(function(err, res) {
+                            done(undefined, question, err, res)
+                        });
+                },
+                function(question, err, res, done) {
+                    // Verify that the next page the user visits contains the
+                    // appropriate flash message
+                    assert.ok(res.text.indexOf('Please login before' +
+                            ' performing that action.') !== -1,
+                        'response should contain "Please login before' +
+                        ' performing that action."');
+                    done();
+                }, function(done) {
+                    // Log back in
+                    request.post('/users/login')
+                        .send({username: 'test', password: 'testpass123'})
+                        .end(function() {
+                            done();
+                        });
+                }
+            ], done)
+        });
+
+        it('should fail to post an argument with no text', function(done) {
+            async.waterfall([
+                function(done) {
+                    // Initialize database with test question
+                    database.createQuestion('fail post argument test question',
+                        'fail post argument test details', username,
+                        function(question) {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Try to post argument
+                    request.post('/questions/pa?q=' + qid)
+                        .set('Referer', 'referer_test')
+                        .send({
+                            argument: '',
+                            type: 'pro'
+                        })
+                        .end(function(err, res) {
+                            done(undefined, question, err, res);
+                        })
+                },
+                function(question, err, res, done) {
+                    // Verify that user is redirected to referrer
+                    assert.ok(
+                        res.header.location.indexOf('referer_test') !== -1,
+                        'redirect to referer expected');
+
+                    request.get('/questions/view?q=' + question.id)
+                        .end(function(err, res) {
+                            done(undefined, question, err, res);
+                        });
+                },
+                function(question, err, res) {
+                    // Verify that argument was created and proper flash is
+                    // shown
+                    assert.ok(
+                        res.text.indexOf('Argument field is empty.') !== -1,
+                        'response should contain "Argument field is empty."');
+                    done();
+                }
+            ], done);
         });
 
         it('should successfully post an argument in favour', function(done) {
-            database.getQuestion(qid, function(question) {
-                assert.ok(question, 'question with ID ' + qid + ' should exist');
-                request.post('/questions/pa?q=' + qid)
-                    .set('Referer', 'referer_test')
-                    .send({argument: 'test_argument_for', type: 'pro'})
-                    .end(function(err, res) {
-                        assert.ok(res.header.location.indexOf('referer_test') !== -1,
-                            'redirect to referer expected');
-                        request.get('/questions/view?q=1').end(function(err, res) {
-                            assert.ok(res.text.indexOf('test_argument_for') !== -1,
-                                'response should contain "test_argument_for"');
-                            done();
+            async.waterfall([
+                function(done) {
+                    // Initialize database with test question
+                    database.createQuestion('post argument pro test question',
+                        'post argument pro test details', username,
+                        function(question) {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Try to post argument
+                    var argumentText = 'post argument pro test argument';
+                    request.post('/questions/pa?q=' + question.id)
+                        .set('Referer', 'referer_test')
+                        .send({
+                            argument: argumentText,
+                            type: 'pro'
+                        })
+                        .end(function(err, res) {
+                            done(undefined, question, argumentText, err, res);
+                        })
+                },
+                function(question, argumentText, err, res, done) {
+                    // Verify that user is redirected to referrer
+                    assert.ok(
+                        res.header.location.indexOf('referer_test') !== -1,
+                        'redirect to referer expected');
+
+                    request.get('/questions/view?q=' + question.id)
+                        .end(function(err, res) {
+                            done(undefined, question, argumentText, err, res);
                         });
-                    });
-            });
+                },
+                function(question, argumentText, err, res) {
+                    // Verify that argument was created and proper flash is
+                    // shown
+                    assert.ok(res.text.indexOf(argumentText) !== -1,
+                        'response should contain "' + argumentText + '"');
+                    assert.ok(
+                        res.text.indexOf('Argument in favour posted.') !== -1,
+                        'response should contain "Argument in favour posted."');
+                    done();
+                }
+            ], done);
         });
 
         it('should successfully post an argument against', function(done) {
-            database.getQuestion(qid, function(question) {
-                assert.ok(question, 'question with ID ' + qid + ' should exist');
-                request.post('/questions/pa?q=' + qid)
-                    .set('Referer', 'referer_test')
-                    .send({argument: 'test_argument_against', type: 'con'})
-                    .end(function(err, res) {
-                        assert.ok(res.header.location.indexOf('referer_test') !== -1,
-                            'redirect to referer expected');
-                        request.get('/questions/view?q=1').end(function(err, res) {
-                            assert.ok(res.text.indexOf('test_argument_against') !== -1,
-                                'response should contain "test_argument_against"');
-                            done();
+            async.waterfall([
+                function(done) {
+                    // Initialize database with test question
+                    database.createQuestion('post argument con test question',
+                        'post argument con test details', username,
+                        function(question) {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Try to post argument
+                    var argumentText = 'post argument con test argument';
+                    request.post('/questions/pa?q=' + question.id)
+                        .set('Referer', 'referer_test')
+                        .send({
+                            argument: argumentText,
+                            type: 'con'
+                        })
+                        .end(function(err, res) {
+                            done(undefined, question, argumentText, err, res);
+                        })
+                },
+                function(question, argumentText, err, res, done) {
+                    // Verify that user is redirected to referrer
+                    assert.ok(
+                        res.header.location.indexOf('referer_test') !== -1,
+                        'redirect to referer expected');
+                    request.get('/questions/view?q=' + question.id)
+                        .end(function(err, res) {
+                            done(undefined, question, argumentText, err, res);
                         });
-                    });
-            });
+                },
+                function(question, argumentText, err, res) {
+                    // Verify that proper flash is shown
+                    assert.ok(res.text.indexOf(argumentText) !== -1,
+                        'response should contain "' + argumentText + '"');
+                    assert.ok(
+                        res.text.indexOf('Argument against posted.') !== -1,
+                        'response should contain "Argument against posted."');
+                    done();
+                }
+            ], done);
         });
     });
 
