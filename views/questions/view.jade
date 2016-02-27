@@ -1,6 +1,14 @@
 extends ../layout
 
 block content
+    script.
+        function auto_grow(element) {
+            if (element.scrollHeight > 50) {
+                element.style.height = "auto";
+                element.style.height = (element.scrollHeight + 15) + "px";
+            }
+        }
+
     .page-header
         h2 Question:
             span(id='q' + id + '_title')  #{question.title}
@@ -26,27 +34,14 @@ block content
                                 i.fa.fa-search
     .row
         .col-sm-12
-            .dropdown
-                button.btn.btn-default.dropdown-toggle(type='button', data-toggle='dropdown')
-                    | Sort searched result
-                    span.caret
-                ul.dropdown-menu
-                    li.dropdown-header Sort Date By
-                    li
-                        a(href='#') Ascending
-                    li
-                        a(href='#') Descending
-                    li.divider
-                    li.dropdown-header Sort By Vote
-                    li
-                        a(href='#') Low to High
-                    li
-                        a(href='#') High to Low
-
-
+            form(method='GET', action='/questions/view')
+                if searchQuery != undefined
+                    +sortDropDownList('/questions/view?q=' + question.id + '&search=' + searchQuery)
+                else
+                    +sortDropDownList('/questions/view?q=' + question.id)
     .row
         .col-md-6
-            h3 Arguments in Favour
+            h3#arg_favour Arguments in Favour
             if argsFor.length !== 0
                 each argument in argsFor
                     +argument(question.id, argument.id, argument.text,
@@ -58,7 +53,7 @@ block content
                     | No arguments have yet been made in favour. Why don't you
                     | write one?
         .col-md-6
-            h3 Arguments Against
+            h3#arg_against Arguments Against
             if argsAgainst.length !== 0
                 each argument in argsAgainst
                     +argument(question.id, argument.id, argument.text,
@@ -167,3 +162,21 @@ mixin pagination(currArgs, hasNextArgs, base)
         else
             li.disabled
                 a Next
+
+mixin sortDropDownList(baseUrl)
+    .dropdown
+        button.btn.btn-default.dropdown-toggle(type='button', data-toggle='dropdown')
+            | Sort searched result
+            span.caret
+        ul.dropdown-menu
+            li.dropdown-header Sort Date By
+            li
+                a(href='#{baseUrl}&sortType=dateAsc') Ascending
+            li
+                a(href='#{baseUrl}&sortType=dateDes') Descending
+            li.divider
+            li.dropdown-header Sort By Vote
+            li
+                a(href='#{baseUrl}&sortType=voteAsc') Low to High
+            li
+                a(href='#{baseUrl}&sortType=voteDes') High to Low
