@@ -307,52 +307,7 @@ var Database = function(dbName){
         );
     };
 
-    self.getNewQuestions = function(since, limit, offset, getDone) {
-        if (since === undefined) {
-            since = SMALLEST_DATE;
-        } else if (since > new Date()) {
-            throw Error("Since date is in the future");
-        }
-        if (limit === undefined) {
-            limit = 10;
-        }
-        if (offset === undefined) {
-            offset = 0;
-        }
-        pg.connect(
-            config,
-            function(error, client, done) {
-                if (error) {
-                    console.error(error);
-                    throw new Error('Error creating query');
-                }
-                client.query(
-                    'SELECT id, title, text, date, submitter ' +
-                        'FROM ' + questionTable + ' WHERE date >= $1 ' +
-                        'ORDER BY date DESC ' +
-                        'LIMIT $2 OFFSET $3;',
-                    [since, limit, offset],
-                    function(error, result) {
-                        done();
-                        if (error) {
-                            console.error(error);
-                            throw new Error('Could not get questions');
-                        }
-                        var questions = [];
-                        result.rows.forEach(function(row, index, array) {
-                            questions.push(new Question(
-                                row.id, row.title, row.text, row.date,
-                                row.submitter
-                            ));
-                        });
-                        getDone(questions);
-                    }
-                );
-            }
-        );
-    };
-
-    self.getQuestionsByKeywords = function(since, limit, offset, keywords, getDone) {
+    self.getNewQuestions = function(since, limit, offset, keywords, getDone) {
         if (since === undefined) {
             since = SMALLEST_DATE;
         } else if (since > new Date()) {

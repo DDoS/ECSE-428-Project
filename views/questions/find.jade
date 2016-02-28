@@ -6,8 +6,7 @@ block content
 
     .row
         .col-sm-12
-            form(method='POST', action='find')
-                input(type='hidden', name='_csrf', value=csrfToken)
+            form(method='GET', action='find')
                 .form-group
                     .input-group
                         input.form-control(id='search', name='search',
@@ -19,24 +18,11 @@ block content
                                 i.fa.fa-search
     .row
         .col-sm-12
-            .dropdown
-                button.btn.btn-default.dropdown-toggle(type='button', data-toggle='dropdown')
-                    | Sort searched result
-                    span.caret
-                ul.dropdown-menu
-                    li.dropdown-header Sort Date By
-                    li
-                        a(href='#') Ascending
-                    li
-                        a(href='#') Descending
-                    li.divider
-                    li.dropdown-header Sort By Vote
-                    li
-                        a(href='#') Low to High
-                    li
-                        a(href='#') High to Low
-
-
+            form(method='GET', action='/questions/view')
+                if searchQuery != undefined
+                    +sortDropDownList('/questions/find?search=' + searchQuery + '&')
+                else
+                    +sortDropDownList('/questions/find?')
 
     if questions.length == 0
         .row
@@ -107,3 +93,21 @@ mixin pagination(curr, base)
         else
             li.disabled
                 a Next
+
+mixin sortDropDownList(baseUrl)
+    .dropdown
+        button.btn.btn-default.dropdown-toggle(type='button', data-toggle='dropdown')
+            | Sort searched result
+            span.caret
+        ul.dropdown-menu
+            li.dropdown-header Sort Date By
+            li
+                a(href='#{baseUrl}sortType=dateAsc') Ascending
+            li
+                a(href='#{baseUrl}sortType=dateDes') Descending
+            li.divider
+            li.dropdown-header Sort By Vote
+            li
+                a(href='#{baseUrl}sortType=voteAsc') Low to High
+            li
+                a(href='#{baseUrl}sortType=voteDes') High to Low
