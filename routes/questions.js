@@ -77,6 +77,42 @@ router.get('/find', function(req, res) {
 
     // Retrieve questions mathching keyword from database and display them
     getNewQuestions(function(questions) {
+        if(req.query.sortType != undefined) {
+            switch (req.query.sortType) {
+                case "dateAsc":
+                    questions.sort(function (a, b) {
+                        return new Date(a.date) - new Date(b.date);
+                    });
+                    questions.sort(function (a, b) {
+                        return new Date(a.date) - new Date(b.date);
+                    });
+                    break;
+                case "dateDes":
+                    questions.sort(function (a, b) {
+                        return new Date(b.date) - new Date(a.date);
+                    });
+                    questions.sort(function (a, b) {
+                        return new Date(b.date) - new Date(a.date);
+                    });
+                    break;
+                case "voteAsc":
+                    questions.sort(function (a, b) {
+                        return a.voteScore - b.voteScore;
+                    });
+                    questions.sort(function (a, b) {
+                        return a.voteScore - b.voteScore;
+                    });
+                    break;
+                case "voteDes":
+                    questions.sort(function (a, b) {
+                        return b.voteScore - a.voteScore;
+                    });
+                    questions.sort(function (a, b) {
+                        return b.voteScore - a.voteScore;
+                    });
+                    break;
+            }
+        }
         res.render('questions/find', {
             title: pageTitle,
             searchQuery: req.query.search,
