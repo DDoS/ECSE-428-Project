@@ -2,37 +2,56 @@ extends ../layout
 
 block content
     .page-header
-        h2 Question: #{question.title}
+        h2 Question:
+            span(id='q' + id + '_title')  #{question.title}
 
     .row
         .col-md-12
             +question(question.id, question.text, question.submitter,
                       question.date, question.upVoted, question.downVoted,
-                      question.upVoteCount - question.downVoteCount, user)
+                      question.voteScore, user)
 
+    .row
+        .col-sm-12
+            form(method='GET', action='/questions/view')
+                input(type='hidden', name='q', value=question.id)
+                .form-group
+                    .input-group
+                        input.form-control(id='search', name='search',
+                                           placeholder= 'Search for arguments...',
+                                           autofocus=searchQuery === undefined
+                                           value=searchQuery)
+                        span.input-group-btn
+                            button.btn.btn-default(type='submit')
+                                i.fa.fa-search
+    .row
+        .col-sm-12
+            form(method='GET', action='/questions/view')
+                if searchQuery != undefined
+                    +sortDropDownList('/questions/view?q=' + question.id + '&search=' + searchQuery)
+                else
+                    +sortDropDownList('/questions/view?q=' + question.id)
     .row
         .col-md-6
             h3 Arguments in Favour
-            if locals.argsFor.length !== 0
-                each argument in locals.argsFor
+            if argsFor.length !== 0
+                each argument in argsFor
                     +argument(question.id, argument.id, argument.text,
                               argument.submitter, argument.date,
                               argument.upVoted, argument.downVoted,
-                              argument.upVoteCount - argument.downVoteCount,
-                              user)
+                              argument.voteScore, user)
             else
                 p
                     | No arguments have yet been made in favour. Why don't you
                     | write one?
         .col-md-6
             h3 Arguments Against
-            if locals.argsAgainst.length !== 0
-                each argument in locals.argsAgainst
+            if argsAgainst.length !== 0
+                each argument in argsAgainst
                     +argument(question.id, argument.id, argument.text,
                               argument.submitter, argument.date,
                               argument.upVoted, argument.downVoted,
-                              argument.upVoteCount - argument.downVoteCount,
-                              user)
+                              argument.voteScore, user)
             else
                 p
                     | No arguments have yet been made against. Why don't you
@@ -45,20 +64,22 @@ block content
                 form(method='POST', action='/questions/pa?q=#{question.id}')
                     input(type='hidden', name='_csrf', value=csrfToken)
                     .form-group
-                        textarea.form-control(name='argument', rows='5',
+                        textarea.form-control(id='argument', name='argument', rows='5',
                                               placeholder="What's your argument?")
                     .form-group
                         .btn-group
-                            button.btn.btn-default(name='post_arg', type='submit', value='pro')
+                            button.btn.btn-primary(id='pro', name='type',
+                                                   type='submit', value='pro')
                                 i.fa.fa-label.fa-paper-plane
                                 | For
-                            button.btn.btn-default(name='post_arg', type='submit', value='con')
+                            button.btn.btn-danger(id='con', name='type',
+                                                  type='submit', value='con')
                                 i.fa.fa-label.fa-paper-plane
                                 | Against
 
     .row
         .col-md-12
-            +pagination(locals.currArgs, locals.hasNextArgs, '/questions/view?q=' + question.id)
+            +pagination(currArgs, hasNextArgs, '/questions/view?q=' + question.id)
 
 mixin question(id, text, submitter, date, upVoted, downVoted, count, user)
     .panel.panel-default
@@ -66,53 +87,57 @@ mixin question(id, text, submitter, date, upVoted, downVoted, count, user)
             .vote-group
                 form(method='POST', action='/questions/vote?q=#{id}')
                     .btn-group-vertical
-                        button.btn.btn-primary(class=upVoted ? 'active' : undefined,
+                        button.btn.btn-primary(id='q' + id + '_upvote',
+                                               class=upVoted ? 'active' : undefined,
                                                disabled = !user ? 'disabled' : undefined,
                                                type='submit', name='vote',
                                                value=upVoted ? 'none' : 'up')
                             i.fa.fa-thumbs-up
                         button.btn.btn-default.vote-status(disabled='disabled')
-                            span.badge= count
-                        button.btn.btn-danger(class=downVoted ? 'active' : undefined,
+                            span.badge(id='q' + id + '_count')= count
+                        button.btn.btn-danger(id='q' + id + '_downvote',
+                                              class=downVoted ? 'active' : undefined,
                                               disabled = !user ? 'disabled' : undefined,
                                               type='submit', name='vote',
                                               value=downVoted ? 'none' : 'down')
                             i.fa.fa-thumbs-down
                     input(type='hidden', name='_csrf', value=csrfToken)
-            .vote-panel-text
+            .vote-panel-text(id='q' + id + '_text')
                 each para in text.split('\n')
                     p= para
         .panel-footer
-            span.text-muted
+            span.text-muted(id='q' + id + '_meta')
                 | Submitted by #{submitter} on
                 | #{moment(date.toISOString()).format('YYYY-MM-DD HH:m:s')}
 
 mixin argument(qid, aid, text, submitter, date, upVoted, downVoted, count)
-    .panel.panel-default
+    .panel.panel-default(id='argContainer')
         .panel-body
             .vote-group
                 form(method='POST', action='/questions/vote?q=#{qid}&a=#{aid}')
                     .btn-group-vertical
-                        button.btn.btn-primary(class=upVoted ? 'active' : undefined,
+                        button.btn.btn-primary(id='a' + aid + '_upvote',
+                                               class=upVoted ? 'active' : undefined,
                                                disabled = !user ? 'disabled' : undefined,
                                                type='submit', name='vote',
                                                value=upVoted ? 'none' : 'up')
                             i.fa.fa-thumbs-up
                         button.btn.btn-default.vote-status(disabled='disabled')
-                            span.badge= count
-                        button.btn.btn-danger(class=downVoted ? 'active' : undefined,
+                            span.badge(id='a' + aid + '_count')= count
+                        button.btn.btn-danger(id='a' + aid + '_downvote',
+                                              class=downVoted ? 'active' : undefined,
                                               disabled = !user ? 'disabled' : undefined,
                                               type='submit', name='vote',
                                               value=downVoted ? 'none' : 'down')
                             i.fa.fa-thumbs-down
                     input(type='hidden', name='_csrf', value=csrfToken)
-            .vote-panel-text
+            .vote-panel-text(id='a' + aid + '_text')
                 each para in text.split('\n')
                     p= para
         .panel-footer
-            span.text-muted
+            span.text-muted(id='a' + aid + '_meta')
                 | Submitted by #{submitter} on
-                | #{moment(date.toISOString()).format('YYYY-MM-DD HH:m:s')}
+                | #{moment(date.toISOString()).format('YYYY-MM-DD HH:mm:ss')}
 
 mixin pagination(currArgs, hasNextArgs, base)
     ul.pagination
@@ -129,3 +154,21 @@ mixin pagination(currArgs, hasNextArgs, base)
         else
             li.disabled
                 a Next
+
+mixin sortDropDownList(baseUrl)
+    .dropdown
+        button.btn.btn-default.dropdown-toggle(type='button', data-toggle='dropdown')
+            | Sort searched result
+            span.caret
+        ul.dropdown-menu
+            li.dropdown-header Sort Date By
+            li
+                a(href='#{baseUrl}&sortType=dateAsc') Ascending
+            li
+                a(href='#{baseUrl}&sortType=dateDes') Descending
+            li.divider
+            li.dropdown-header Sort By Vote
+            li
+                a(href='#{baseUrl}&sortType=voteAsc') Low to High
+            li
+                a(href='#{baseUrl}&sortType=voteDes') High to Low

@@ -2,14 +2,37 @@ extends ../layout
 
 block content
     .page-header
-        h2 All Questions
+        h2 #{title}
+
+    .row
+        .col-sm-12
+            form(method='GET', action='find')
+                .form-group
+                    .input-group
+                        input.form-control(id='search', name='search',
+                        placeholder='Search for questions...',
+                        autofocus=searchString === undefined
+                        value=searchString)
+                        span.input-group-btn
+                            button.btn.btn-default(type='submit', id='submitSearch')
+                                i.fa.fa-search
+    .row
+        .col-sm-12
+            form(method='GET', action='/questions/view')
+                if searchQuery != undefined
+                    +sortDropDownList('/questions/find?search=' + searchQuery + '&')
+                else
+                    +sortDropDownList('/questions/find?')
 
     if questions.length == 0
         .row
             .col-md-12
-                p
-                    | No questions have been submitted. Why not write one of
-                    | your own?
+                p(id='noQuestionMsg')
+                    if searchString === undefined
+                        | No questions have been submitted. Why not write one of
+                        | your own?
+                    else
+                        | No results found.
     else
         .row
             each question in questions
@@ -17,41 +40,43 @@ block content
                     +question(question.id, question.title, question.text,
                               question.submitter,  question.date,
                               question.upVoted, question.downVoted,
-                              question.upVoteCount - question.downVoteCount,
-                              user)
+                              question.voteScore, user)
 
     .form-group
-        +pagination(currPage, '/questions/find/')
+        +pagination(currPage, '/questions/find')
 
 mixin question(id, title, text, submitter, date, upVoted, downVoted, count, user)
     .panel.panel-default
         .panel-heading
             h4
-                a(href='/questions/view/?q=#{id}')= title
+                a(id='q' + id + '_title',
+                  href='/questions/view?q=#{id}')= title
         .panel-body
             .vote-group
                 form(method='POST', action='/questions/vote?q=#{id}')
                     .btn-group-vertical
-                        button.btn.btn-primary(class=upVoted ? 'active' : undefined,
-                        disabled = !user ? 'disabled' : undefined,
-                        type='submit', name='vote',
-                        value=upVoted ? 'none' : 'up')
+                        button.btn.btn-primary(id='q' + id + '_upvote',
+                                               class=upVoted ? 'active' : undefined,
+                                               disabled = !user ? 'disabled' : undefined,
+                                               type='submit', name='vote',
+                                               value=upVoted ? 'none' : 'up')
                             i.fa.fa-thumbs-up
                         button.btn.btn-default.vote-status(disabled='disabled')
-                            span.badge= count
-                        button.btn.btn-danger(class=downVoted ? 'active' : undefined,
-                        disabled = !user ? 'disabled' : undefined,
-                        type='submit', name='vote',
-                        value=downVoted ? 'none' : 'down')
+                            span.badge(id='q' + id + '_count')= count
+                        button.btn.btn-danger(id='q' + id + '_downvote',
+                                              class=downVoted ? 'active' : undefined,
+                                              disabled = !user ? 'disabled' : undefined,
+                                              type='submit', name='vote',
+                                              value=downVoted ? 'none' : 'down')
                             i.fa.fa-thumbs-down
                     input(type='hidden', name='_csrf', value=csrfToken)
-            .vote-panel-text
+            .vote-panel-text(id='q' + id + '_text')
                 each para in text.split('\n')
                     p= para
         .panel-footer
-            span.text-muted
+            span.text-muted(id='q' + id + '_meta')
                 | Submitted by #{submitter} on
-                | #{moment(date.toISOString()).format('YYYY-MM-DD HH:m:s')}
+                | #{moment(date.toISOString()).format('YYYY-MM-DD HH:mm:ss')}
 
 mixin pagination(curr, base)
     ul.pagination
@@ -62,9 +87,27 @@ mixin pagination(curr, base)
             li
                 a(href='#{base}?page=#{curr - 1}') Prev
 
-        if locals.hasNextPage
+        if hasNextPage
             li
                 a(href='#{base}?page=#{curr + 1}') Next
         else
             li.disabled
                 a Next
+
+mixin sortDropDownList(baseUrl)
+    .dropdown
+        button.btn.btn-default.dropdown-toggle(type='button', data-toggle='dropdown')
+            | Sort searched result
+            span.caret
+        ul.dropdown-menu
+            li.dropdown-header Sort Date By
+            li
+                a(href='#{baseUrl}sortType=dateAsc') Ascending
+            li
+                a(href='#{baseUrl}sortType=dateDes') Descending
+            li.divider
+            li.dropdown-header Sort By Vote
+            li
+                a(href='#{baseUrl}sortType=voteAsc') Low to High
+            li
+                a(href='#{baseUrl}sortType=voteDes') High to Low

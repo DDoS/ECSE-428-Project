@@ -3,6 +3,12 @@
  */
 
 module.exports = function (type, element, falseCase, origText, done) {
+    if (origText === "$DEFAULT_TEST_ARGUMENT_PRO_TEXT") {
+        origText = this.argumentPro.text;
+    } else if (origText === "$DEFAULT_TEST_ARGUMENT_CON_TEXT") {
+        origText = this.argumentCon.text;
+    }
+
     var command = (type !== 'inputfield') ? 'getText' : 'getValue';
 
     // Check for empty element
@@ -16,9 +22,9 @@ module.exports = function (type, element, falseCase, origText, done) {
     this.browser[command](element)
         .then(function (text) {
             if (falseCase) {
-                origText.should.not.equal(text);
+                assert.ok(text.indexOf(origText) === -1);
             } else {
-                origText.should.equal(text);
+                assert.ok(text.indexOf(origText) !== -1);
             }
         })
         .call(done);
