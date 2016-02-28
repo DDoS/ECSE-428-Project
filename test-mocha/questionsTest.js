@@ -571,6 +571,7 @@ describe('/questions', function() {
 
     describe('/questions/view', function() {
         it('should successfully load a question with arguments', function(done) {
+            this.timeout(5000);
             async.waterfall([
                 function(done) {
                     // Initialize database with test question
