@@ -162,7 +162,7 @@ describe('Database', function() {
 
         it('Should return at most the 10 newest questions in descending date, when no date, limit or offset is defined',
             function(done) {
-                database.getNewQuestions(undefined, undefined, undefined, function(questions) {
+                database.getNewQuestions(undefined, undefined, undefined, undefined, function(questions) {
                     assert.equal(10, questions.length);
                     assert(isSorted(questions));
                     done();
@@ -172,7 +172,7 @@ describe('Database', function() {
 
         it('Should return the newest questions in descending date, up to a given limit, when no date or offset is defined',
             function(done) {
-                database.getNewQuestions(undefined, 5, undefined, function(questions) {
+                database.getNewQuestions(undefined, 5, undefined, undefined, function(questions) {
                     assert.equal(5, questions.length);
                     assert(isSorted(questions));
                     done();
@@ -182,7 +182,7 @@ describe('Database', function() {
 
         it('Should return the newest questions in descending date, before the given date, up to a given limit when no offset is given',
             function(done) {
-                database.getNewQuestions(someDate, 20, undefined, function(questions) {
+                database.getNewQuestions(someDate, 20, undefined, undefined, function(questions) {
                     assert.equal(numberAfterThatDate, questions.length);
                     assert(isSorted(questions));
                     questions.forEach(function(question, index, array) {
@@ -195,12 +195,12 @@ describe('Database', function() {
 
         it('Should return the newest questions in descending date, up to a given limit, starting at a given offset, when no date is defined',
             function(done) {
-                database.getNewQuestions(undefined, 10, 0, function(questions) {
+                database.getNewQuestions(undefined, 10, 0, undefined, function(questions) {
                     // Get the first 10 questions
                     assert.equal(10, questions.length);
                     assert(isSorted(questions));
                     // Get the other 10
-                    database.getNewQuestions(undefined, 10, 10, function(restOfQuestions) {
+                    database.getNewQuestions(undefined, 10, 10, undefined, function(restOfQuestions) {
                         assert.equal(10, restOfQuestions.length);
                         // Append both question arrays
                         questions.forEach(function(question, index, array) {
@@ -220,7 +220,7 @@ describe('Database', function() {
         it('Should not allow since dates in the future', function() {
             assert.throws(
                 function() {
-                    database.getNewQuestions(new Date('2018-01-01'), undefined, function() {});
+                    database.getNewQuestions(new Date('2018-01-01'), undefined, undefined, undefined, function() {});
                 },
                 Error, 'Since date is in the future'
             );
@@ -437,7 +437,7 @@ describe('Database', function() {
         it('Should not allow since dates in the future', function() {
             assert.throws(
                 function() {
-                    database.getNewQuestions(new Date('2018-01-01'), undefined, function() {});
+                    database.getNewQuestions(new Date('2018-01-01'), undefined, undefined, undefined, function() {});
                 },
                 Error, 'Since date is in the future'
             );
