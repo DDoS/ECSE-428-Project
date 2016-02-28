@@ -328,12 +328,13 @@ var Database = function(dbName){
                 }
                 var whereClause = ' WHERE date >= $1 ';
                 if (typeof(keywords) === "string") {
-                    var keywordArray = keywords.split(" ");
+                    var keywordArray = keywords.match(/\S+/g);
                     var searchQuery = keywordArray[0];
                     for (var i = 1; i<keywordArray.length; i++) {
                         searchQuery += '|' + keywordArray[i];
                     }
-                    whereClause += "AND to_tsvector(text) @@ to_tsquery('" + searchQuery + "')";
+                    whereClause += "AND (to_tsvector('english', title) @@ to_tsquery('english','" + searchQuery + "')";
+                    whereClause += "OR to_tsvector('english', text) @@ to_tsquery('english','" + searchQuery + "'))";
                 }
                 client.query(
                     'SELECT id, title, text, date, submitter ' +
@@ -466,7 +467,7 @@ var Database = function(dbName){
                     queryArgs.push(type);
                 }
                 if (typeof(keywords) === "string") {
-                    var keywordArray = keywords.split(" ");
+                    var keywordArray = keywords.match(/\S+/g);
                     var searchQuery = keywordArray[0];
                     for (var i = 1; i<keywordArray.length; i++) {
                         searchQuery += '|' + keywordArray[i];
