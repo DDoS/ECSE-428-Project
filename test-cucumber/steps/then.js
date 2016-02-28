@@ -25,9 +25,6 @@ module.exports = function (dict) {
         .then(/^I expect that (element|inputfield) "$string"( not)* contains the text "$string"$/,
             require('../support/check/checkContent'))
 
-        .then(/^I expect that (element|inputfield) "$string"( not)* contains the partial text "$string"$/,
-            require('../support/check/checkPartialContent'))
-
         .then(/^I expect that (element|inputfield) "$string" does( not)* contain any text$/,
             require('../support/check/checkContent'))
 
@@ -86,5 +83,44 @@ module.exports = function (dict) {
             require('../support/check/checkModal'))
 
         .then(/^I expect that a (alertbox|confirmbox|prompt)( not)* contains the text "$text"$/,
-            require('../support/check/checkModalText'));
+            require('../support/check/checkModalText'))
+
+        .then(/^I expect the url to contain the url for the question with ID "$string"/, function(id, done) {
+            var that = this;
+            this.browser
+                .url()
+                .then(function(result) {
+                    var value = "/questions/view?q=" + that.questions[id].id;
+                    result.value.should.contain(value, 'Expected URL (' + result.value + ') to contain "' + value + '"');
+                })
+                .call(done);
+        })
+
+        .then(/^I expect the page to( not)* contain the question with ID "$string"$/, function(falseCase, id, done) {
+            var titleId = "#q" + this.questions[id].id + "_title";
+            this.browser
+                .elements(titleId)
+                .then(function (elements) {
+                    if (falseCase) {
+                        expect(elements.value).to.have.length(0, 'expected element "' + elements + '" not to exist');
+                    } else {
+                        expect(elements.value).to.have.length.above(0, 'expected element "' + elements + '" to exist');
+                    }
+                })
+                .call(done);
+        })
+
+        .then(/^I expect the page to( not)* contain the argument with ID "$string"$/, function(falseCase, id, done) {
+            var textId = "#a" + this.arguments[id].id + "_text";
+            this.browser
+                .elements(textId)
+                .then(function (elements) {
+                    if (falseCase) {
+                        expect(elements.value).to.have.length(0, 'expected element "' + elements + '" not to exist');
+                    } else {
+                        expect(elements.value).to.have.length.above(0, 'expected element "' + elements + '" to exist');
+                    }
+                })
+                .call(done);
+        })
 };

@@ -1,8 +1,4 @@
 module.exports = function (falseCase, value, done) {
-    if (value === "$DEFAULT_TEST_QUESTION_VIEW_URL") {
-        value = "/questions/view?q=" + this.question.id;
-    }
-
     this.browser
         .url()
         .then(function (result) {

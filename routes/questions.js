@@ -63,12 +63,17 @@ router.get('/find', function(req, res) {
     // Check if search query exists
     if (req.query.search != undefined){
         // Check if search query is empty (or only whitespace)
+        pageTitle = 'Results for "' + req.query.search + '"';
         if (req.query.search === '' || !/\S/.test(req.query.search)) {
-            req.query.search = undefined;
             req.flash('errors', {msg: 'Search field is empty.'});
-        }
-        else {
-            pageTitle = 'Results for "' + req.query.search + '"';
+            return res.render('questions/find', {
+                title: pageTitle,
+                searchQuery: req.query.search,
+                sortType: req.query.sortType,
+                questions: [],
+                currPage: 1,
+                hasNextPage: false
+            });
         }
     }
 

@@ -10,13 +10,13 @@ block content
             form(id='searchForm', method='GET', action='find')
                 .form-group
                     .input-group
-                        input.form-control(id='search', name='search',
+                        input.form-control(id='searchInput', name='search',
                                            placeholder='Search for questions...',
                                            autofocus=searchQuery === undefined
                                            value=searchQuery)
                         div.input-group-btn
-                            button.btn.btn-default(type='submit',
-                                                   id='submitSearch')
+                            button.btn.btn-default(id='searchButton',
+                                                   type='submit')
                                 i.fa.fa-search.fa-label
                                 | Search
                             button.btn.btn-default.dropdown-toggle(type='button',
@@ -25,16 +25,24 @@ block content
                                 span.caret
                             ul.dropdown-menu
                                 li.dropdown-header Sort by date
-                                li(onclick='$("#sortTypeInput").val("dateDes"); $("#searchForm").submit()')
-                                    a(href='#') Newest first
-                                li(onclick='$("#sortTypeInput").val("dateAsc"); $("#searchForm").submit()')
-                                    a(href='#') Oldest first
+                                li
+                                    a(id='newestFirstLink',
+                                      onclick='$("#sortTypeInput").val("dateDes"); $("#searchForm").submit()',
+                                      href='#') Newest first
+                                li
+                                    a(id='oldestFirstLink',
+                                      onclick='$("#sortTypeInput").val("dateAsc"); $("#searchForm").submit()',
+                                      href='#') Oldest first
                                 li.divider
                                 li.dropdown-header Sort by vote score
-                                li(onclick='$("#sortTypeInput").val("voteDes"); $("#searchForm").submit()')
-                                    a(href='#') Highest score first
-                                li(onclick='$("#sortTypeInput").val("voteAsc"); $("#searchForm").submit()')
-                                    a(href='#') Lowest score first
+                                li
+                                    a(id='highestScoreLink',
+                                      onclick='$("#sortTypeInput").val("voteDes"); $("#searchForm").submit()',
+                                      href='#') Highest score first
+                                li
+                                    a(id='lowestScoreLink',
+                                      onclick='$("#sortTypeInput").val("voteAsc"); $("#searchForm").submit()',
+                                      href='#') Lowest score first
                 input(id='sortTypeInput', type='hidden', name='sortType',
                       value=sortType === undefined ? 'dateDes' : sortType)
 
@@ -42,7 +50,7 @@ block content
         // No questions or no search results message
         .row
             .col-md-12
-                p(id='noQuestionMsg')
+                p(id='noQuestionsPara')
                     if searchQuery === undefined
                         | No questions have been submitted. Why not write one of
                         | your own?

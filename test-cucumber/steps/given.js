@@ -2,6 +2,8 @@
  * given steps
  */
 
+var db = require("../../data/db");
+
 module.exports = function () {
     this
         .given(/I open the (url|site) "$string"$/,
@@ -59,5 +61,69 @@ module.exports = function () {
             require('../support/action/closeAllButFirstTab'))
 
         .given(/^a (alertbox|confirmbox|prompt) is( not)* opened$/,
-            require('../support/check/checkModal'));
+            require('../support/check/checkModal'))
+
+        .given(/^the database has been cleared$/, function(done) {
+            var that = this;
+            this.database.clear(function() {
+                that.database.initialize(function() {
+                    done();
+                });
+            });
+        })
+
+        .given(/^I have a registered user account with username "$string" and password "$string" and email "$string"$/,
+            function(username, password, email, done) {
+                this.database.createUser(username, password, email, function() {
+                        done();
+                    }
+                );
+        })
+
+        .given(/^I am logged into the account with username "$string" and password "$string"$/, function(username, password, done) {
+            this.browser
+                .url(this.baseUrl + '/users/login')
+                .setValue('#usernameInput', username)
+                .setValue('#passwordInput', password)
+                .click('#loginButton')
+                .call(done);
+        })
+
+        .given(/^I have created a question with username "$string" and question "$string" and details "$string" and ID "$string"$/,
+            function(username, question, details, id, done) {
+                var that = this;
+                this.database.createQuestion(question, details, username, function(question) {
+                    that.questions[id] = question;
+                    done();
+                });
+            }
+        )
+
+        .given(/^I have created an argument in favour with username "$string" and question ID "$string" and text "$string" and ID "$string"$/,
+            function(username, questionId, text, id, done) {
+                var that = this;
+                this.database.createArgument(this.questions[questionId].id, db.ArgumentType.PRO, text, username, function(argument) {
+                    that.arguments[id] = argument;
+                    done();
+                });
+            }
+        )
+
+        .given(/^I have created an argument against with username "$string" and question ID "$string" and text "$string" and ID "$string"$/,
+            function(username, questionId, text, id, done) {
+                var that = this;
+                this.database.createArgument(this.questions[questionId].id, db.ArgumentType.CON, text, username, function(argument) {
+                    that.arguments[id] = argument;
+                    done();
+                });
+            }
+        )
+
+        .given(/^I open the site for the question with ID "$string"$/,
+            function(id, done) {
+                this.browser
+                    .url(this.baseUrl + '/questions/view?q=' + this.questions[id].id)
+                    .call(done);
+            }
+        );
 };
