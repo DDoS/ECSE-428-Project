@@ -80,6 +80,7 @@ router.get('/find', function(req, res) {
         res.render('questions/find', {
             title: pageTitle,
             searchQuery: req.query.search,
+            sortType: req.query.sortType,
             questions: questions,
             currPage: page + 1,
             hasNextPage: questions.length == 10
@@ -224,7 +225,8 @@ router.get('/view', function(req, res) {
             argsAgainst: argsAgainst,
             currArgs: page + 1,
             hasNextArgs: argsFor.length == 10 || argsAgainst.length == 10,
-            searchQuery: req.query.search
+            searchQuery: req.query.search,
+            sortType: req.query.sortType
         });
     // On database error, redirect to find page
     }, function() {

@@ -16,6 +16,7 @@ block content
                         span.input-group-btn
                             button.btn.btn-default(type='submit', id='submitSearch')
                                 i.fa.fa-search
+                input(type='hidden', name='sortType', value=sortType)
     .row
         .col-sm-12
             form(method='GET', action='/questions/view')
