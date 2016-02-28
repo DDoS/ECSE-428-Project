@@ -70,5 +70,18 @@ module.exports = function () {
             var upvoteId = "#q" + this.questions[id].id + "_upvote";
             this.browser.click(upvoteId)
                 .call(done);
+        })
+
+
+        .when(/^I downvote the argument with ID "$string"$/, function(id, done) {
+            var downvoteId = "#a" + this.arguments[id].id + "_downvote";
+            this.browser.click(downvoteId)
+                .call(done);
+        })
+
+        .when(/^I upvote the argument with ID "$string"$/, function(id, done) {
+            var upvoteId = "#a" + this.arguments[id].id + "_upvote";
+            this.browser.click(upvoteId)
+                .call(done);
         });
 };

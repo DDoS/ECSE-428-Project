@@ -131,6 +131,18 @@ module.exports = function () {
             });
         })
 
+        .given(/^I have downvoted the argument with username "$string" and question ID "$string" and ID "$string"$/, function(username, questionId, id, done) {
+            this.database.setArgumentVote(this.questions[questionId].id, this.arguments[id].id, username, db.VoteType.DOWN, function() {
+                done();
+            });
+        })
+
+        .given(/^I have upvoted the argument with username "$string" and question ID "$string" and ID "$string"$/, function(username, questionId, id, done) {
+            this.database.setArgumentVote(this.questions[questionId].id, this.arguments[id].id, username, db.VoteType.UP, function() {
+                done();
+            });
+        })
+
         .given(/^I open the site for the question with ID "$string"$/,
             function(id, done) {
                 this.browser
