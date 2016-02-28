@@ -60,9 +60,12 @@ block content
                               argument.upVoted, argument.downVoted,
                               argument.voteScore, user)
             else
-                p
-                    | No arguments have yet been made in favour. Why don't you
-                    | write one?
+                p(id='noArgsForPara')
+                    if searchQuery === undefined
+                        | No arguments have yet been made in favour. Why don't you
+                        | write one?
+                    else
+                        | No results found.
         .col-md-6
             h4 Arguments Against
             if argsAgainst.length !== 0
@@ -72,9 +75,12 @@ block content
                               argument.upVoted, argument.downVoted,
                               argument.voteScore, user)
             else
-                p
-                    | No arguments have yet been made against. Why don't you
-                    | write one?
+                p(id='noArgsAgainstPara')
+                    if searchQuery === undefined
+                        | No arguments have yet been made against. Why don't you
+                        | write one?
+                    else
+                        | No results found.
 
     if user
         .row

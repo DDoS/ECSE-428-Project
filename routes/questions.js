@@ -55,17 +55,22 @@ router.post('/create', isAuthenticated, function(req, res) {
 });
 
 router.get('/find', function(req, res) {
-
     var database = req.app.get('db');
 
+    // Page title and pagination
     var pageTitle = 'All Questions';
+    var pageNum = req.query.page ? req.query.page - 1 : 0;
 
-    // Check if search query exists
-    if (req.query.search != undefined){
-        // Check if search query is empty (or only whitespace)
+    // Check if this request is a search
+    if (req.query.search !== undefined) {
+        // Update page title
         pageTitle = 'Results for "' + req.query.search + '"';
-        if (req.query.search === '' || !/\S/.test(req.query.search)) {
-            req.flash('errors', {msg: 'Search field is empty.'});
+
+        // Check if search query is valid
+        if (req.query.search.trim() === '') {
+            req.flash('errors', {
+                msg: 'Search field is empty.'
+            });
             return res.render('questions/find', {
                 title: pageTitle,
                 searchQuery: req.query.search,
@@ -77,42 +82,27 @@ router.get('/find', function(req, res) {
         }
     }
 
-    // Pagination
-    var page = req.query.page ? req.query.page - 1 : 0;
-
-    // Retrieve questions mathching keyword from database and display them
+    // Retrieve questions matching keyword from database and display them
     getNewQuestions(function(questions) {
-        if(req.query.sortType != undefined) {
+        if (req.query.sortType != undefined) {
             switch (req.query.sortType) {
                 case "dateAsc":
-                    questions.sort(function (a, b) {
-                        return new Date(a.date) - new Date(b.date);
-                    });
-                    questions.sort(function (a, b) {
+                    questions.sort(function(a, b) {
                         return new Date(a.date) - new Date(b.date);
                     });
                     break;
                 case "dateDes":
-                    questions.sort(function (a, b) {
-                        return new Date(b.date) - new Date(a.date);
-                    });
-                    questions.sort(function (a, b) {
+                    questions.sort(function(a, b) {
                         return new Date(b.date) - new Date(a.date);
                     });
                     break;
                 case "voteAsc":
-                    questions.sort(function (a, b) {
-                        return a.voteScore - b.voteScore;
-                    });
-                    questions.sort(function (a, b) {
+                    questions.sort(function(a, b) {
                         return a.voteScore - b.voteScore;
                     });
                     break;
                 case "voteDes":
-                    questions.sort(function (a, b) {
-                        return b.voteScore - a.voteScore;
-                    });
-                    questions.sort(function (a, b) {
+                    questions.sort(function(a, b) {
                         return b.voteScore - a.voteScore;
                     });
                     break;
@@ -123,7 +113,7 @@ router.get('/find', function(req, res) {
             searchQuery: req.query.search,
             sortType: req.query.sortType,
             questions: questions,
-            currPage: page + 1,
+            currPage: pageNum + 1,
             hasNextPage: questions.length == 10
         });
     // On database error, redirect back to home page
@@ -131,12 +121,13 @@ router.get('/find', function(req, res) {
         req.flash('errors', {
             msg: 'Failed to show search results. Please try again.'
         });
-        res.redirect('/questions/find');
+        res.redirect('/');
     });
 
     function getNewQuestions(done, error) {
         try {
-            database.getNewQuestions(undefined, undefined, page * 10, req.query.search,
+            database.getNewQuestions(undefined, undefined, pageNum * 10,
+                req.query.search,
                 function(questions) {
                     async.each(questions, function(question, done) {
                         getQuestionVoteScoreAndStatus(req, database, question,
@@ -212,12 +203,8 @@ router.post('/pa', isAuthenticated, function(req, res) {
 router.get('/view', function(req, res) {
     var database = req.app.get('db');
 
-    if (req.query.search === '') {
-        req.query.search = undefined;
-    }
-
     // Pagination
-    var page = req.query.page ? req.query.page - 1 : 0;
+    var pageNum = req.query.page ? req.query.page - 1 : 0;
 
     // Get specified question and display to user
     getQuestion(function(question, argsFor, argsAgainst) {
@@ -259,12 +246,33 @@ router.get('/view', function(req, res) {
             }
         }
 
+        // Check if this is a search query
+        if (req.query.search !== undefined) {
+            // Check if search query is valid
+            if (req.query.search.trim() === '') {
+                req.flash('errors', {
+                    msg: 'Search field is empty.'
+                });
+                return res.render('questions/view', {
+                    title: "Question: " + question.title,
+                    question: question,
+                    argsFor: [],
+                    argsAgainst: [],
+                    currArgs: 1,
+                    hasNextArgs: false,
+                    searchQuery: req.query.search,
+                    sortType: req.query.sortType
+                });
+            }
+        }
+
+
         res.render('questions/view', {
             title: "Question: " + question.title,
             question: question,
             argsFor: argsFor,
             argsAgainst: argsAgainst,
-            currArgs: page + 1,
+            currArgs: pageNum + 1,
             hasNextArgs: argsFor.length == 10 || argsAgainst.length == 10,
             searchQuery: req.query.search,
             sortType: req.query.sortType
@@ -293,8 +301,8 @@ router.get('/view', function(req, res) {
     }
 
     function getArguments(question, done) {
-        database.getNewArguments(question.id, db.ArgumentType.PRO, undefined, undefined, page * 10, req.query.search, function (argsFor) {
-            database.getNewArguments(question.id, db.ArgumentType.CON, undefined, undefined, page * 10, req.query.search, function (argsAgainst) {
+        database.getNewArguments(question.id, db.ArgumentType.PRO, undefined, undefined, pageNum * 10, req.query.search !== undefined && req.query.search.trim() === '' ? undefined : req.query.search, function (argsFor) {
+            database.getNewArguments(question.id, db.ArgumentType.CON, undefined, undefined, pageNum * 10, req.query.search !== undefined && req.query.search.trim() === '' ? undefined : req.query.search, function (argsAgainst) {
                 var arguments = argsFor.concat(argsAgainst);
                 async.each(arguments,
                     function (argument, done) {
