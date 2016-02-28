@@ -8,10 +8,10 @@ Feature: Downvoting a Question
         And I have a registered user account with username "test_username" and password "test_password" and email "test@example.com"
         And I am logged into the account with username "test_username" and password "test_password"
         And I have created a question with username "test_username" and question "test question" and details "test details" and ID "question1"
-        And I have created a question with username "test_username" and question "test question" and details "test details" and ID "question2"
-        And I have created a question with username "test_username" and question "test question 2" and details "test details 2" and ID "question3"
+        And I have created a question with username "test_username" and question "test question 2" and details "test details 2" and ID "question2"
+        And I have created a question with username "test_username" and question "test question 3" and details "test details 3" and ID "question3"
         And I have upvoted the question with username "test_username" and ID "question3"
-        And I have created a question with username "test_username" and question "test question 3" and details "test details 3" and ID "question4"
+        And I have created a question with username "test_username" and question "test question 4" and details "test details 4" and ID "question4"
         And I have downvoted the question with username "test_username" and ID "question4"
 
     Scenario: Downvoting a Question From a List of Questions
