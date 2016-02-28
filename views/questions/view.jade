@@ -22,13 +22,13 @@ block content
                 input(type='hidden', name='q', value=question.id)
                 .form-group
                     .input-group
-                        input.form-control(id='search', name='search',
+                        input.form-control(id='searchInput', name='search',
                                            placeholder='Search for arguments...',
                                            autofocus=searchQuery === undefined
                                            value=searchQuery)
                         div.input-group-btn
-                            button.btn.btn-default(type='submit',
-                                                   id='submitButton')
+                            button.btn.btn-default(id='searchButton',
+                                                   type='submit')
                                 i.fa.fa-search.fa-label
                                 | Search
                             button.btn.btn-default.dropdown-toggle(type='button',
