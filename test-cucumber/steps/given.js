@@ -119,6 +119,18 @@ module.exports = function () {
             }
         )
 
+        .given(/^I have downvoted the question with username "$string" and ID "$string"$/, function(username, id, done) {
+            this.database.setQuestionVote(this.questions[id].id, username, db.VoteType.DOWN, function() {
+                done();
+            });
+        })
+
+        .given(/^I have upvoted the question with username "$string" and ID "$string"$/, function(username, id, done) {
+            this.database.setQuestionVote(this.questions[id].id, username, db.VoteType.UP, function() {
+                done();
+            });
+        })
+
         .given(/^I open the site for the question with ID "$string"$/,
             function(id, done) {
                 this.browser
