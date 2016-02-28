@@ -131,7 +131,7 @@ describe('Database', function() {
         });
     });
 
-    describe('getNewQuestions(since, limit, offset, getDone)', function() {
+    describe('getNewQuestions(since, limit, offset, keywords, getDone)', function() {
         var someDate = undefined;
         var numberAfterThatDate = 0;
 

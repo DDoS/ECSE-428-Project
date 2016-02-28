@@ -177,6 +177,37 @@ describe('/questions', function() {
                 }
             ], done);
         });
+
+        it('should successfully load Question search results', function(done) {
+            async.waterfall([
+                function(done) {
+                    // Initialize database with test question
+                    database.createQuestion('all questions test title',
+                        'all questions test details', username,
+                        function(question) {
+                            done(undefined, question);
+                        }
+                    );
+                },
+                function(question, done) {
+                    // Load find page
+                    request.get('/questions/find?search=title')
+                        .end(function(err, res) {
+                            done(undefined, question, err, res);
+                        });
+                },
+                function(question, err, res, done) {
+                    // Verify that all information is displayed
+                    assert.ok(
+                        res.text.indexOf(question.title) !== -1,
+                        'response should contain "' + question.title + '"');
+                    assert.ok(
+                        res.text.indexOf(question.text) !== -1,
+                        'response should contain "' + question.text + '"');
+                    done();
+                }
+            ], done);
+        });
     });
 
     /**
