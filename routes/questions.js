@@ -79,7 +79,7 @@ router.get('/find', function(req, res) {
     getNewQuestions(function(questions) {
         res.render('questions/find', {
             title: pageTitle,
-            searchString: req.query.search,
+            searchQuery: req.query.search,
             questions: questions,
             currPage: page + 1,
             hasNextPage: questions.length == 10

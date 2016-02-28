@@ -11,8 +11,8 @@ block content
                     .input-group
                         input.form-control(id='search', name='search',
                         placeholder='Search for questions...',
-                        autofocus=searchString === undefined
-                        value=searchString)
+                        autofocus=searchQuery === undefined
+                        value=searchQuery)
                         span.input-group-btn
                             button.btn.btn-default(type='submit', id='submitSearch')
                                 i.fa.fa-search
@@ -28,7 +28,7 @@ block content
         .row
             .col-md-12
                 p(id='noQuestionMsg')
-                    if searchString === undefined
+                    if searchQuery === undefined
                         | No questions have been submitted. Why not write one of
                         | your own?
                     else
