@@ -12,29 +12,47 @@ block content
                       question.voteScore, user)
 
     .row
-        .col-sm-12
-            form(method='GET', action='/questions/view')
+        .col-md-12
+            h3 Arguments
+
+    // Search bar
+    .row
+        .col-md-12
+            form(id='searchForm', method='GET', action='/questions/view')
                 input(type='hidden', name='q', value=question.id)
                 .form-group
                     .input-group
                         input.form-control(id='search', name='search',
-                                           placeholder= 'Search for arguments...',
+                                           placeholder='Search for arguments...',
                                            autofocus=searchQuery === undefined
                                            value=searchQuery)
-                        span.input-group-btn
-                            button.btn.btn-default(type='submit')
-                                i.fa.fa-search
-                input(type='hidden', name='sortType', value=sortType)
-    .row
-        .col-sm-12
-            form(method='GET', action='/questions/view')
-                if searchQuery != undefined
-                    +sortDropDownList('/questions/view?q=' + question.id + '&search=' + searchQuery)
-                else
-                    +sortDropDownList('/questions/view?q=' + question.id)
+                        div.input-group-btn
+                            button.btn.btn-default(type='submit',
+                                                   id='submitButton')
+                                i.fa.fa-search.fa-label
+                                | Search
+                            button.btn.btn-default.dropdown-toggle(type='button',
+                                                                   data-toggle='dropdown')
+                                | Sort Results&nbsp;
+                                span.caret
+                            ul.dropdown-menu
+                                li.dropdown-header Sort by date
+                                li(onclick='$("#sortTypeInput").val("dateDes"); $("#searchForm").submit()')
+                                    a(href='#') Newest first
+                                li(onclick='$("#sortTypeInput").val("dateAsc"); $("#searchForm").submit()')
+                                    a(href='#') Oldest first
+                                li.divider
+                                li.dropdown-header Sort by vote score
+                                li(onclick='$("#sortTypeInput").val("voteDes"); $("#searchForm").submit()')
+                                    a(href='#') Highest score first
+                                li(onclick='$("#sortTypeInput").val("voteAsc"); $("#searchForm").submit()')
+                                    a(href='#') Lowest score first
+                input(id='sortTypeInput', type='hidden', name='sortType',
+                      value=sortType === undefined ? 'dateDes' : sortType)
+
     .row
         .col-md-6
-            h3 Arguments in Favour
+            h4 Arguments in Favour
             if argsFor.length !== 0
                 each argument in argsFor
                     +argument(question.id, argument.id, argument.text,
@@ -46,7 +64,7 @@ block content
                     | No arguments have yet been made in favour. Why don't you
                     | write one?
         .col-md-6
-            h3 Arguments Against
+            h4 Arguments Against
             if argsAgainst.length !== 0
                 each argument in argsAgainst
                     +argument(question.id, argument.id, argument.text,
@@ -80,7 +98,20 @@ block content
 
     .row
         .col-md-12
-            +pagination(currArgs, hasNextArgs, '/questions/view?q=' + question.id)
+            ul.pagination
+                if currArgs == 1
+                    li.disabled
+                        a Prev
+                else
+                    li
+                        a(href='/questions/view?q=' + question.id + '&page=#{currArgs - 1}') Prev
+
+                if hasNextArgs
+                    li
+                        a(href='/questions/view?q=' + question.id + 'page=#{currArgs + 1}') Next
+                else
+                    li.disabled
+                        a Next
 
 mixin question(id, text, submitter, date, upVoted, downVoted, count, user)
     .panel.panel-default
@@ -139,37 +170,3 @@ mixin argument(qid, aid, text, submitter, date, upVoted, downVoted, count)
             span.text-muted(id='a' + aid + '_meta')
                 | Submitted by #{submitter} on
                 | #{moment(date.toISOString()).format('YYYY-MM-DD HH:mm:ss')}
-
-mixin pagination(currArgs, hasNextArgs, base)
-    ul.pagination
-        if currArgs == 1
-            li.disabled
-                a Prev
-        else
-            li
-                a(href='#{base}&page=#{currArgs - 1}') Prev
-
-        if hasNextArgs
-            li
-                a(href='#{base}&page=#{currArgs + 1}') Next
-        else
-            li.disabled
-                a Next
-
-mixin sortDropDownList(baseUrl)
-    .dropdown
-        button.btn.btn-default.dropdown-toggle(type='button', data-toggle='dropdown')
-            | Sort searched result
-            span.caret
-        ul.dropdown-menu
-            li.dropdown-header Sort Date By
-            li
-                a(href='#{baseUrl}&sortType=dateAsc') Ascending
-            li
-                a(href='#{baseUrl}&sortType=dateDes') Descending
-            li.divider
-            li.dropdown-header Sort By Vote
-            li
-                a(href='#{baseUrl}&sortType=voteAsc') Low to High
-            li
-                a(href='#{baseUrl}&sortType=voteDes') High to Low
