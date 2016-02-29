@@ -2,8 +2,6 @@
  * given steps
  */
 
-var db = require("../../data/db");
-
 module.exports = function () {
     this
         .given(/I open the (url|site) "$string"$/,
@@ -63,91 +61,40 @@ module.exports = function () {
         .given(/^a (alertbox|confirmbox|prompt) is( not)* opened$/,
             require('../support/check/checkModal'))
 
-        .given(/^the database has been cleared$/, function(done) {
-            var that = this;
-            this.database.clear(function() {
-                that.database.initialize(function() {
-                    done();
-                });
-            });
-        })
+        /**
+         * Custom
+         */
+
+        .given(/^the database has been cleared$/,
+            require('../support/custom/clearDatabase'))
 
         .given(/^I have a registered user account with username "$string" and password "$string" and email "$string"$/,
-            function(username, password, email, done) {
-                this.database.createUser(username, password, email, function() {
-                        done();
-                    }
-                );
-        })
+            require('../support/custom/createAccount'))
 
-        .given(/^I am logged into the account with username "$string" and password "$string"$/, function(username, password, done) {
-            this.browser
-                .url(this.baseUrl + '/users/login')
-                .setValue('#usernameInput', username)
-                .setValue('#passwordInput', password)
-                .click('#loginButton')
-                .call(done);
-        })
+        .given(/^I am logged into the account with username "$string" and password "$string"$/,
+            require('../support/custom/login'))
 
         .given(/^I have created a question with username "$string" and question "$string" and details "$string" and ID "$string"$/,
-            function(username, question, details, id, done) {
-                var that = this;
-                this.database.createQuestion(question, details, username, function(question) {
-                    that.questions[id] = question;
-                    done();
-                });
-            }
-        )
+            require('../support/custom/createQuestion'))
 
         .given(/^I have created an argument in favour with username "$string" and question ID "$string" and text "$string" and ID "$string"$/,
-            function(username, questionId, text, id, done) {
-                var that = this;
-                this.database.createArgument(this.questions[questionId].id, db.ArgumentType.PRO, text, username, function(argument) {
-                    that.arguments[id] = argument;
-                    done();
-                });
-            }
-        )
+            require('../support/custom/createArgumentInFavour'))
 
         .given(/^I have created an argument against with username "$string" and question ID "$string" and text "$string" and ID "$string"$/,
-            function(username, questionId, text, id, done) {
-                var that = this;
-                this.database.createArgument(this.questions[questionId].id, db.ArgumentType.CON, text, username, function(argument) {
-                    that.arguments[id] = argument;
-                    done();
-                });
-            }
-        )
+            require('../support/custom/createArgumentAgainst'))
 
-        .given(/^I have downvoted the question with username "$string" and ID "$string"$/, function(username, id, done) {
-            this.database.setQuestionVote(this.questions[id].id, username, db.VoteType.DOWN, function() {
-                done();
-            });
-        })
+        .given(/^I have upvoted the question with username "$string" and ID "$string"$/,
+            require('../support/custom/upvotedQuestion'))
 
-        .given(/^I have upvoted the question with username "$string" and ID "$string"$/, function(username, id, done) {
-            this.database.setQuestionVote(this.questions[id].id, username, db.VoteType.UP, function() {
-                done();
-            });
-        })
+        .given(/^I have downvoted the question with username "$string" and ID "$string"$/,
+            require('../support/custom/downvotedQuestion'))
 
-        .given(/^I have downvoted the argument with username "$string" and question ID "$string" and ID "$string"$/, function(username, questionId, id, done) {
-            this.database.setArgumentVote(this.questions[questionId].id, this.arguments[id].id, username, db.VoteType.DOWN, function() {
-                done();
-            });
-        })
+        .given(/^I have upvoted the argument with username "$string" and question ID "$string" and ID "$string"$/,
+            require('../support/custom/upvotedArgument'))
 
-        .given(/^I have upvoted the argument with username "$string" and question ID "$string" and ID "$string"$/, function(username, questionId, id, done) {
-            this.database.setArgumentVote(this.questions[questionId].id, this.arguments[id].id, username, db.VoteType.UP, function() {
-                done();
-            });
-        })
+        .given(/^I have downvoted the argument with username "$string" and question ID "$string" and ID "$string"$/,
+            require('../support/custom/downvotedArgument'))
 
         .given(/^I open the site for the question with ID "$string"$/,
-            function(id, done) {
-                this.browser
-                    .url(this.baseUrl + '/questions/view?q=' + this.questions[id].id)
-                    .call(done);
-            }
-        );
+            require('../support/custom/openSiteQuestion'));
 };

@@ -7,13 +7,13 @@ Feature: Sorting Argument Search Results
         Given the database has been cleared
         And I have a registered user account with username "test_username" and password "test_password" and email "test@example.com"
         And I have created a question with username "test_username" and question "test question" and details "test details" and ID "question1"
-        And I have created an argument in favour with username "test_username" and question ID "question1" and text "test argument" and ID "argument1"
+        And I have created an argument in favour with username "test_username" and question ID "question1" and text "test argument 1" and ID "argument1"
         And I have upvoted the argument with username "test_username" and question ID "question1" and ID "argument1"
-        And I have created an argument in favour with username "test_username" and question ID "question1" and text "test argument" and ID "argument2"
+        And I have created an argument in favour with username "test_username" and question ID "question1" and text "test argument 2" and ID "argument2"
         And I have downvoted the argument with username "test_username" and question ID "question1" and ID "argument2"
-        And I have created an argument against with username "test_username" and question ID "question1" and text "test argument" and ID "argument3"
+        And I have created an argument against with username "test_username" and question ID "question1" and text "test argument 3" and ID "argument3"
         And I have upvoted the argument with username "test_username" and question ID "question1" and ID "argument3"
-        And I have created an argument against with username "test_username" and question ID "question1" and text "test argument" and ID "argument4"
+        And I have created an argument against with username "test_username" and question ID "question1" and text "test argument 4" and ID "argument4"
         And I have downvoted the argument with username "test_username" and question ID "question1" and ID "argument4"
 
     Scenario: [Normal] Obtaining Argument Search Results Newest First

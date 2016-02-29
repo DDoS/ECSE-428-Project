@@ -14,30 +14,30 @@ Feature: Upvoting a Question
 		And I have created a question with username "test_username" and question "test question 4" and details "test details 4" and ID "question4"
 		And I have upvoted the question with username "test_username" and ID "question4"
 
-	Scenario: Upvoting a Question From a List of Questions
+	Scenario: [Normal] Upvoting a Question From a List of Questions
 		Given I open the site "/questions/find"
-		When I upvote the question with username "test_username" and ID "question1"
+		When I upvote the question with ID "question1"
 		Then I expect the url to contain "/questions/find"
 		Then I expect that element ".alert.alert-success" contains the text "Upvote recorded."
 		Then I expect the question with ID "question1" to have a score of "1"
 
-	Scenario: Upvoting a Question From the Question Page
+	Scenario: [Alternate] Upvoting a Question From the Question Page
 		Given I open the site for the question with ID "question2"
-		When I upvote the question with username "test_username" and ID "question2"
+		When I upvote the question with ID "question2"
 		Then I expect the url to contain the url for the question with ID "question2"
 		Then I expect that element ".alert.alert-success" contains the text "Upvote recorded."
 		Then I expect the question with ID "question2" to have a score of "1"
 
-	Scenario: Upvoting a Downvoted Question
+	Scenario: [Alternate] Upvoting a Downvoted Question
 		Given I open the site "/questions/find"
-		When I upvote the question with username "test_username" and ID "question3"
+		When I upvote the question with ID "question3"
 		Then I expect the url to contain "/questions/find"
 		Then I expect that element ".alert.alert-success" contains the text "Upvote recorded."
 		Then I expect the question with ID "question3" to have a score of "1"
 
-	Scenario: Upvoting an Upvoted Question
+	Scenario: [Alternate] Upvoting an Upvoted Question
 		Given I open the site "/questions/find"
-		When I upvote the question with username "test_username" and ID "question4"
+		When I upvote the question with ID "question4"
 		Then I expect the url to contain "/questions/find"
 		Then I expect that element ".alert.alert-success" contains the text "Vote removal recorded."
 		Then I expect the question with ID "question4" to have a score of "0"
