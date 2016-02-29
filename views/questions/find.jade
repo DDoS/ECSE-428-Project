@@ -19,30 +19,27 @@ block content
                                                    type='submit')
                                 i.fa.fa-search.fa-label
                                 | Search
-                            button.btn.btn-default.dropdown-toggle(type='button',
+                            button.btn.btn-default.dropdown-toggle(id='sortButton',
+                                                                   type='button',
                                                                    data-toggle='dropdown')
                                 | Sort Results&nbsp;
                                 span.caret
                             ul.dropdown-menu
                                 li.dropdown-header Sort by date
-                                li
-                                    a(id='newestFirstLink',
-                                      onclick='$("#sortTypeInput").val("dateDes"); $("#searchForm").submit()',
-                                      href='#') Newest first
-                                li
-                                    a(id='oldestFirstLink',
-                                      onclick='$("#sortTypeInput").val("dateAsc"); $("#searchForm").submit()',
-                                      href='#') Oldest first
+                                li(id='newestFirstLi',
+                                   onclick='$("#sortTypeInput").val("dateDes"); $("#searchForm").submit()')
+                                    a(href='#') Newest first
+                                li(id='oldestFirstLi',
+                                   onclick='$("#sortTypeInput").val("dateAsc"); $("#searchForm").submit()')
+                                    a(href='#') Oldest first
                                 li.divider
                                 li.dropdown-header Sort by vote score
-                                li
-                                    a(id='highestScoreLink',
-                                      onclick='$("#sortTypeInput").val("voteDes"); $("#searchForm").submit()',
-                                      href='#') Highest score first
-                                li
-                                    a(id='lowestScoreLink',
-                                      onclick='$("#sortTypeInput").val("voteAsc"); $("#searchForm").submit()',
-                                      href='#') Lowest score first
+                                li(id='highestScoreFirstLi',
+                                   onclick='$("#sortTypeInput").val("voteDes"); $("#searchForm").submit()')
+                                    a(href='#') Highest score first
+                                li(id='lowestScoreFirstLi',
+                                   onclick='$("#sortTypeInput").val("voteAsc"); $("#searchForm").submit()')
+                                    a(href='#') Lowest score first
                 input(id='sortTypeInput', type='hidden', name='sortType',
                       value=sortType === undefined ? 'dateDes' : sortType)
 
@@ -59,9 +56,9 @@ block content
 
     else
         // Questions
-        .row
+        .row(id='questions')
             each question in questions
-                .col-md-12
+                .col-md-12(id='q' + question.id)
                     +question(question.id, question.title, question.text,
                               question.submitter,  question.date,
                               question.upVoted, question.downVoted,

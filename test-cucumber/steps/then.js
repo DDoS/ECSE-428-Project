@@ -110,6 +110,21 @@ module.exports = function (dict) {
                 .call(done);
         })
 
+        .then(/^I expect the page to( not)* contain the question with ID "$string" first$/, function(falseCase, id, done) {
+            var that = this;
+            var questionsId = "#questions > div";
+            this.browser
+                .getAttribute(questionsId, 'id')
+                .then(function (value) {
+                    if (falseCase) {
+                        value[0].should.not.equal('q' + that.questions[id].id);
+                    } else {
+                        value[0].should.equal('q' + that.questions[id].id);
+                    }
+                })
+                .call(done);
+        })
+
         .then(/^I expect the page to( not)* contain the argument with ID "$string"$/, function(falseCase, id, done) {
             var textId = "#a" + this.arguments[id].id + "_text";
             this.browser
@@ -132,6 +147,36 @@ module.exports = function (dict) {
                         score.should.not.equal(text);
                     } else {
                         score.should.equal(text);
+                    }
+                })
+                .call(done);
+        })
+
+        .then(/^I expect the page to( not)* contain the argument in favour with ID "$string" first$/, function(falseCase, id, done) {
+            var that = this;
+            var argumentsId = "#argumentsFor > div";
+            this.browser
+                .getAttribute(argumentsId, 'id')
+                .then(function (value) {
+                    if (falseCase) {
+                        value[0].should.not.equal('a' + that.arguments[id].id);
+                    } else {
+                        value[0].should.equal('a' + that.arguments[id].id);
+                    }
+                })
+                .call(done);
+        })
+
+        .then(/^I expect the page to( not)* contain the argument against with ID "$string" first$/, function(falseCase, id, done) {
+            var that = this;
+            var argumentsId = "#argumentsAgainst > div";
+            this.browser
+                .getAttribute(argumentsId, 'id')
+                .then(function (value) {
+                    if (falseCase) {
+                        value[0].should.not.equal('a' + that.arguments[id].id);
+                    } else {
+                        value[0].should.equal('a' + that.arguments[id].id);
                     }
                 })
                 .call(done);

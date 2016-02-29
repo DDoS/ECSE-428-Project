@@ -31,21 +31,26 @@ block content
                                                    type='submit')
                                 i.fa.fa-search.fa-label
                                 | Search
-                            button.btn.btn-default.dropdown-toggle(type='button',
+                            button.btn.btn-default.dropdown-toggle(id='sortButton',
+                                                                   type='button',
                                                                    data-toggle='dropdown')
                                 | Sort Results&nbsp;
                                 span.caret
                             ul.dropdown-menu
                                 li.dropdown-header Sort by date
-                                li(onclick='$("#sortTypeInput").val("dateDes"); $("#searchForm").submit()')
+                                li(id='newestFirstLi',
+                                   onclick='$("#sortTypeInput").val("dateDes"); $("#searchForm").submit()')
                                     a(href='#') Newest first
-                                li(onclick='$("#sortTypeInput").val("dateAsc"); $("#searchForm").submit()')
+                                li(id='oldestFirstLi',
+                                   onclick='$("#sortTypeInput").val("dateAsc"); $("#searchForm").submit()')
                                     a(href='#') Oldest first
                                 li.divider
                                 li.dropdown-header Sort by vote score
-                                li(onclick='$("#sortTypeInput").val("voteDes"); $("#searchForm").submit()')
+                                li(id='highestScoreFirstLi',
+                                   onclick='$("#sortTypeInput").val("voteDes"); $("#searchForm").submit()')
                                     a(href='#') Highest score first
-                                li(onclick='$("#sortTypeInput").val("voteAsc"); $("#searchForm").submit()')
+                                li(id='lowestScoreFirstLi',
+                                   onclick='$("#sortTypeInput").val("voteAsc"); $("#searchForm").submit()')
                                     a(href='#') Lowest score first
                 input(id='sortTypeInput', type='hidden', name='sortType',
                       value=sortType === undefined ? 'dateDes' : sortType)
@@ -53,34 +58,36 @@ block content
     .row
         .col-md-6
             h4 Arguments in Favour
-            if argsFor.length !== 0
-                each argument in argsFor
-                    +argument(question.id, argument.id, argument.text,
-                              argument.submitter, argument.date,
-                              argument.upVoted, argument.downVoted,
-                              argument.voteScore, user)
-            else
-                p(id='noArgsForPara')
-                    if searchQuery === undefined
-                        | No arguments have yet been made in favour. Why don't you
-                        | write one?
-                    else
-                        | No results found.
+            div(id='argumentsFor')
+                if argsFor.length !== 0
+                    each argument in argsFor
+                        +argument(question.id, argument.id, argument.text,
+                                  argument.submitter, argument.date,
+                                  argument.upVoted, argument.downVoted,
+                                  argument.voteScore, user)
+                else
+                    p(id='noArgsForPara')
+                        if searchQuery === undefined
+                            | No arguments have yet been made in favour. Why don't you
+                            | write one?
+                        else
+                            | No results found.
         .col-md-6
             h4 Arguments Against
-            if argsAgainst.length !== 0
-                each argument in argsAgainst
-                    +argument(question.id, argument.id, argument.text,
-                              argument.submitter, argument.date,
-                              argument.upVoted, argument.downVoted,
-                              argument.voteScore, user)
-            else
-                p(id='noArgsAgainstPara')
-                    if searchQuery === undefined
-                        | No arguments have yet been made against. Why don't you
-                        | write one?
-                    else
-                        | No results found.
+            div(id='argumentsAgainst')
+                if argsAgainst.length !== 0
+                    each argument in argsAgainst
+                        +argument(question.id, argument.id, argument.text,
+                                  argument.submitter, argument.date,
+                                  argument.upVoted, argument.downVoted,
+                                  argument.voteScore, user)
+                else
+                    p(id='noArgsAgainstPara')
+                        if searchQuery === undefined
+                            | No arguments have yet been made against. Why don't you
+                            | write one?
+                        else
+                            | No results found.
 
     if user
         .row
@@ -150,7 +157,7 @@ mixin question(id, text, submitter, date, upVoted, downVoted, count, user)
                 | #{moment(date.toISOString()).format('YYYY-MM-DD HH:m:s')}
 
 mixin argument(qid, aid, text, submitter, date, upVoted, downVoted, count)
-    .panel.panel-default(id='argContainer')
+    .panel.panel-default(id='a' + aid)
         .panel-body
             .vote-group
                 form(method='POST', action='/questions/vote?q=#{qid}&a=#{aid}')
