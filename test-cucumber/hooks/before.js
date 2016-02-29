@@ -30,11 +30,6 @@ function serverStartup(that, done) {
     that.app.set('port', 8080);
     that.app.set('ipaddress', '127.0.0.1');
 
-    // Test credentials used to create account
-    that.username = "default_test_username";
-    that.password = "default_test_password";
-    that.email = "default_test@example.com";
-
     async.series([
         function(done) {
             // Initialize database
@@ -48,43 +43,11 @@ function serverStartup(that, done) {
         function(done) {
             // Create environment variables for database
             that.database = that.app.get('db');
+
+            // Create environment variables for questions and arguments
+            that.questions = {};
+            that.arguments = {};
             done();
-        },
-        function(done) {
-            // Create default test user
-            that.database.createUser(that.username, that.password, that.email,
-                function() {
-                    done();
-                }
-            );
-        },
-        function(done) {
-            // Initialize database with default test question
-            that.database.createQuestion('test question', 'test details',
-                that.username,
-                function(question) {
-                    that.question = question;
-                    done();
-                }
-            );
-        },
-        function(done) {
-            // Initialize database with default test argument in favour
-            that.database.createArgument(that.question.id, db.ArgumentType.PRO,
-                'test argument', that.username,
-                function(argument) {
-                    that.argumentPro = argument;
-                    done();
-                })
-        },
-        function(done) {
-            // Initialize database with default test argument against
-            that.database.createArgument(that.question.id, db.ArgumentType.CON,
-                'test argument', that.username,
-                function(argument) {
-                    that.argumentCon = argument;
-                    done();
-                })
         }
     ], done);
 }

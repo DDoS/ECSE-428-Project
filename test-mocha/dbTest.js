@@ -131,7 +131,7 @@ describe('Database', function() {
         });
     });
 
-    describe('getNewQuestions(since, limit, offset, getDone)', function() {
+    describe('getNewQuestions(since, limit, offset, keywords, getDone)', function() {
         var someDate = undefined;
         var numberAfterThatDate = 0;
 
@@ -690,41 +690,8 @@ describe('Database', function() {
     });
 
     after(function(deleteDone) {
-        // Delete the all the tables and functions
-        database.rawQuery(function(error, client, done) {
-            if (error) {
-                console.error(error);
-                throw new Error('Error creating query');
-            }
-            client.query(
-                'SELECT \'DROP TABLE IF EXISTS "\' || tablename || \'" CASCADE;\'' +
-                    'FROM pg_tables ' +
-                    'WHERE schemaname = \'public\';' +
-                'SELECT \'DROP FUNCTION \' || ns.nspname || \'.\' || proname || \'(\' || oidvectortypes(proargtypes) || \');\'' +
-                    'FROM pg_proc INNER JOIN pg_namespace ns ON (pg_proc.pronamespace = ns.oid)' +
-                    'WHERE ns.nspname = \'public\';',
-                function(error, result) {
-                    if (error) {
-                        console.error(error);
-                        throw new Error('Could not drop test tables and functions');
-                    }
-                    var dropTablesQueries = "";
-                    result.rows.forEach(function(row, index, array) {
-                        dropTablesQueries += row['?column?'];
-                    });
-                    client.query(
-                        dropTablesQueries,
-                        function(error, result) {
-                            done();
-                            if (error) {
-                                console.error(error);
-                                throw new Error('Could not drop test tables and functions');
-                            }
-                            deleteDone();
-                        }
-                    );
-                }
-            );
+        database.clear(function() {
+            deleteDone();
         });
     });
 });

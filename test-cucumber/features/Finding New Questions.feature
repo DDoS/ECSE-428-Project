@@ -4,17 +4,12 @@ Feature: Finding New Questions
     I should be able to view a list of all questions, or a list of all questions for a question category, in order of chronological age
 
     Background:
-        Given I open the site "/users/login"
-        When I set "$DEFAULT_TEST_USERNAME" to the inputfield "#username"
-        When I set "$DEFAULT_TEST_PASSWORD" to the inputfield "#password"
-        And I click on the button "#login"
-
-        Given I open the site "/questions/create"
-        When I set "test_question_question" to the inputfield "#question"
-        And I set "test_question_details" to the inputfield "#details"
-        And I click on the button "#create"
+        Given the database has been cleared
+        And I have a registered user account with username "test_username" and password "test_password" and email "test@example.com"
+        And I have created a question with username "test_username" and question "test question" and details "test details" and ID "question1"
+        And I have created a question with username "test_username" and question "test question 2" and details "test details 2" and ID "question2"
 
     Scenario: [Normal] Finding All New Questions
         Given I open the site "/questions/find"
-        Then I expect that element "body" contains the partial text "test_question_question"
-        And I expect that element "body" contains the partial text "test_question_details"
+        Then I expect the page to contain the question with ID "question1"
+        And I expect the page to contain the question with ID "question2"

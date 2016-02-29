@@ -2,6 +2,8 @@
  * when steps
  */
 
+var db = require("../../data/db");
+
 module.exports = function () {
     this
         .when(/^I (click|doubleclick) on the (link|button|element) "$string"$/,
@@ -53,5 +55,33 @@ module.exports = function () {
             require('../support/action/selectOptionByIndex'))
 
         .when(/^I select the option with the (name|value|text) "$string" for element "$string"$/,
-            require('../support/action/selectOption'));
+            require('../support/action/selectOption'))
+
+        .when(/I open the (url|site) "$string"$/,
+            require('../support/action/openWebsite'))
+
+        .when(/^I downvote the question with username "$string" and ID "$string"$/, function(username, id, done) {
+            var downvoteId = "#q" + this.questions[id].id + "_downvote";
+            this.browser.click(downvoteId)
+                .call(done);
+        })
+
+        .when(/^I upvote the question with username "$string" and ID "$string"$/, function(username, id, done) {
+            var upvoteId = "#q" + this.questions[id].id + "_upvote";
+            this.browser.click(upvoteId)
+                .call(done);
+        })
+
+
+        .when(/^I downvote the argument with ID "$string"$/, function(id, done) {
+            var downvoteId = "#a" + this.arguments[id].id + "_downvote";
+            this.browser.click(downvoteId)
+                .call(done);
+        })
+
+        .when(/^I upvote the argument with ID "$string"$/, function(id, done) {
+            var upvoteId = "#a" + this.arguments[id].id + "_upvote";
+            this.browser.click(upvoteId)
+                .call(done);
+        });
 };

@@ -9,26 +9,27 @@ block content
         .form-group
             label.col-sm-2.control-label Username
             .col-sm-10
-                input.form-control(id='username', name='username',
+                input.form-control(id='usernameInput', name='username',
                                    placeholder="Username",
                                    autofocus=true)
         .form-group
             label.col-sm-2.control-label Email
             .col-sm-10
-                input.form-control(id='email', name='email', type='email',
+                input.form-control(id='emailInput', name='email', type='email',
                                    placeholder="Email")
         .form-group
             label.col-sm-2.control-label Password
             .col-sm-10
-                input.form-control(id='password', name='password',
+                input.form-control(id='passwordInput', name='password',
                                    type='password', placeholder="Password")
         .form-group
             label.col-sm-2.control-label Confirm Password
             .col-sm-10
-                input.form-control(id='confirmPassword', name='confirmPassword',
+                input.form-control(id='confirmPasswordInput',
+                                   name='confirmPassword',
                                    type='password', placeholder="Confirm Password")
         .form-group
             .col-sm-offset-2.col-sm-10
-                button.btn.btn-primary(id='create', type='submit')
+                button.btn.btn-primary(id='createButton', type='submit')
                     i.fa.fa-label.fa-user-plus
                     | Create Account

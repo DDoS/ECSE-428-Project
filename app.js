@@ -101,23 +101,23 @@ app.set('initDb', function(done) {
         dbName = process.env.DBNAME_PROD;
     }
 
-    app.database = new db.Database(dbName);
+    var database = new db.Database(dbName);
 
     if (app.get('env') === 'test') {
-        app.database.clear(function() {
-            app.database.initialize(function() {
+        database.clear(function() {
+            database.initialize(function() {
                 end();
             });
         })
     } else {
-        app.database.initialize(function() {
+        database.initialize(function() {
             console.log('Production database initialized');
             end();
         });
     }
 
     function end() {
-        app.set('db', app.database);
+        app.set('db', database);
         done();
     }
 });

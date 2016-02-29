@@ -4,46 +4,82 @@ block content
     .page-header
         h2 #{title}
 
+    // Search bar
     .row
-        .col-sm-12
-            form(method='GET', action='find')
+        .col-md-12
+            form(id='searchForm', method='GET', action='find')
                 .form-group
                     .input-group
-                        input.form-control(id='search', name='search',
-                        placeholder='Search for questions...',
-                        autofocus=searchString === undefined
-                        value=searchString)
-                        span.input-group-btn
-                            button.btn.btn-default(type='submit', id='submitSearch')
-                                i.fa.fa-search
-    .row
-        .col-sm-12
-            form(method='GET', action='/questions/view')
-                if searchQuery != undefined
-                    +sortDropDownList('/questions/find?search=' + searchQuery + '&')
-                else
-                    +sortDropDownList('/questions/find?')
+                        input.form-control(id='searchInput', name='search',
+                                           placeholder='Search for questions...',
+                                           autofocus=searchQuery === undefined
+                                           value=searchQuery)
+                        div.input-group-btn
+                            button.btn.btn-default(id='searchButton',
+                                                   type='submit')
+                                i.fa.fa-search.fa-label
+                                | Search
+                            button.btn.btn-default.dropdown-toggle(id='sortButton',
+                                                                   type='button',
+                                                                   data-toggle='dropdown')
+                                | Sort Results&nbsp;
+                                span.caret
+                            ul.dropdown-menu
+                                li.dropdown-header Sort by date
+                                li(id='newestFirstLi',
+                                   onclick='$("#sortTypeInput").val("dateDes"); $("#searchForm").submit()')
+                                    a(href='#') Newest first
+                                li(id='oldestFirstLi',
+                                   onclick='$("#sortTypeInput").val("dateAsc"); $("#searchForm").submit()')
+                                    a(href='#') Oldest first
+                                li.divider
+                                li.dropdown-header Sort by vote score
+                                li(id='highestScoreFirstLi',
+                                   onclick='$("#sortTypeInput").val("voteDes"); $("#searchForm").submit()')
+                                    a(href='#') Highest score first
+                                li(id='lowestScoreFirstLi',
+                                   onclick='$("#sortTypeInput").val("voteAsc"); $("#searchForm").submit()')
+                                    a(href='#') Lowest score first
+                input(id='sortTypeInput', type='hidden', name='sortType',
+                      value=sortType === undefined ? 'dateDes' : sortType)
 
     if questions.length == 0
+        // No questions or no search results message
         .row
             .col-md-12
-                p(id='noQuestionMsg')
-                    if searchString === undefined
+                p(id='noQuestionsPara')
+                    if searchQuery === undefined
                         | No questions have been submitted. Why not write one of
                         | your own?
                     else
                         | No results found.
+
     else
-        .row
+        // Questions
+        .row(id='questions')
             each question in questions
-                .col-md-12
+                .col-md-12(id='q' + question.id)
                     +question(question.id, question.title, question.text,
                               question.submitter,  question.date,
                               question.upVoted, question.downVoted,
                               question.voteScore, user)
 
+    // Pagination
     .form-group
-        +pagination(currPage, '/questions/find')
+        ul.pagination
+            if currPage == 1
+                li.disabled
+                    a Prev
+            else
+                li
+                    a(href='/questions/find?page=#{curr - 1}') Prev
+
+            if hasNextPage
+                li
+                    a(href='/questions/find?page=#{curr + 1}') Next
+            else
+                li.disabled
+                    a Next
 
 mixin question(id, title, text, submitter, date, upVoted, downVoted, count, user)
     .panel.panel-default
@@ -77,37 +113,3 @@ mixin question(id, title, text, submitter, date, upVoted, downVoted, count, user
             span.text-muted(id='q' + id + '_meta')
                 | Submitted by #{submitter} on
                 | #{moment(date.toISOString()).format('YYYY-MM-DD HH:mm:ss')}
-
-mixin pagination(curr, base)
-    ul.pagination
-        if curr == 1
-            li.disabled
-                a Prev
-        else
-            li
-                a(href='#{base}?page=#{curr - 1}') Prev
-
-        if hasNextPage
-            li
-                a(href='#{base}?page=#{curr + 1}') Next
-        else
-            li.disabled
-                a Next
-
-mixin sortDropDownList(baseUrl)
-    .dropdown
-        button.btn.btn-default.dropdown-toggle(type='button', data-toggle='dropdown')
-            | Sort searched result
-            span.caret
-        ul.dropdown-menu
-            li.dropdown-header Sort Date By
-            li
-                a(href='#{baseUrl}sortType=dateAsc') Ascending
-            li
-                a(href='#{baseUrl}sortType=dateDes') Descending
-            li.divider
-            li.dropdown-header Sort By Vote
-            li
-                a(href='#{baseUrl}sortType=voteAsc') Low to High
-            li
-                a(href='#{baseUrl}sortType=voteDes') High to Low
