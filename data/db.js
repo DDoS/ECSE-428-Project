@@ -228,18 +228,7 @@ var Database = function(dbName){
         );
     };
 
-    self.getNewQuestions = function(since, limit, offset, keywords, getDone) {
-        if (since === undefined) {
-            since = SMALLEST_DATE;
-        } else if (since > new Date()) {
-            throw Error("Since date is in the future");
-        }
-        if (limit === undefined) {
-            limit = 10;
-        }
-        if (offset === undefined) {
-            offset = 0;
-        }
+    self.findQuestions = function(options, getDone) {
         pg.connect(
             config,
             function(error, client, done) {
@@ -247,22 +236,13 @@ var Database = function(dbName){
                     console.error(error);
                     throw new Error('Error creating query');
                 }
-                var whereClause = ' WHERE date >= $1 ';
-                if (typeof(keywords) === "string") {
-                    var keywordArray = keywords.match(/\S+/g);
-                    var searchQuery = keywordArray[0];
-                    for (var i = 1; i<keywordArray.length; i++) {
-                        searchQuery += '|' + keywordArray[i];
-                    }
-                    whereClause += "AND (to_tsvector('english', title) @@ to_tsquery('english','" + searchQuery + "')";
-                    whereClause += "OR to_tsvector('english', text) @@ to_tsquery('english','" + searchQuery + "'))";
-                }
+                var whereClause = options.genWhereClause(undefined);
                 client.query(
                     'SELECT id, title, text, date, submitter ' +
-                        'FROM ' + questionTable + whereClause +
+                        'FROM ' + questionTable + ' ' + whereClause[0] +
                         'ORDER BY date DESC ' +
-                        'LIMIT $2 OFFSET $3;',
-                    [since, limit, offset],
+                        'OFFSET $1 LIMIT $2;',
+                    whereClause[1],
                     function(error, result) {
                         done();
                         if (error) {
@@ -358,20 +338,9 @@ var Database = function(dbName){
         );
     };
 
-    self.getNewArguments = function (questionID, type, since, limit, offset, keywords, getDone) {
+    self.findArguments = function (questionID, options, getDone) {
         if (questionID === undefined) {
             throw new Error('question ID is undefined');
-        }
-        if (since === undefined) {
-            since = SMALLEST_DATE;
-        } else if (since > new Date()) {
-            throw Error("Since date is in the future");
-        }
-        if (limit === undefined) {
-            limit = 10;
-        }
-        if (offset === undefined) {
-            offset = 0;
         }
         pg.connect(
             config,
@@ -380,27 +349,13 @@ var Database = function(dbName){
                     console.error(error);
                     throw new Error('Error creating query');
                 }
-                // If the type is specified, add it to the where condition
-                var whereClause = ' WHERE questionID = $1 AND date >= $2 ';
-                var queryArgs = [questionID, since, limit, offset];
-                if (type === ArgumentType.CON || type === ArgumentType.PRO) {
-                    whereClause += 'AND type = $5 ';
-                    queryArgs.push(type);
-                }
-                if (typeof(keywords) === "string") {
-                    var keywordArray = keywords.match(/\S+/g);
-                    var searchQuery = keywordArray[0];
-                    for (var i = 1; i<keywordArray.length; i++) {
-                        searchQuery += '|' + keywordArray[i];
-                    }
-                    whereClause += "AND to_tsvector(text) @@ to_tsquery('" + searchQuery + "')";
-                }
+                var whereClause = options.genWhereClause(questionID);
                 client.query(
                     'SELECT id, type, text, date, submitter ' +
-                        'FROM ' + argumentTable + whereClause +
+                        'FROM ' + argumentTable + ' ' + whereClause[0] +
                         'ORDER BY date DESC ' +
-                        'LIMIT $3 OFFSET $4;',
-                    queryArgs,
+                        'OFFSET $1 LIMIT $2;',
+                    whereClause[1],
                     function(error, result) {
                         done();
                         if (error) {
@@ -694,6 +649,80 @@ var VoteType = Object.freeze({
     "NONE": 0
 });
 
+var SearchOptions = function() {
+    var self = this;
+    self.offset = 0;
+    self.limit = 10;
+    self.type = undefined;
+    self.since = undefined;
+    self.keywords = undefined;
+
+    self.withOffset = function(offset) {
+        if (offset === undefined) {
+            throw new Error('Undefined offset');
+        }
+        self.offset = offset;
+        return self;
+    }
+
+    self.withLimit = function(limit) {
+        if (limit === undefined) {
+            throw new Error('Undefined limit');
+        }
+        self.limit = limit;
+        return self;
+    }
+
+    self.withType = function(type) {
+        if (type !== ArgumentType.CON && type !== ArgumentType.PRO) {
+            throw new Error('Invalid type');
+        }
+        self.type = type;
+        return self;
+    }
+
+    self.withSince = function(since) {
+        if (since === undefined) {
+            throw new Error('Undefined since');
+        }
+        self.since = since;
+        return self;
+    }
+
+    self.withKeywords = function(keywords) {
+        if (typeof(keywords) === 'string' && !stringEmpty(keywords)) {
+            self.keywords = keywords;
+        }
+        return self;
+    }
+
+    self.genWhereClause = function(questionID) {
+        var conditions = [];
+        var queryArgs = [];
+        queryArgs.push(self.offset);
+        queryArgs.push(self.limit);
+        var i = 3;
+        if (questionID !== undefined) {
+            conditions.push('questionID = $' + i++);
+            queryArgs.push(questionID);
+        }
+        if (self.type !== undefined) {
+            conditions.push('type = $' + i++);
+            queryArgs.push(self.type);
+        }
+        if (self.since !== undefined) {
+            conditions.push('date >= $' + i++);
+            queryArgs.push(self.since);
+        }
+        if (self.keywords !== undefined) {
+            conditions.push('to_tsvector(title || \' \' || text) @@ plainto_tsquery($' + i++ + ')');
+            queryArgs.push(self.keywords);
+        }
+        var whereClause = conditions.length === 0 ? '' : 'WHERE ' + conditions.join(' AND ')
+        return [whereClause, queryArgs];
+    }
+}
+
 function stringEmpty(string) {
     return !string || string.trim().length === 0;
 }
@@ -704,3 +733,4 @@ module.exports.Question = Question;
 module.exports.ArgumentType = ArgumentType;
 module.exports.Argument = Argument;
 module.exports.VoteType = VoteType;
+module.exports.SearchOptions = SearchOptions;

@@ -131,7 +131,7 @@ describe('Database', function() {
         });
     });
 
-    describe('getNewQuestions(since, limit, offset, keywords, getDone)', function() {
+    describe('findQuestions(options, getDone)', function() {
         var someDate = undefined;
         var numberAfterThatDate = 0;
 
@@ -162,7 +162,8 @@ describe('Database', function() {
 
         it('Should return at most the 10 newest questions in descending date, when no date, limit or offset is defined',
             function(done) {
-                database.getNewQuestions(undefined, undefined, undefined, undefined, function(questions) {
+                var options = new db.SearchOptions();
+                database.findQuestions(options, function(questions) {
                     assert.equal(10, questions.length);
                     assert(isSorted(questions));
                     done();
@@ -172,7 +173,8 @@ describe('Database', function() {
 
         it('Should return the newest questions in descending date, up to a given limit, when no date or offset is defined',
             function(done) {
-                database.getNewQuestions(undefined, 5, undefined, undefined, function(questions) {
+                var options = new db.SearchOptions().withLimit(5);
+                database.findQuestions(options, function(questions) {
                     assert.equal(5, questions.length);
                     assert(isSorted(questions));
                     done();
@@ -182,7 +184,8 @@ describe('Database', function() {
 
         it('Should return the newest questions in descending date, before the given date, up to a given limit when no offset is given',
             function(done) {
-                database.getNewQuestions(someDate, 20, undefined, undefined, function(questions) {
+                var options = new db.SearchOptions().withLimit(20).withSince(someDate);
+                database.findQuestions(options, function(questions) {
                     assert.equal(numberAfterThatDate, questions.length);
                     assert(isSorted(questions));
                     questions.forEach(function(question, index, array) {
@@ -195,12 +198,14 @@ describe('Database', function() {
 
         it('Should return the newest questions in descending date, up to a given limit, starting at a given offset, when no date is defined',
             function(done) {
-                database.getNewQuestions(undefined, 10, 0, undefined, function(questions) {
+                var options1 = new db.SearchOptions().withLimit(10).withOffset(0);
+                database.findQuestions(options1, function(questions) {
                     // Get the first 10 questions
                     assert.equal(10, questions.length);
                     assert(isSorted(questions));
                     // Get the other 10
-                    database.getNewQuestions(undefined, 10, 10, undefined, function(restOfQuestions) {
+                    var options2 = new db.SearchOptions().withLimit(10).withOffset(10);
+                    database.findQuestions(options2, function(restOfQuestions) {
                         assert.equal(10, restOfQuestions.length);
                         // Append both question arrays
                         questions.forEach(function(question, index, array) {
@@ -216,15 +221,6 @@ describe('Database', function() {
                 });
             }
         );
-
-        it('Should not allow since dates in the future', function() {
-            assert.throws(
-                function() {
-                    database.getNewQuestions(new Date('2018-01-01'), undefined, undefined, undefined, function() {});
-                },
-                Error, 'Since date is in the future'
-            );
-        });
     });
 
     describe('createArgument(questionID, type, text, submitter, createDone)', function() {
@@ -254,7 +250,6 @@ describe('Database', function() {
                     'Small loan of a million dollars.',
                 'Dude',
                 function(argument) {
-                    assert.equal(1, argument.id);
                     assert.strictEqual(db.ArgumentType.CON, argument.type);
                     assert.equal(
                         'Can\'t stump the Trump!\n' +
@@ -316,7 +311,7 @@ describe('Database', function() {
         });
     });
 
-    describe('getNewArguments(questionID, type, since, limit, offset, getDone)', function() {
+    describe('findArguments(questionID, type, since, limit, offset, getDone)', function() {
         var questionID = undefined;
         var someDate = undefined;
         var numberAfterThatDate = 0;
@@ -350,7 +345,8 @@ describe('Database', function() {
 
         it('Should return at most the 10 newest arguments in descending date, when no type, date, limit or offset is defined',
             function(done) {
-                database.getNewArguments(questionID, undefined, undefined, undefined, undefined, undefined, function (args) {
+                var options = new db.SearchOptions();
+                database.findArguments(questionID, options, function (args) {
                     assert.equal(10, args.length);
                     assert(isSorted(args));
                     done();
@@ -360,7 +356,8 @@ describe('Database', function() {
 
         it('Should return the newest arguments in descending date, up to a given limit, when no type, date or offset is defined',
             function(done) {
-                database.getNewArguments(questionID, undefined, undefined, 5, undefined, undefined, function (args) {
+                var options = new db.SearchOptions().withLimit(5);
+                database.findArguments(questionID, options, function (args) {
                     assert.equal(5, args.length);
                     assert(isSorted(args));
                     done();
@@ -370,7 +367,8 @@ describe('Database', function() {
 
         it('Should return the newest arguments in descending date, before the given date, up to a given limit when no type or offset is given',
             function(done) {
-                database.getNewArguments(questionID, undefined, someDate, 20, undefined, undefined, function (args) {
+                var options = new db.SearchOptions().withSince(someDate).withLimit(20);
+                database.findArguments(questionID, options, function (args) {
                     assert.equal(numberAfterThatDate, args.length);
                     assert(isSorted(args));
                     args.forEach(function (argument, index, array) {
@@ -383,12 +381,14 @@ describe('Database', function() {
 
         it('Should return the newest arguments in descending date, up to a given limit, starting at a given offset, when no type or date is defined',
             function(done) {
-                database.getNewArguments(questionID, undefined, undefined, 10, 0, undefined, function (args) {
+                var options = new db.SearchOptions().withLimit(10).withOffset(0);
+                database.findArguments(questionID, options, function (args) {
                     // Get the first 10 arguments
                     assert.equal(10, args.length);
                     assert(isSorted(args));
                     // Get the other 10
-                    database.getNewArguments(questionID, undefined, undefined, 10, 10, undefined, function (restOfArguments) {
+                    var options = new db.SearchOptions().withLimit(10).withOffset(10);
+                    database.findArguments(questionID, options, function (restOfArguments) {
                         assert.equal(10, restOfArguments.length);
                         // Append both argument arrays
                         args.forEach(function (argument, index, array) {
@@ -407,14 +407,16 @@ describe('Database', function() {
 
         it('Should return at most the 10 newest arguments in descending date for the given type, when no date, limit or offset is defined',
             function(done) {
-                database.getNewArguments(questionID, db.ArgumentType.PRO, undefined, undefined, undefined, undefined, function (proArgs) {
+                var options = new db.SearchOptions().withType(db.ArgumentType.PRO);
+                database.findArguments(questionID, options, function (proArgs) {
                     assert.equal(10, proArgs.length);
                     assert(isSorted(proArgs));
                     proArgs.forEach(function (argument, index, array) {
                         assert.strictEqual(db.ArgumentType.PRO, argument.type);
                     });
                     // Now check the con args
-                    database.getNewArguments(questionID, db.ArgumentType.CON, undefined, undefined, undefined, undefined, function (conArgs) {
+                    var options = new db.SearchOptions().withType(db.ArgumentType.CON);
+                    database.findArguments(questionID, options, function (conArgs) {
                         assert.equal(10, conArgs.length);
                         assert(isSorted(conArgs));
                         conArgs.forEach(function (argument, index, array) {
@@ -433,15 +435,6 @@ describe('Database', function() {
                 });
             }
         );
-
-        it('Should not allow since dates in the future', function() {
-            assert.throws(
-                function() {
-                    database.getNewQuestions(new Date('2018-01-01'), undefined, undefined, undefined, function() {});
-                },
-                Error, 'Since date is in the future'
-            );
-        });
     });
 
     describe('setQuestionVote(questionID, username, vote, setDone)', function() {

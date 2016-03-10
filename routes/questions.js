@@ -126,8 +126,9 @@ router.get('/find', function(req, res) {
 
     function getNewQuestions(done, error) {
         try {
-            database.getNewQuestions(undefined, undefined, pageNum * 10,
-                req.query.search,
+            var options = new db.SearchOptions().withOffset(pageNum * 10).withKeywords(req.query.search);
+            database.findQuestions(
+                options,
                 function(questions) {
                     async.each(questions, function(question, done) {
                         getQuestionVoteScoreAndStatus(req, database, question,
@@ -301,8 +302,10 @@ router.get('/view', function(req, res) {
     }
 
     function getArguments(question, done) {
-        database.getNewArguments(question.id, db.ArgumentType.PRO, undefined, undefined, pageNum * 10, req.query.search !== undefined && req.query.search.trim() === '' ? undefined : req.query.search, function (argsFor) {
-            database.getNewArguments(question.id, db.ArgumentType.CON, undefined, undefined, pageNum * 10, req.query.search !== undefined && req.query.search.trim() === '' ? undefined : req.query.search, function (argsAgainst) {
+        var options = new db.SearchOptions().withType(db.ArgumentType.PRO).withOffset(pageNum * 10).withKeywords(req.query.search);
+        database.findArguments(question.id, options, function (argsFor) {
+            options.withType(db.ArgumentType.CON);
+            database.findArguments(question.id, options, function (argsAgainst) {
                 var arguments = argsFor.concat(argsAgainst);
                 async.each(arguments,
                     function (argument, done) {
