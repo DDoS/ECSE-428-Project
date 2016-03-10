@@ -142,7 +142,7 @@ describe('Database', function() {
                 questions = [];
                 var j = 0;
                 for (var i = 0; i < 20; i++) {
-                    database.createQuestion('Title', 'Text', 'Spammer', function(question) {
+                    database.createQuestion('Title' + i, 'Text' + i, 'Spammer', function(question) {
                         questions.push(question);
                         if (++j >= 20) {
                             // Find the date of the question in the middle
@@ -221,6 +221,22 @@ describe('Database', function() {
                 });
             }
         );
+
+        it('Should return the questions with given keywords', function(done) {
+            var options = new db.SearchOptions().withKeywords('text1');
+            database.findQuestions(options, function (questions) {
+                assert.equal(1, questions.length);
+                assert.equal('Title1', questions[0].title);
+                assert.equal('Text1', questions[0].text);
+                options.withKeywords('title3');
+                database.findQuestions(options, function (questions) {
+                    assert.equal(1, questions.length);
+                    assert.equal('Title3', questions[0].title);
+                    assert.equal('Text3', questions[0].text);
+                    done();
+                });
+            });
+        });
     });
 
     describe('createArgument(questionID, type, text, submitter, createDone)', function() {
@@ -311,7 +327,7 @@ describe('Database', function() {
         });
     });
 
-    describe('findArguments(questionID, type, since, limit, offset, getDone)', function() {
+    describe('findArguments(questionID, options, getDone)', function() {
         var questionID = undefined;
         var someDate = undefined;
         var numberAfterThatDate = 0;
@@ -324,7 +340,7 @@ describe('Database', function() {
                     args = [];
                     var j = 0;
                     for (var i = 0; i < 20; i++) {
-                        database.createArgument(questionID, i % 2 == 0, 'Text', 'Scammer', function(argument) {
+                        database.createArgument(questionID, i % 2 == 0, 'Text' + i, 'Scammer', function(argument) {
                             args.push(argument);
                             if (++j >= 20) {
                                 // Find the date of the argument in the middle
@@ -435,6 +451,15 @@ describe('Database', function() {
                 });
             }
         );
+
+        it('Should return the arguments with given keywords', function(done) {
+            var options = new db.SearchOptions().withKeywords('text1');
+            database.findArguments(questionID, options, function (args) {
+                assert.equal(1, args.length);
+                assert.equal('Text1', args[0].text);
+                done();
+            });
+        });
     });
 
     describe('setQuestionVote(questionID, username, vote, setDone)', function() {

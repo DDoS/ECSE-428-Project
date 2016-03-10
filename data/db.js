@@ -239,7 +239,7 @@ var Database = function(dbName){
                 var whereClause = options.genWhereClause(undefined);
                 client.query(
                     'SELECT id, title, text, date, submitter ' +
-                        'FROM ' + questionTable + ' ' + whereClause[0] +
+                        'FROM ' + questionTable + ' ' + whereClause[0] + ' ' +
                         'ORDER BY date DESC ' +
                         'OFFSET $1 LIMIT $2;',
                     whereClause[1],
@@ -352,7 +352,7 @@ var Database = function(dbName){
                 var whereClause = options.genWhereClause(questionID);
                 client.query(
                     'SELECT id, type, text, date, submitter ' +
-                        'FROM ' + argumentTable + ' ' + whereClause[0] +
+                        'FROM ' + argumentTable + ' ' + whereClause[0] + ' ' +
                         'ORDER BY date DESC ' +
                         'OFFSET $1 LIMIT $2;',
                     whereClause[1],
@@ -715,7 +715,13 @@ var SearchOptions = function() {
             queryArgs.push(self.since);
         }
         if (self.keywords !== undefined) {
-            conditions.push('to_tsvector(title || \' \' || text) @@ plainto_tsquery($' + i++ + ')');
+            var text;
+            if (questionID !== undefined) {
+                text = 'text';
+            } else {
+                text = 'title || \' \' || text';
+            }
+            conditions.push('to_tsvector('+ text + ') @@ plainto_tsquery($' + i++ + ')');
             queryArgs.push(self.keywords);
         }
         var whereClause = conditions.length === 0 ? '' : 'WHERE ' + conditions.join(' AND ')
