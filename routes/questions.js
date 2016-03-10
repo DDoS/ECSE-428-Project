@@ -84,30 +84,6 @@ router.get('/find', function(req, res) {
 
     // Retrieve questions matching keyword from database and display them
     getNewQuestions(function(questions) {
-        if (req.query.sortType != undefined) {
-            switch (req.query.sortType) {
-                case "dateAsc":
-                    questions.sort(function(a, b) {
-                        return new Date(a.date) - new Date(b.date);
-                    });
-                    break;
-                case "dateDes":
-                    questions.sort(function(a, b) {
-                        return new Date(b.date) - new Date(a.date);
-                    });
-                    break;
-                case "voteAsc":
-                    questions.sort(function(a, b) {
-                        return a.voteScore - b.voteScore;
-                    });
-                    break;
-                case "voteDes":
-                    questions.sort(function(a, b) {
-                        return b.voteScore - a.voteScore;
-                    });
-                    break;
-            }
-        }
         res.render('questions/find', {
             title: pageTitle,
             searchQuery: req.query.search,
@@ -127,6 +103,22 @@ router.get('/find', function(req, res) {
     function getNewQuestions(done, error) {
         try {
             var options = new db.SearchOptions().withOffset(pageNum * 10).withKeywords(req.query.search);
+            if (req.query.sortType != undefined) {
+                switch (req.query.sortType) {
+                    case "dateAsc":
+                        options.orderByDate().orderAscending();
+                        break;
+                    case "dateDes":
+                        options.orderByDate().orderDescending();
+                        break;
+                    case "voteAsc":
+                        options.orderByScore().orderAscending();
+                        break;
+                    case "voteDes":
+                        options.orderByScore().orderDescending();
+                        break;
+                }
+            }
             database.findQuestions(
                 options,
                 function(questions) {
@@ -210,43 +202,6 @@ router.get('/view', function(req, res) {
     // Get specified question and display to user
     getQuestion(function(question, argsFor, argsAgainst) {
 
-        if(req.query.sortType != undefined) {
-            switch (req.query.sortType) {
-                case "dateAsc":
-                    argsFor.sort(function (a, b) {
-                        return new Date(a.date) - new Date(b.date);
-                    });
-                    argsAgainst.sort(function (a, b) {
-                        return new Date(a.date) - new Date(b.date);
-                    });
-                    break;
-                case "dateDes":
-                    argsFor.sort(function (a, b) {
-                        return new Date(b.date) - new Date(a.date);
-                    });
-                    argsAgainst.sort(function (a, b) {
-                        return new Date(b.date) - new Date(a.date);
-                    });
-                    break;
-                case "voteAsc":
-                    argsFor.sort(function (a, b) {
-                        return a.voteScore - b.voteScore;
-                    });
-                    argsAgainst.sort(function (a, b) {
-                        return a.voteScore - b.voteScore;
-                    });
-                    break;
-                case "voteDes":
-                    argsFor.sort(function (a, b) {
-                        return b.voteScore - a.voteScore;
-                    });
-                    argsAgainst.sort(function (a, b) {
-                        return b.voteScore - a.voteScore;
-                    });
-                    break;
-            }
-        }
-
         // Check if this is a search query
         if (req.query.search !== undefined) {
             // Check if search query is valid
@@ -303,6 +258,22 @@ router.get('/view', function(req, res) {
 
     function getArguments(question, done) {
         var options = new db.SearchOptions().withType(db.ArgumentType.PRO).withOffset(pageNum * 10).withKeywords(req.query.search);
+        if (req.query.sortType != undefined) {
+            switch (req.query.sortType) {
+                case "dateAsc":
+                    options.orderByDate().orderAscending();
+                    break;
+                case "dateDes":
+                    options.orderByDate().orderDescending();
+                    break;
+                case "voteAsc":
+                    options.orderByScore().orderAscending();
+                    break;
+                case "voteDes":
+                    options.orderByScore().orderDescending();
+                    break;
+            }
+        }
         database.findArguments(question.id, options, function (argsFor) {
             options.withType(db.ArgumentType.CON);
             database.findArguments(question.id, options, function (argsAgainst) {

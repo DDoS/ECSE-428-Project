@@ -236,13 +236,10 @@ var Database = function(dbName){
                     console.error(error);
                     throw new Error('Error creating query');
                 }
-                var whereClause = options.genWhereClause(undefined);
+                var query = options.genQuery(undefined);
                 client.query(
-                    'SELECT id, title, text, date, submitter ' +
-                        'FROM ' + questionTable + ' ' + whereClause[0] + ' ' +
-                        'ORDER BY date DESC ' +
-                        'OFFSET $1 LIMIT $2;',
-                    whereClause[1],
+                    query[0],
+                    query[1],
                     function(error, result) {
                         done();
                         if (error) {
@@ -349,13 +346,10 @@ var Database = function(dbName){
                     console.error(error);
                     throw new Error('Error creating query');
                 }
-                var whereClause = options.genWhereClause(questionID);
+                var query = options.genQuery(questionID);
                 client.query(
-                    'SELECT id, type, text, date, submitter ' +
-                        'FROM ' + argumentTable + ' ' + whereClause[0] + ' ' +
-                        'ORDER BY date DESC ' +
-                        'OFFSET $1 LIMIT $2;',
-                    whereClause[1],
+                    query[0],
+                    query[1],
                     function(error, result) {
                         done();
                         if (error) {
@@ -656,6 +650,8 @@ var SearchOptions = function() {
     self.type = undefined;
     self.since = undefined;
     self.keywords = undefined;
+    self.orderType = 0;
+    self.ascending = false;
 
     self.withOffset = function(offset) {
         if (offset === undefined) {
@@ -696,13 +692,39 @@ var SearchOptions = function() {
         return self;
     }
 
-    self.genWhereClause = function(questionID) {
+    self.orderByDate = function() {
+        self.orderType = 0;
+        return self;
+    }
+
+    self.orderByScore = function() {
+        self.orderType = 1;
+        return self;
+    }
+
+    self.orderAscending = function() {
+        self.ascending = true;
+        return self;
+    }
+
+    self.orderDescending = function() {
+        self.ascending = false;
+        return self;
+    }
+
+    self.genQuery = function(questionID) {
+        var argSearch = questionID !== undefined;
+        // select clause
+        var selectText = 'SELECT ' + (argSearch ? 'id, type, text, date, submitter' : 'id, title, text, date, submitter');
+        // from clause
+        var fromText = 'FROM ' + (argSearch ? argumentTable : questionTable);
+        // where clause
         var conditions = [];
         var queryArgs = [];
         queryArgs.push(self.offset);
         queryArgs.push(self.limit);
         var i = 3;
-        if (questionID !== undefined) {
+        if (argSearch) {
             conditions.push('questionID = $' + i++);
             queryArgs.push(questionID);
         }
@@ -716,7 +738,7 @@ var SearchOptions = function() {
         }
         if (self.keywords !== undefined) {
             var text;
-            if (questionID !== undefined) {
+            if (argSearch) {
                 text = 'text';
             } else {
                 text = 'title || \' \' || text';
@@ -724,8 +746,37 @@ var SearchOptions = function() {
             conditions.push('to_tsvector('+ text + ') @@ plainto_tsquery($' + i++ + ')');
             queryArgs.push(self.keywords);
         }
-        var whereClause = conditions.length === 0 ? '' : 'WHERE ' + conditions.join(' AND ')
-        return [whereClause, queryArgs];
+        var whereText = conditions.length !== 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+        // order clause
+        var orderText;
+        if (self.orderType === 0) {
+            orderText = 'ORDER BY date';
+        } else if (self.orderType === 1) {
+            if (argSearch) {
+                fromText += ' LEFT OUTER JOIN (' +
+                    'SELECT argumentID, sum(vote) AS score ' +
+                        'FROM argument_votes ' +
+                        'WHERE questionID = $3 ' +
+                        'GROUP BY argumentID' +
+                ') scores ON arguments.id = scores.argumentID'
+            } else {
+                fromText +=  ' LEFT OUTER JOIN (' +
+                    'SELECT questionID, sum(vote) AS score ' +
+                        'FROM question_votes ' +
+                        'GROUP BY questionID' +
+                ') scores ON questions.id = scores.questionID'
+            }
+            orderText = 'ORDER BY CASE WHEN score IS NULL THEN 0 ELSE score END';
+        } else {
+            throw new Error('Unknown order type');
+        }
+        if (self.ascending) {
+            orderText += ' ASC';
+        } else {
+            orderText += ' DESC';
+        }
+        var queryText = selectText + ' ' + fromText + ' ' + whereText + ' ' + orderText + ' ' + 'OFFSET $1 LIMIT $2;'
+        return [queryText, queryArgs];
     }
 }
 

@@ -143,18 +143,20 @@ describe('Database', function() {
                 var j = 0;
                 for (var i = 0; i < 20; i++) {
                     database.createQuestion('Title' + i, 'Text' + i, 'Spammer', function(question) {
-                        questions.push(question);
-                        if (++j >= 20) {
-                            // Find the date of the question in the middle
-                            someDate = questions[10].date;
-                            // Count the number of questions made after it
-                            questions.forEach(function(question, index, array) {
-                                if (question.date >= someDate) {
-                                    numberAfterThatDate++;
-                                }
-                            });
-                            done();
-                        }
+                        database.setQuestionVote(question.id, 'Spammer', question.id % 2 == 0 ? -1 : 1, function() {
+                            questions.push(question);
+                            if (++j >= 20) {
+                                // Find the date of the question in the middle
+                                someDate = questions[10].date;
+                                // Count the number of questions made after it
+                                questions.forEach(function(question, index, array) {
+                                    if (question.date >= someDate) {
+                                        numberAfterThatDate++;
+                                    }
+                                });
+                                done();
+                            }
+                        });
                     });
                 }
             });
@@ -162,10 +164,10 @@ describe('Database', function() {
 
         it('Should return at most the 10 newest questions in descending date, when no date, limit or offset is defined',
             function(done) {
-                var options = new db.SearchOptions();
+                var options = new db.SearchOptions().orderAscending();
                 database.findQuestions(options, function(questions) {
                     assert.equal(10, questions.length);
-                    assert(isSorted(questions));
+                    assert(isSorted(questions, 'date'));
                     done();
                 });
             }
@@ -173,10 +175,10 @@ describe('Database', function() {
 
         it('Should return the newest questions in descending date, up to a given limit, when no date or offset is defined',
             function(done) {
-                var options = new db.SearchOptions().withLimit(5);
+                var options = new db.SearchOptions().withLimit(5).orderAscending();
                 database.findQuestions(options, function(questions) {
                     assert.equal(5, questions.length);
-                    assert(isSorted(questions));
+                    assert(isSorted(questions, 'date'));
                     done();
                 });
             }
@@ -184,10 +186,10 @@ describe('Database', function() {
 
         it('Should return the newest questions in descending date, before the given date, up to a given limit when no offset is given',
             function(done) {
-                var options = new db.SearchOptions().withLimit(20).withSince(someDate);
+                var options = new db.SearchOptions().withLimit(20).withSince(someDate).orderAscending();
                 database.findQuestions(options, function(questions) {
                     assert.equal(numberAfterThatDate, questions.length);
-                    assert(isSorted(questions));
+                    assert(isSorted(questions, 'date'));
                     questions.forEach(function(question, index, array) {
                         assert(question.date >= someDate);
                     });
@@ -198,20 +200,20 @@ describe('Database', function() {
 
         it('Should return the newest questions in descending date, up to a given limit, starting at a given offset, when no date is defined',
             function(done) {
-                var options1 = new db.SearchOptions().withLimit(10).withOffset(0);
+                var options1 = new db.SearchOptions().withLimit(10).withOffset(0).orderAscending();
                 database.findQuestions(options1, function(questions) {
                     // Get the first 10 questions
                     assert.equal(10, questions.length);
-                    assert(isSorted(questions));
+                    assert(isSorted(questions, 'date'));
                     // Get the other 10
-                    var options2 = new db.SearchOptions().withLimit(10).withOffset(10);
+                    var options2 = new db.SearchOptions().withLimit(10).withOffset(10).orderAscending();
                     database.findQuestions(options2, function(restOfQuestions) {
                         assert.equal(10, restOfQuestions.length);
                         // Append both question arrays
                         questions.forEach(function(question, index, array) {
                             array.push(restOfQuestions[index]);
                         });
-                        assert(isSorted(questions));
+                        assert(isSorted(questions, 'date'));
                         // Assert no duplicates, all questions have been returned once
                         questions.sort().forEach(function(question, index, array) {
                             assert(index == 0 || question != array[index - 1]);
@@ -234,6 +236,22 @@ describe('Database', function() {
                     assert.equal('Title3', questions[0].title);
                     assert.equal('Text3', questions[0].text);
                     done();
+                });
+            });
+        });
+
+        it('Should optionally return the questions sorted by score', function(done) {
+            var options = new db.SearchOptions().withLimit(20).orderByScore().orderAscending();
+            database.findQuestions(options, function(questions) {
+                var i = 0;
+                questions.forEach(function(question, index, array) {
+                    database.getQuestionVoteScore(question.id, function(score) {
+                        question.score = score;
+                        if (++i === array.length) {
+                            assert(isSorted(array, 'score'));
+                            done();
+                        }
+                    });
                 });
             });
         });
@@ -341,18 +359,20 @@ describe('Database', function() {
                     var j = 0;
                     for (var i = 0; i < 20; i++) {
                         database.createArgument(questionID, i % 2 == 0, 'Text' + i, 'Scammer', function(argument) {
-                            args.push(argument);
-                            if (++j >= 20) {
-                                // Find the date of the argument in the middle
-                                someDate = args[10].date;
-                                // Count the number of arguments made after it
-                                args.forEach(function(argument, index, array) {
-                                    if (argument.date >= someDate) {
-                                        numberAfterThatDate++;
-                                    }
-                                });
-                                done();
-                            }
+                            database.setArgumentVote(questionID, argument.id, 'Scammer', argument.id % 2 == 0 ? -1 : 1, function() {
+                                args.push(argument);
+                                if (++j >= 20) {
+                                    // Find the date of the argument in the middle
+                                    someDate = args[10].date;
+                                    // Count the number of arguments made after it
+                                    args.forEach(function(argument, index, array) {
+                                        if (argument.date >= someDate) {
+                                            numberAfterThatDate++;
+                                        }
+                                    });
+                                    done();
+                                }
+                            });
                         });
                     }
                 });
@@ -361,10 +381,10 @@ describe('Database', function() {
 
         it('Should return at most the 10 newest arguments in descending date, when no type, date, limit or offset is defined',
             function(done) {
-                var options = new db.SearchOptions();
+                var options = new db.SearchOptions().orderAscending();
                 database.findArguments(questionID, options, function (args) {
                     assert.equal(10, args.length);
-                    assert(isSorted(args));
+                    assert(isSorted(args, 'date'));
                     done();
                 });
             }
@@ -372,10 +392,10 @@ describe('Database', function() {
 
         it('Should return the newest arguments in descending date, up to a given limit, when no type, date or offset is defined',
             function(done) {
-                var options = new db.SearchOptions().withLimit(5);
+                var options = new db.SearchOptions().withLimit(5).orderAscending();
                 database.findArguments(questionID, options, function (args) {
                     assert.equal(5, args.length);
-                    assert(isSorted(args));
+                    assert(isSorted(args, 'date'));
                     done();
                 });
             }
@@ -383,10 +403,10 @@ describe('Database', function() {
 
         it('Should return the newest arguments in descending date, before the given date, up to a given limit when no type or offset is given',
             function(done) {
-                var options = new db.SearchOptions().withSince(someDate).withLimit(20);
+                var options = new db.SearchOptions().withSince(someDate).withLimit(20).orderAscending();
                 database.findArguments(questionID, options, function (args) {
                     assert.equal(numberAfterThatDate, args.length);
-                    assert(isSorted(args));
+                    assert(isSorted(args, 'date'));
                     args.forEach(function (argument, index, array) {
                         assert(argument.date >= someDate);
                     });
@@ -397,20 +417,20 @@ describe('Database', function() {
 
         it('Should return the newest arguments in descending date, up to a given limit, starting at a given offset, when no type or date is defined',
             function(done) {
-                var options = new db.SearchOptions().withLimit(10).withOffset(0);
+                var options = new db.SearchOptions().withLimit(10).withOffset(0).orderAscending();
                 database.findArguments(questionID, options, function (args) {
                     // Get the first 10 arguments
                     assert.equal(10, args.length);
-                    assert(isSorted(args));
+                    assert(isSorted(args, 'date'));
                     // Get the other 10
-                    var options = new db.SearchOptions().withLimit(10).withOffset(10);
+                    var options = new db.SearchOptions().withLimit(10).withOffset(10).orderAscending();
                     database.findArguments(questionID, options, function (restOfArguments) {
                         assert.equal(10, restOfArguments.length);
                         // Append both argument arrays
                         args.forEach(function (argument, index, array) {
                             array.push(restOfArguments[index]);
                         });
-                        assert(isSorted(args));
+                        assert(isSorted(args, 'date'));
                         // Assert no duplicates, all arguments have been returned once
                         args.forEach(function (argument, index, array) {
                             assert(index == 0 || argument != array[index - 1]);
@@ -423,18 +443,18 @@ describe('Database', function() {
 
         it('Should return at most the 10 newest arguments in descending date for the given type, when no date, limit or offset is defined',
             function(done) {
-                var options = new db.SearchOptions().withType(db.ArgumentType.PRO);
+                var options = new db.SearchOptions().withType(db.ArgumentType.PRO).orderAscending();
                 database.findArguments(questionID, options, function (proArgs) {
                     assert.equal(10, proArgs.length);
-                    assert(isSorted(proArgs));
+                    assert(isSorted(proArgs, 'date'));
                     proArgs.forEach(function (argument, index, array) {
                         assert.strictEqual(db.ArgumentType.PRO, argument.type);
                     });
                     // Now check the con args
-                    var options = new db.SearchOptions().withType(db.ArgumentType.CON);
+                    var options = new db.SearchOptions().withType(db.ArgumentType.CON).orderAscending();
                     database.findArguments(questionID, options, function (conArgs) {
                         assert.equal(10, conArgs.length);
-                        assert(isSorted(conArgs));
+                        assert(isSorted(conArgs, 'date'));
                         conArgs.forEach(function (argument, index, array) {
                             assert.strictEqual(db.ArgumentType.CON, argument.type);
                         });
@@ -458,6 +478,22 @@ describe('Database', function() {
                 assert.equal(1, args.length);
                 assert.equal('Text1', args[0].text);
                 done();
+            });
+        });
+
+        it('Should optionally return the arguments sorted by score', function(done) {
+            var options = new db.SearchOptions().withLimit(20).orderByScore().orderAscending();
+            database.findArguments(questionID, options, function(arguments) {
+                var i = 0;
+                arguments.forEach(function(argument, index, array) {
+                    database.getArgumentVoteScore(questionID, argument.id, function(score) {
+                        argument.score = score;
+                        if (++i === array.length) {
+                            assert(isSorted(array, 'score'));
+                            done();
+                        }
+                    });
+                });
             });
         });
     });
@@ -714,8 +750,11 @@ describe('Database', function() {
     });
 });
 
-function isSorted(array) {
+function isSorted(array, field) {
     return array.every(function(value, index, array) {
-      return index === 0 || array[index - 1] <= value;
+        if (index === 0) {
+            return true
+        }
+        return array[index - 1][field] <= value[field];
     });
 }
