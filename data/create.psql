@@ -1,0 +1,90 @@
+CREATE TABLE IF NOT EXISTS users (
+    username VARCHAR(64) NOT NULL PRIMARY KEY,
+    salt CHAR(64) NOT NULL,
+    password CHAR(64) NOT NULL,
+    email VARCHAR(128) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS moderators (
+    username VARCHAR(64) NOT NULL PRIMARY KEY REFERENCES users
+);
+
+CREATE TABLE IF NOT EXISTS Admins (
+    username VARCHAR(64) NOT NULL PRIMARY KEY REFERENCES users
+);
+
+CREATE TABLE IF NOT EXISTS questions (
+    id BIGSERIAL PRIMARY KEY,
+    title VARCHAR(256) NOT NULL,
+    text VARCHAR(4096) NOT NULL,
+    date TIMESTAMP DEFAULT now(),
+    submitter VARCHAR(64) NOT NULL REFERENCES users
+);
+
+CREATE TABLE IF NOT EXISTS arguments (
+    id BIGSERIAL,
+    questionID BIGINT NOT NULL REFERENCES questions ,
+    type BOOLEAN NOT NULL,
+    text VARCHAR(4096) NOT NULL,
+    date TIMESTAMP DEFAULT now(),
+    submitter VARCHAR(64) NOT NULL REFERENCES users ,
+    PRIMARY KEY (id, questionID)
+);
+
+CREATE TABLE IF NOT EXISTS question_votes (
+    questionID BIGINT NOT NULL REFERENCES questions ,
+    username VARCHAR(64) NOT NULL REFERENCES users ,
+    vote SMALLINT NOT NULL CHECK (vote = -1 OR vote = 1),
+    PRIMARY KEY (questionID, username)
+);
+
+CREATE OR REPLACE FUNCTION
+    upsertQuestionVote(qid BIGINT, usr VARCHAR(64), v SMALLINT)
+    RETURNS VOID AS
+$$
+    BEGIN
+        LOOP
+            UPDATE question_votes SET vote = v
+            WHERE questionID = qid AND username = usr;
+            IF found THEN
+                RETURN;
+            END IF;
+            BEGIN
+                INSERT INTO question_votes (questionID, username, vote)
+                    VALUES (qid, usr, v);
+                RETURN;
+                EXCEPTION WHEN unique_violation THEN
+            END;
+        END LOOP;
+    END;
+$$ LANGUAGE plpgsql;
+
+CREATE TABLE IF NOT EXISTS argument_votes (
+    questionID BIGINT NOT NULL,
+    argumentID BIGINT NOT NULL,
+    username VARCHAR(64) NOT NULL REFERENCES users ,
+    vote SMALLINT NOT NULL CHECK (vote = -1 OR vote = 1),
+    FOREIGN KEY (questionID, argumentID) REFERENCES arguments (questionID, id),
+    PRIMARY KEY (questionID, argumentID, username)
+);
+
+CREATE OR REPLACE FUNCTION
+    upsertArgumentVote(qid BIGINT, aid BIGINT, usr VARCHAR(64), v SMALLINT)
+    RETURNS VOID AS
+$$
+    BEGIN
+        LOOP
+            UPDATE argument_votes SET vote = v
+            WHERE questionID = qid AND argumentID = aid AND username = usr;
+            IF found THEN
+                RETURN;
+            END IF;
+            BEGIN
+                INSERT INTO argument_votes (questionID, argumentID, username, vote)
+                    VALUES (qid, aid, usr, v);
+                RETURN;
+                EXCEPTION WHEN unique_violation THEN
+            END;
+        END LOOP;
+    END;
+$$ LANGUAGE plpgsql;

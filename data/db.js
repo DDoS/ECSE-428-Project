@@ -1,4 +1,5 @@
 var pg = require('pg');
+var fs = require('fs');
 var crypto = require('crypto');
 
 const SMALLEST_DATE = new Date('1900-01-01');
@@ -13,8 +14,12 @@ const moderatorTable = 'Moderators';
 const adminTable = 'Admins';
 const questionTable = 'Questions';
 const argumentTable = 'Arguments';
-const questionVoteTable = 'QuestionVotes';
-const argumentVoteTable = 'ArgumentVotes';
+const questionVoteTable = 'Question_Votes';
+const argumentVoteTable = 'Argument_Votes';
+
+var createQuery = fs.readFileSync('data/create.psql').toString()
+var genClear = fs.readFileSync('data/gen_clear.psql').toString()
+
 
 var Database = function(dbName){
     var self = this;
@@ -37,86 +42,7 @@ var Database = function(dbName){
                     throw new Error('Error creating query');
                 }
                 client.query(
-                    'CREATE TABLE IF NOT EXISTS ' + userTable + '(' +
-                        'username VARCHAR(64) NOT NULL PRIMARY KEY,' +
-                        'salt CHAR(64) NOT NULL,' +
-                        'password CHAR(64) NOT NULL,' +
-                        'email VARCHAR(128) NOT NULL' +
-                    ');' +
-                    'CREATE TABLE IF NOT EXISTS ' + moderatorTable + ' (' +
-                        'username VARCHAR(64) NOT NULL PRIMARY KEY REFERENCES ' + userTable +
-                    ');' +
-                    'CREATE TABLE IF NOT EXISTS ' + adminTable + ' (' +
-                        'username VARCHAR(64) NOT NULL PRIMARY KEY REFERENCES ' + userTable +
-                    ');' +
-                    'CREATE TABLE IF NOT EXISTS ' + questionTable + ' (' +
-                        'id BIGSERIAL PRIMARY KEY,' +
-                        'title VARCHAR(256) NOT NULL,' +
-                        'text VARCHAR(4096) NOT NULL,' +
-                        'date TIMESTAMP DEFAULT now(),' +
-                        'submitter VARCHAR(64) NOT NULL REFERENCES ' + userTable +
-                    ');' +
-                    'CREATE TABLE IF NOT EXISTS ' + argumentTable + ' (' +
-                        'id BIGSERIAL,' +
-                        'questionID BIGINT NOT NULL REFERENCES ' + questionTable + ',' +
-                        'type BOOLEAN NOT NULL,' +
-                        'text VARCHAR(4096) NOT NULL,' +
-                        'date TIMESTAMP DEFAULT now(),' +
-                        'submitter VARCHAR(64) NOT NULL REFERENCES ' + userTable + ',' +
-                        'PRIMARY KEY (id, questionID)' +
-                    ');' +
-                    'CREATE TABLE IF NOT EXISTS ' + questionVoteTable + ' (' +
-                        'questionID BIGINT NOT NULL REFERENCES ' + questionTable + ',' +
-                        'username VARCHAR(64) NOT NULL REFERENCES ' + userTable + ',' +
-                        'vote SMALLINT NOT NULL CHECK (vote = -1 OR vote = 1),' +
-                        'PRIMARY KEY (questionID, username)' +
-                    ');' +
-                    'CREATE OR REPLACE FUNCTION ' +
-                        'upsertQuestionVote(qid BIGINT, usr VARCHAR(64), v SMALLINT) ' +
-                        'RETURNS VOID AS $$ ' +
-                    'BEGIN ' +
-                        'LOOP ' +
-                            'UPDATE ' + questionVoteTable + ' SET vote = v ' +
-                                'WHERE questionID = qid AND username = usr; ' +
-                            'IF found THEN ' +
-                                'RETURN; ' +
-                            'END IF; ' +
-                            'BEGIN ' +
-                                'INSERT INTO ' + questionVoteTable + ' (questionID, username, vote) ' +
-                                    'VALUES (qid, usr, v); ' +
-                                'RETURN; ' +
-                            'EXCEPTION WHEN unique_violation THEN ' +
-                            'END; ' +
-                        'END LOOP; ' +
-                    'END; ' +
-                    '$$ LANGUAGE plpgsql;' +
-                    'CREATE TABLE IF NOT EXISTS ' + argumentVoteTable + ' (' +
-                        'questionID BIGINT NOT NULL,' +
-                        'argumentID BIGINT NOT NULL,' +
-                        'username VARCHAR(64) NOT NULL REFERENCES ' + userTable + ',' +
-                        'vote SMALLINT NOT NULL CHECK (vote = -1 OR vote = 1),' +
-                        'FOREIGN KEY (questionID, argumentID) REFERENCES ' + argumentTable + ' (questionID, id),' +
-                        'PRIMARY KEY (questionID, argumentID, username)' +
-                    ');' +
-                    'CREATE OR REPLACE FUNCTION ' +
-                        'upsertArgumentVote(qid BIGINT, aid BIGINT, usr VARCHAR(64), v SMALLINT) ' +
-                        'RETURNS VOID AS $$ ' +
-                    'BEGIN ' +
-                        'LOOP ' +
-                            'UPDATE ' + argumentVoteTable + ' SET vote = v ' +
-                                'WHERE questionID = qid AND argumentID = aid AND username = usr; ' +
-                            'IF found THEN ' +
-                                'RETURN; ' +
-                            'END IF; ' +
-                            'BEGIN ' +
-                                'INSERT INTO ' + argumentVoteTable + ' (questionID, argumentID, username, vote) ' +
-                                    'VALUES (qid, aid, usr, v); ' +
-                                'RETURN; ' +
-                            'EXCEPTION WHEN unique_violation THEN ' +
-                            'END; ' +
-                        'END LOOP; ' +
-                    'END; ' +
-                    '$$ LANGUAGE plpgsql;',
+                    createQuery,
                     function(error, result) {
                         done();
                         if (error) {
@@ -137,12 +63,7 @@ var Database = function(dbName){
                 throw new Error('Error creating query');
             }
             client.query(
-                'SELECT \'DROP TABLE IF EXISTS "\' || tablename || \'" CASCADE;\'' +
-                'FROM pg_tables ' +
-                'WHERE schemaname = \'public\';' +
-                'SELECT \'DROP FUNCTION \' || ns.nspname || \'.\' || proname || \'(\' || oidvectortypes(proargtypes) || \');\'' +
-                'FROM pg_proc INNER JOIN pg_namespace ns ON (pg_proc.pronamespace = ns.oid)' +
-                'WHERE ns.nspname = \'public\';',
+                genClear,
                 function(error, result) {
                     if (error) {
                         console.error(error);
