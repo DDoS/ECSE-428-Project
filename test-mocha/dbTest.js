@@ -84,6 +84,33 @@ describe('Database', function() {
             );
         });
     });
+
+    describe('editUserPassword(username, newPasswordText, editDone)', function() {
+        before(function(done) {
+            database.createUser('pepsi_next', 'NSFW', 'I@warned.you', function(user) {
+                done();
+            });
+        });
+
+        it('Should update the user\'s password', function(done) {
+            database.editUserPassword('pepsi_next', 'SO MUCH KARMA', function(editDone) {
+                database.getUser('pepsi_next', function(user) {
+                    assert.equal('pepsi_next', user.username);
+                    assert(user.authenticate('SO MUCH KARMA'));
+                    assert(!user.authenticate('NSFW'));
+                    done();
+                });
+            });
+        });
+
+        it('Should not allow an empty password', function() {
+            assert.throws(
+                function() {
+                    database.editUserEmail('pepsi_next', '', function() {});
+                },
+                Error, 'new password is empty'
+            );
+        });
     });
 
     describe('createQuestion(title, text, submitter, createDone)', function() {

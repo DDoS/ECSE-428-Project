@@ -177,6 +177,37 @@ var Database = function(dbName){
         );
     }
 
+    self.editUserPassword = function(username, newPasswordText, editDone) {
+        if (stringEmpty(newPasswordText)) {
+            throw new Error('new password is empty');
+        }
+        // Generate a new salt and hash the new password
+        var salt = crypto.randomBytes(32).toString('hex');
+        var hash = crypto.createHash('sha256');
+        var password = hash.update(newPasswordText).update(salt).digest('hex');
+        pg.connect(
+            config,
+            function(error, client, done) {
+                if (error) {
+                    console.error(error);
+                    throw new Error('Error creating query');
+                }
+                client.query(
+                    'UPDATE users SET salt = $2, password = $3 WHERE username = $1',
+                    [username, salt, password],
+                    function(error, result) {
+                        done();
+                        if (error) {
+                            console.error(error);
+                            throw new Error('Could update user password');
+                        }
+                        editDone();
+                    }
+                );
+            }
+        );
+    }
+
     self.createQuestion = function(title, text, submitter, createDone) {
         if (stringEmpty(title)) {
             throw new Error('title is empty');
