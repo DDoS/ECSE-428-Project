@@ -17,6 +17,7 @@ var db = require('./data/db');
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var questions = require('./routes/questions');
+var arguments = require('./routes/arguments');
 
 dotenv.load({ path: __dirname + '/.env' });
 
@@ -64,6 +65,7 @@ if (app.get('env') !== 'test') {
 app.use('/', routes);
 app.use('/users', users);
 app.use('/questions',questions);
+app.use('/arguments', arguments);
 
 // 404 error handler
 app.use(function(req, res, next) {

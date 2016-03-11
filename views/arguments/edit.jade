@@ -1,0 +1,19 @@
+extends ../layout
+
+block content
+    .page-header
+        h2 #{title}
+
+        form(method='POST', action='/arguments/edit?q=#{questionID}&a=#{argument.id}')
+            input(type='hidden', name='_csrf', value=csrfToken)
+            .form-group
+                textarea.form-control(id='argumentTextarea', name='argument', rows='10', placeholder="What's your argument?")
+                    | #{argument.text}
+            .form-group
+                .btn-group
+                    button.btn.btn-success(id='submitButton', type='submit')
+                        i.fa.fa-label.fa-paper-plane
+                        | Submit
+                    button.btn.btn-danger(id='deleteButton', type='submit')
+                        i.fa.fa-label.fa-paper-plane
+                        | Delete

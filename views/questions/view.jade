@@ -180,6 +180,9 @@ mixin argument(qid, aid, text, submitter, date, upVoted, downVoted, count)
             .vote-panel-text(id='a' + aid + '_text')
                 each para in text.split('\n')
                     p= para
+
+            .edit-panel
+                a(href="/arguments/edit?q=#{qid}&a=#{aid}") Edit
         .panel-footer
             span.text-muted(id='a' + aid + '_meta')
                 | Submitted by #{submitter} on
