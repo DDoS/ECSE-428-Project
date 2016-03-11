@@ -113,6 +113,73 @@ describe('Database', function() {
         });
     });
 
+    describe('deleteUser(username, deleteDone)', function() {
+        var questionID = undefined;
+        var argumentID = undefined;
+        var copyPasta =
+            'Here\'s the thing. You said a "jackdaw is a crow."\n' +
+            'Is it in the same family? Yes. No one\'s arguing that.\n' +
+            'As someone who is a scientist who studies crows, I am telling you, ' +
+            'specifically, in science, no one calls jackdaws crows. If you want ' +
+            'to be "specific" like you said, then you shouldn\'t either. They\'re not the same thing.\n' +
+            'If you\'re saying "crow family" you\'re referring to the taxonomic ' +
+            'grouping of Corvidae, which includes things from nutcrackers to blue jays to ravens.\n' +
+            'So your reasoning for calling a jackdaw a crow is because random people ' +
+            '"call the black ones crows?" Let\'s get grackles and blackbirds in there, then, too.\n' +
+            'Also, calling someone a human or an ape? It\'s not one or the other, ' +
+            'that\'s not how taxonomy works. They\'re both. A jackdaw is a jackdaw ' +
+            'and a member of the crow family. But that\'s not what you said. You said ' +
+            'a jackdaw is a crow, which is not true unless you\'re okay with calling all ' +
+            'members of the crow family crows, which means you\'d call blue jays, ravens, ' +
+            'and other birds crows, too. Which you said you don\'t.\n' +
+            'It\'s okay to just admit you\'re wrong, you know?';
+
+        before(function(done) {
+            database.createUser('Unidan', 'Jackdaw', 'uni@ban.ned', function(user) {
+                database.createQuestion(
+                    'Is a jackdaw a crow?',
+                    'WHAT IF I TOLD YOU\nTHE CROW HE\'S REFERRING TO IS ACTUALLY A JACKDAW?',
+                    'Unidan',
+                    function(question) {
+                        questionID = question.id;
+                        database.createArgument(questionID, db.ArgumentType.CON, copyPasta, 'Unidan', function(argument) {
+                            argumentID = argument.id;
+                            database.setQuestionVote(questionID, 'Unidan', db.VoteType.UP, function() {
+                                database.setArgumentVote(questionID, argumentID, 'Unidan', db.VoteType.DOWN, function() {
+                                    done();
+                                });
+                            });
+                        });
+                    }
+                );
+            });
+        });
+
+        it('Should delete the user but not his submissions', function(done) {
+            database.deleteUser('Unidan', function(deleteDone) {
+                database.getUser('Unidan', function(user) {
+                    assert.equal('Unidan', user.username);
+                    assert.equal(true, user.deleted);
+                    database.getQuestion(questionID, function(question) {
+                        assert.equal('Unidan', question.submitter);
+                        assert.equal(true, question.submitter_deleted);
+                        database.getArgument(questionID, argumentID, function(argument) {
+                            assert.equal('Unidan', argument.submitter);
+                            assert.equal(true, argument.submitter_deleted);
+                            database.getQuestionVote(questionID, 'Unidan', function(questionVote) {
+                                assert.equal(db.VoteType.UP, questionVote);
+                                database.getArgumentVote(questionID, argumentID, 'Unidan', function(argumentVote) {
+                                    assert.equal(db.VoteType.DOWN, argumentVote);
+                                    done();
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+
     describe('createQuestion(title, text, submitter, createDone)', function() {
         before(function(done) {
             database.createUser('Bloke', 'badSecurity', 'bloke@shadymail.so', function(user) {

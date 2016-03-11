@@ -2,7 +2,8 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(64) NOT NULL PRIMARY KEY,
     salt CHAR(64) NOT NULL,
     password CHAR(64) NOT NULL,
-    email VARCHAR(128) NOT NULL
+    email VARCHAR(128) NOT NULL,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- CREATE TABLE IF NOT EXISTS moderators (
@@ -21,6 +22,11 @@ CREATE TABLE IF NOT EXISTS questions (
     submitter VARCHAR(64) NOT NULL REFERENCES users
 );
 
+CREATE OR REPLACE VIEW user_questions AS
+    SELECT id, title, text, date, submitter,
+        (SELECT deleted FROM users WHERE username = submitter) AS submitter_deleted
+    FROM questions;
+
 CREATE TABLE IF NOT EXISTS arguments (
     id BIGSERIAL,
     question_id BIGINT NOT NULL REFERENCES questions ON DELETE CASCADE,
@@ -30,6 +36,11 @@ CREATE TABLE IF NOT EXISTS arguments (
     submitter VARCHAR(64) NOT NULL REFERENCES users,
     PRIMARY KEY (id, question_id)
 );
+
+CREATE OR REPLACE VIEW user_arguments AS
+    SELECT id, question_id, type, text, date, submitter,
+        (SELECT deleted FROM users WHERE username = submitter) AS submitter_deleted
+    FROM arguments;
 
 CREATE TABLE IF NOT EXISTS question_votes (
     question_id BIGINT NOT NULL REFERENCES questions ON DELETE CASCADE,
