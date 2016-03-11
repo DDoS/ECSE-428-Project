@@ -9,17 +9,8 @@ const port = process.env.OPENSHIFT_POSTGRESQL_DB_PORT || process.env.PGPORT;
 const user = process.env.OPENSHIFT_POSTGRESQL_DB_USER || process.env.PGUSER;
 const password = process.env.OPENSHIFT_POSTGRESQL_DB_PASSWORD || process.env.PGPASSWORD;
 
-const userTable = 'Users';
-const moderatorTable = 'Moderators';
-const adminTable = 'Admins';
-const questionTable = 'Questions';
-const argumentTable = 'Arguments';
-const questionVoteTable = 'Question_Votes';
-const argumentVoteTable = 'Argument_Votes';
-
 var createQuery = fs.readFileSync('data/create.psql').toString()
 var genClear = fs.readFileSync('data/gen_clear.psql').toString()
-
 
 var Database = function(dbName){
     var self = this;
@@ -113,7 +104,7 @@ var Database = function(dbName){
                     throw new Error('Error creating query');
                 }
                 client.query(
-                    'INSERT INTO ' + userTable + ' VALUES ($1, $2, $3, $4);',
+                    'INSERT INTO users VALUES ($1, $2, $3, $4);',
                     [username, salt, password, email],
                     function(error, result) {
                         done();
@@ -138,7 +129,7 @@ var Database = function(dbName){
                     throw new Error('Error creating query');
                 }
                 client.query(
-                    'SELECT salt, password, email FROM ' + userTable + ' WHERE username = $1;',
+                    'SELECT salt, password, email FROM users WHERE username = $1;',
                     [username],
                     function(error, result) {
                         done();
@@ -177,7 +168,7 @@ var Database = function(dbName){
                     throw new Error('Error creating query');
                 }
                 client.query(
-                    'INSERT INTO ' + questionTable + ' (title, text, submitter) VALUES ($1, $2, $3)' +
+                    'INSERT INTO questions (title, text, submitter) VALUES ($1, $2, $3)' +
                         'RETURNING id, date;',
                     [title, text, submitter],
                     function(error, result) {
@@ -204,7 +195,7 @@ var Database = function(dbName){
                 }
                 client.query(
                     'SELECT title, text, date, submitter ' +
-                        'FROM ' + questionTable + ' WHERE id = $1;',
+                        'FROM questions WHERE id = $1;',
                     [id],
                     function(error, result) {
                         done();
@@ -281,7 +272,7 @@ var Database = function(dbName){
                     throw new Error('Error creating query');
                 }
                 client.query(
-                    'INSERT INTO ' + argumentTable + ' (questionID, type, text, submitter) VALUES ($1, $2, $3, $4)' +
+                    'INSERT INTO arguments (question_id, type, text, submitter) VALUES ($1, $2, $3, $4)' +
                         'RETURNING id, date;',
                     [questionID, type, text, submitter],
                     function(error, result) {
@@ -311,7 +302,7 @@ var Database = function(dbName){
                 }
                 client.query(
                     'SELECT type, text, date, submitter ' +
-                        'FROM ' + argumentTable + ' WHERE questionID = $1 AND id = $2;',
+                        'FROM arguments WHERE question_id = $1 AND id = $2;',
                     [questionID, id],
                     function(error, result) {
                         done();
@@ -447,7 +438,7 @@ var Database = function(dbName){
                     throw new Error('Error creating query');
                 }
                 client.query(
-                    'SELECT vote FROM ' + questionVoteTable + ' WHERE questionID = $1 AND username = $2;',
+                    'SELECT vote FROM question_votes WHERE question_id = $1 AND username = $2;',
                     [questionID, username],
                     function(error, result) {
                         done();
@@ -484,7 +475,7 @@ var Database = function(dbName){
                         throw new Error('Error creating query');
                     }
                     client.query(
-                        'SELECT upsertQuestionVote($1, $2, $3)',
+                        'SELECT upsert_question_vote($1, $2, $3)',
                         [questionID, username, vote],
                         function(error, result) {
                             done();
@@ -506,7 +497,7 @@ var Database = function(dbName){
                         throw new Error('Error creating query');
                     }
                     client.query(
-                        'DELETE FROM ' + questionVoteTable + ' WHERE questionID = $1 AND username = $2',
+                        'DELETE FROM question_votes WHERE question_id = $1 AND username = $2',
                         [questionID, username],
                         function(error, result) {
                             done();
@@ -533,7 +524,7 @@ var Database = function(dbName){
                     throw new Error('Error creating query');
                 }
                 client.query(
-                    'SELECT vote FROM ' + argumentVoteTable + ' WHERE questionID = $1 AND argumentID = $2 AND username = $3;',
+                    'SELECT vote FROM argument_votes WHERE question_id = $1 AND argument_id = $2 AND username = $3;',
                     [questionID, argumentID, username],
                     function(error, result) {
                         done();
@@ -573,7 +564,7 @@ var Database = function(dbName){
                         throw new Error('Error creating query');
                     }
                     client.query(
-                        'SELECT upsertArgumentVote($1, $2, $3, $4)',
+                        'SELECT upsert_argument_vote($1, $2, $3, $4)',
                         [questionID, argumentID, username, vote],
                         function(error, result) {
                             done();
@@ -595,7 +586,7 @@ var Database = function(dbName){
                         throw new Error('Error creating query');
                     }
                     client.query(
-                        'DELETE FROM ' + argumentVoteTable + ' WHERE questionID = $1 AND argumentID = $2 AND username = $3',
+                        'DELETE FROM argument_votes WHERE question_id = $1 AND argument_id = $2 AND username = $3',
                         [questionID, argumentID, username],
                         function(error, result) {
                             done();
@@ -622,7 +613,7 @@ var Database = function(dbName){
                     throw new Error('Error creating query');
                 }
                 client.query(
-                    'SELECT sum(vote) AS score FROM ' + questionVoteTable + ' WHERE questionID = $1;',
+                    'SELECT sum(vote) AS score FROM question_votes WHERE question_id = $1;',
                     [questionID],
                     function(error, result) {
                         done();
@@ -647,7 +638,7 @@ var Database = function(dbName){
                     throw new Error('Error creating query');
                 }
                 client.query(
-                    'SELECT sum(vote) AS score FROM ' + argumentVoteTable + ' WHERE questionID = $1 AND argumentID = $2;',
+                    'SELECT sum(vote) AS score FROM argument_votes WHERE question_id = $1 AND argument_id = $2;',
                     [questionID, argumentID],
                     function(error, result) {
                         done();
@@ -785,7 +776,7 @@ var SearchOptions = function() {
         // select clause
         var selectText = 'SELECT ' + (argSearch ? 'id, type, text, date, submitter' : 'id, title, text, date, submitter');
         // from clause
-        var fromText = 'FROM ' + (argSearch ? argumentTable : questionTable);
+        var fromText = 'FROM ' + (argSearch ? 'arguments' : 'questions');
         // where clause
         var conditions = [];
         var queryArgs = [];
@@ -793,7 +784,7 @@ var SearchOptions = function() {
         queryArgs.push(self.limit);
         var i = 3;
         if (argSearch) {
-            conditions.push('questionID = $' + i++);
+            conditions.push('question_id = $' + i++);
             queryArgs.push(questionID);
         }
         if (self.type !== undefined) {
@@ -822,17 +813,17 @@ var SearchOptions = function() {
         } else if (self.orderType === 1) {
             if (argSearch) {
                 fromText += ' LEFT OUTER JOIN (' +
-                    'SELECT argumentID, sum(vote) AS score ' +
+                    'SELECT argument_id, sum(vote) AS score ' +
                         'FROM argument_votes ' +
-                        'WHERE questionID = $3 ' +
-                        'GROUP BY argumentID' +
-                ') scores ON arguments.id = scores.argumentID'
+                        'WHERE question_id = $3 ' +
+                        'GROUP BY argument_id' +
+                ') scores ON arguments.id = scores.argument_id'
             } else {
                 fromText +=  ' LEFT OUTER JOIN (' +
-                    'SELECT questionID, sum(vote) AS score ' +
+                    'SELECT question_id, sum(vote) AS score ' +
                         'FROM question_votes ' +
-                        'GROUP BY questionID' +
-                ') scores ON questions.id = scores.questionID'
+                        'GROUP BY question_id' +
+                ') scores ON questions.id = scores.question_id'
             }
             orderText = 'ORDER BY CASE WHEN score IS NULL THEN 0 ELSE score END';
         } else {
