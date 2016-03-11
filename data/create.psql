@@ -32,8 +32,8 @@ CREATE TABLE IF NOT EXISTS arguments (
 );
 
 CREATE TABLE IF NOT EXISTS question_votes (
-    question_id BIGINT NOT NULL REFERENCES questions ,
-    username VARCHAR(64) NOT NULL REFERENCES users ,
+    question_id BIGINT NOT NULL REFERENCES questions ON DELETE CASCADE,
+    username VARCHAR(64) NOT NULL REFERENCES users ON DELETE CASCADE,
     vote SMALLINT NOT NULL CHECK (vote = -1 OR vote = 1),
     PRIMARY KEY (question_id, username)
 );
@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS argument_votes (
     argument_id BIGINT NOT NULL,
     username VARCHAR(64) NOT NULL REFERENCES users ,
     vote SMALLINT NOT NULL CHECK (vote = -1 OR vote = 1),
-    FOREIGN KEY (question_id, argument_id) REFERENCES arguments (question_id, id),
+    FOREIGN KEY (question_id, argument_id) REFERENCES arguments (question_id, id) ON DELETE CASCADE,
     PRIMARY KEY (question_id, argument_id, username)
 );
 
