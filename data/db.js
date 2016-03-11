@@ -150,6 +150,30 @@ var Database = function(dbName){
         );
     };
 
+    self.editUserEmail = function(username, newEmail, editDone) {
+        pg.connect(
+            config,
+            function(error, client, done) {
+                if (error) {
+                    console.error(error);
+                    throw new Error('Error creating query');
+                }
+                client.query(
+                    'UPDATE users SET email = $2 WHERE username = $1',
+                    [username, newEmail],
+                    function(error, result) {
+                        done();
+                        if (error) {
+                            console.error(error);
+                            throw new Error('Could update user email');
+                        }
+                        editDone();
+                    }
+                );
+            }
+        );
+    }
+
     self.createQuestion = function(title, text, submitter, createDone) {
         if (stringEmpty(title)) {
             throw new Error('title is empty');

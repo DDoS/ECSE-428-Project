@@ -58,6 +58,24 @@ describe('Database', function() {
         });
     });
 
+    describe('editUserEmail(username, newEmail, editDone)', function() {
+        before(function(done) {
+            database.createUser('EditingAndLayout', 'MACHO MAN', 'eal@gifs.io', function(user) {
+                done();
+            });
+        });
+
+        it('Should update the user\'s email', function(done) {
+            database.editUserEmail('EditingAndLayout', 'highQuality@gifs.io', function(editDone) {
+                database.getUser('EditingAndLayout', function(user) {
+                    assert.equal('EditingAndLayout', user.username);
+                    assert.equal('highQuality@gifs.io', user.email);
+                    done();
+                });
+            });
+        });
+    });
+
     describe('createQuestion(title, text, submitter, createDone)', function() {
         before(function(done) {
             database.createUser('Bloke', 'badSecurity', 'bloke@shadymail.so', function(user) {
