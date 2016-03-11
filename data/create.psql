@@ -23,17 +23,17 @@ CREATE TABLE IF NOT EXISTS questions (
 
 CREATE TABLE IF NOT EXISTS arguments (
     id BIGSERIAL,
-    question_id BIGINT NOT NULL REFERENCES questions ,
+    question_id BIGINT NOT NULL REFERENCES questions ON DELETE CASCADE,
     type BOOLEAN NOT NULL,
     text VARCHAR(4096) NOT NULL,
     date TIMESTAMP DEFAULT now(),
-    submitter VARCHAR(64) NOT NULL REFERENCES users ,
+    submitter VARCHAR(64) NOT NULL REFERENCES users,
     PRIMARY KEY (id, question_id)
 );
 
 CREATE TABLE IF NOT EXISTS question_votes (
     question_id BIGINT NOT NULL REFERENCES questions ON DELETE CASCADE,
-    username VARCHAR(64) NOT NULL REFERENCES users ON DELETE CASCADE,
+    username VARCHAR(64) NOT NULL REFERENCES users,
     vote SMALLINT NOT NULL CHECK (vote = -1 OR vote = 1),
     PRIMARY KEY (question_id, username)
 );
@@ -62,7 +62,7 @@ $$ LANGUAGE plpgsql;
 CREATE TABLE IF NOT EXISTS argument_votes (
     question_id BIGINT NOT NULL,
     argument_id BIGINT NOT NULL,
-    username VARCHAR(64) NOT NULL REFERENCES users ,
+    username VARCHAR(64) NOT NULL REFERENCES users,
     vote SMALLINT NOT NULL CHECK (vote = -1 OR vote = 1),
     FOREIGN KEY (question_id, argument_id) REFERENCES arguments (question_id, id) ON DELETE CASCADE,
     PRIMARY KEY (question_id, argument_id, username)

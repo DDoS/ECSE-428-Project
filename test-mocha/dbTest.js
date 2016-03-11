@@ -225,7 +225,9 @@ describe('Database', function() {
             database.createUser('Voat', 'is', 'just@absolute.garbage', function(user) {
                 database.createQuestion('It\'s all the trash reddit banned', 'and worse', 'Voat', function(question) {
                     questionID = question.id;
-                    done();
+                    database.createArgument(questionID, db.ArgumentType.CON, 'But I want to hate on fat people :(', 'Voat', function(argument) {
+                        done();
+                    });
                 });
             });
         });
