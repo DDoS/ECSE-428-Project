@@ -74,6 +74,16 @@ describe('Database', function() {
                 });
             });
         });
+
+        it('Should not allow an empty email', function() {
+            assert.throws(
+                function() {
+                    database.editUserEmail('EditingAndLayout', '', function() {});
+                },
+                Error, 'new email is empty'
+            );
+        });
+    });
     });
 
     describe('createQuestion(title, text, submitter, createDone)', function() {
@@ -169,6 +179,15 @@ describe('Database', function() {
                     done();
                 });
             });
+        });
+
+        it('Should not allow an empty text', function() {
+            assert.throws(
+                function() {
+                    database.editQuestion(questionID, '', function() {});
+                },
+                Error, 'new text is empty'
+            );
         });
     });
 
@@ -432,6 +451,15 @@ describe('Database', function() {
                     done();
                 });
             });
+        });
+
+        it('Should not allow an empty text', function() {
+            assert.throws(
+                function() {
+                    database.editArgument(questionID, argumentID, '', function() {});
+                },
+                Error, 'new text is empty'
+            );
         });
     });
 

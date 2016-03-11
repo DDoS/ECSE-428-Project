@@ -151,6 +151,9 @@ var Database = function(dbName){
     };
 
     self.editUserEmail = function(username, newEmail, editDone) {
+        if (stringEmpty(newEmail)) {
+            throw new Error('new email is empty');
+        }
         pg.connect(
             config,
             function(error, client, done) {
@@ -276,6 +279,9 @@ var Database = function(dbName){
     };
 
     self.editQuestion = function(id, newText, editDone) {
+        if (stringEmpty(newText)) {
+            throw new Error('new text is empty');
+        }
         pg.connect(
             config,
             function(error, client, done) {
@@ -438,6 +444,9 @@ var Database = function(dbName){
     self.editArgument = function(questionID, id, newText, editDone) {
         if (questionID === undefined) {
             throw new Error('question ID is undefined');
+        }
+        if (stringEmpty(newText)) {
+            throw new Error('new text is empty');
         }
         pg.connect(
             config,
