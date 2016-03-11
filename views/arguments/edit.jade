@@ -7,13 +7,19 @@ block content
         form(method='POST', action='/arguments/edit?q=#{questionID}&a=#{argument.id}')
             input(type='hidden', name='_csrf', value=csrfToken)
             .form-group
-                textarea.form-control(id='argumentTextarea', name='argument', rows='10', placeholder="What's your argument?")
+                textarea.form-control(id='argumentTextarea', name='argument',
+                    rows='10', placeholder="What's your argument?", disabled=(!user || user.username !== argument.submitter))
                     | #{argument.text}
             .form-group
                 .btn-group
-                    button.btn.btn-success(id='submitButton', type='submit')
+                    button.btn.btn-success(id='submitButton', type='submit' name='action',
+                        value='edit', disabled=(!user || user.username !== argument.submitter))
                         i.fa.fa-label.fa-paper-plane
                         | Submit
-                    button.btn.btn-danger(id='deleteButton', type='submit')
+                    button.btn.btn-danger(id='deleteButton', type='submit' name='action',
+                        value='delete', disabled=(!user || user.username !== argument.submitter))
                         i.fa.fa-label.fa-paper-plane
                         | Delete
+
+        if !user || user.username !== argument.submitter
+            | You cannot edit the argument of someone else.

@@ -370,6 +370,74 @@ var Database = function(dbName){
         );
     };
 
+    self.editArgument = function(questionID, id, newText, getDone) {
+        if (questionID === undefined) {
+            throw new Error('question ID is undefined');
+        }
+        pg.connect(
+            config,
+            function(error, client, done) {
+                if (error) {
+                    console.error(error);
+                    throw new Error('Error creating query');
+                }
+                client.query(
+                    'UPDATE ' + argumentTable +
+                    ' SET text = $1, date=current_timestamp' + ' WHERE questionID = $2 AND id = $3;',
+                    [newText, questionID, id],
+                    function(error) {
+                        done();
+                        if (error) {
+                            console.error(error);
+                            throw new Error('Could not get argument');
+                        }
+                        getDone();
+                    }
+                );
+            }
+        );
+    };
+
+    self.deleteArgument = function(questionID, id, getDone) {
+        if (questionID === undefined) {
+            throw new Error('question ID is undefined');
+        }
+        pg.connect(
+            config,
+            function(error, client, done) {
+                if (error) {
+                    console.error(error);
+                    throw new Error('Error creating query');
+                }
+
+                // must delete argument votes before removing the argument
+                client.query(
+                    'DELETE FROM ' + argumentVoteTable + ' WHERE questionID = $1 AND argumentID = $2',
+                    [questionID, id],
+                    function(error) {
+                        if (error) {
+                            console.error(error);
+                            throw new Error('Could not remove argument vote');
+                        }
+                        client.query(
+                            'DELETE FROM ' + argumentTable +
+                            ' WHERE questionID = $1 AND id = $2;',
+                            [questionID, id],
+                            function(error) {
+                                done();
+                                if (error) {
+                                    console.error(error);
+                                    throw new Error('Could not remove argument');
+                                }
+                                getDone();
+                            }
+                        );
+                    }
+                );
+            }
+        );
+    };
+
     self.getQuestionVote = function(questionID, username, getDone) {
         pg.connect(
             config,
