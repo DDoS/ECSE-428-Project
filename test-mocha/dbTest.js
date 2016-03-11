@@ -345,6 +345,58 @@ describe('Database', function() {
         });
     });
 
+    describe('editArgument(questionID, id, newText, editDone)', function() {
+        var questionID = undefined;
+        var argumentID = undefined;
+
+        before(function(done) {
+            database.createUser('Drumpf', 'cuck', 'the@dona.ld', function(user) {
+                database.createQuestion('Climate change is a chinese invention', 'to sabottage American industries', 'Drumpf', function(question) {
+                    questionID = question.id;
+                    database.createArgument(questionID, db.ArgumentType.PRO, 'Make America great again', 'Drumpf', function(argument) {
+                        argumentID = argument.id;
+                        done();
+                    });
+                });
+            });
+        });
+
+        it('Should change the text of the argument', function(done) {
+            database.editArgument(questionID, argumentID, 'HIGH ENERGY', function(editDone) {
+                database.getArgument(questionID, argumentID, function(argument) {
+                    assert.equal('HIGH ENERGY', argument.text);
+                    done();
+                });
+            });
+        });
+    });
+
+    describe('deleteArgument(questionID, id, deleteDone)', function() {
+        var questionID = undefined;
+        var argumentID = undefined;
+
+        before(function(done) {
+            database.createUser('Sanders', 'communist', 'bernie@br.os', function(user) {
+                database.createQuestion('It\'s Wall Street\'s fault', 'and WalMart too', 'Sanders', function(question) {
+                    questionID = question.id;
+                    database.createArgument(questionID, db.ArgumentType.PRO, 'YUUUUGE', 'Sanders', function(argument) {
+                        argumentID = argument.id;
+                        done();
+                    });
+                });
+            });
+        });
+
+        it('Should delete the argument', function(done) {
+            database.deleteArgument(questionID, argumentID, function(deleteDone) {
+                database.getArgument(questionID, argumentID, function(argument) {
+                    assert.strictEqual(undefined, argument);
+                    done();
+                });
+            });
+        });
+    });
+
     describe('findArguments(questionID, options, getDone)', function() {
         var questionID = undefined;
         var someDate = undefined;
