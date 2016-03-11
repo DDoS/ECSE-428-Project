@@ -251,6 +251,56 @@ var Database = function(dbName){
         );
     };
 
+    self.editQuestion = function(id, newText, editDone) {
+        pg.connect(
+            config,
+            function(error, client, done) {
+                if (error) {
+                    console.error(error);
+                    throw new Error('Error creating query');
+                }
+                client.query(
+                    'UPDATE questions ' +
+                        'SET text = $2, date = NOW() ' +
+                        'WHERE id = $1;',
+                    [id, newText],
+                    function(error) {
+                        done();
+                        if (error) {
+                            console.error(error);
+                            throw new Error('Could not update question');
+                        }
+                        editDone();
+                    }
+                );
+            }
+        );
+    };
+
+    self.deleteQuestion = function(id, deleteDone) {
+        pg.connect(
+            config,
+            function(error, client, done) {
+                if (error) {
+                    console.error(error);
+                    throw new Error('Error creating query');
+                }
+                client.query(
+                    'DELETE FROM questions WHERE id = $1;',
+                    [id],
+                    function(error) {
+                        done();
+                        if (error) {
+                            console.error(error);
+                            throw new Error('Could not delete question');
+                        }
+                        deleteDone();
+                    }
+                );
+            }
+        );
+    };
+
     self.createArgument = function(questionID, type, text, submitter, createDone) {
         if (questionID === undefined) {
             throw new Error('question ID is undefined');
@@ -374,9 +424,9 @@ var Database = function(dbName){
                 }
                 client.query(
                     'UPDATE arguments ' +
-                        'SET text = $1, date = NOW() ' +
-                        'WHERE question_id = $2 AND id = $3;',
-                    [newText, questionID, id],
+                        'SET text = $3, date = NOW() ' +
+                        'WHERE question_id = $1 AND id = $2;',
+                    [questionID, id, newText],
                     function(error) {
                         done();
                         if (error) {
@@ -408,7 +458,7 @@ var Database = function(dbName){
                         done();
                         if (error) {
                             console.error(error);
-                            throw new Error('Could not remove argument');
+                            throw new Error('Could not delete argument');
                         }
                         deleteDone();
                     }

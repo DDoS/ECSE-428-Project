@@ -131,6 +131,51 @@ describe('Database', function() {
         });
     });
 
+    describe('editQuestion(id, newText, editDone)', function() {
+        var questionID = undefined;
+
+        before(function(done) {
+            database.createUser('Out', 'of', 'ideas@for.content', function(user) {
+                database.createQuestion('Always use original test data', 'Even if no one reads it', 'Out', function(question) {
+                    questionID = question.id;
+                    done();
+                });
+            });
+        });
+
+        it('Should change the text of the question', function(done) {
+            database.editQuestion(questionID, 'Low Effort', function(editDone) {
+                database.getQuestion(questionID, function(question) {
+                    assert.equal(questionID, question.id);
+                    assert.equal('Low Effort', question.text);
+                    done();
+                });
+            });
+        });
+    });
+
+    describe('deleteQuestion(id, deleteDone)', function() {
+        var questionID = undefined;
+
+        before(function(done) {
+            database.createUser('Voat', 'is', 'just@absolute.garbage', function(user) {
+                database.createQuestion('It\'s all the trash reddit banned', 'and worse', 'Voat', function(question) {
+                    questionID = question.id;
+                    done();
+                });
+            });
+        });
+
+        it('Should delete the question', function(done) {
+            database.deleteQuestion(questionID, function(deleteDone) {
+                database.getQuestion(questionID, function(question) {
+                    assert.strictEqual(undefined, question);
+                    done();
+                });
+            });
+        });
+    });
+
     describe('findQuestions(options, getDone)', function() {
         var someDate = undefined;
         var numberAfterThatDate = 0;
@@ -364,6 +409,7 @@ describe('Database', function() {
         it('Should change the text of the argument', function(done) {
             database.editArgument(questionID, argumentID, 'HIGH ENERGY', function(editDone) {
                 database.getArgument(questionID, argumentID, function(argument) {
+                    assert.equal(argumentID, argument.id);
                     assert.equal('HIGH ENERGY', argument.text);
                     done();
                 });
