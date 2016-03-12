@@ -12,7 +12,7 @@ const password = process.env.OPENSHIFT_POSTGRESQL_DB_PASSWORD || process.env.PGP
 var createQuery = fs.readFileSync('data/create.psql').toString()
 var genClear = fs.readFileSync('data/gen_clear.psql').toString()
 
-var Database = function(dbName){
+var Database = function(dbName) {
     var self = this;
 
     var config = {
@@ -45,7 +45,7 @@ var Database = function(dbName){
                 );
             }
         );
-    };
+    }
 
     self.clear = function(clearDone) {
         pg.connect(config, function(error, client, done) {
@@ -78,7 +78,7 @@ var Database = function(dbName){
                 }
             );
         });
-    };
+    }
 
     self.createUser = function(username, passwordText, email, createDone) {
         if (stringEmpty(username)) {
@@ -118,7 +118,7 @@ var Database = function(dbName){
                 );
             }
         );
-    };
+    }
 
     self.getUser = function(username, getDone) {
         pg.connect(
@@ -149,7 +149,7 @@ var Database = function(dbName){
                 );
             }
         );
-    };
+    }
 
     self.editUserEmail = function(username, newEmail, editDone) {
         if (stringEmpty(newEmail)) {
@@ -260,13 +260,16 @@ var Database = function(dbName){
                             console.error(error);
                             throw new Error('Could not create question');
                         }
-                        var question = new Question(result.rows[0].id, title, text, result.rows[0].date, submitter, 0, 0, false);
+                        var question = new Question(
+                            result.rows[0].id, title, text, result.rows[0].date,
+                            null, submitter, 0, 0, false
+                        );
                         createDone(question);
                     }
                 );
             }
         );
-    };
+    }
 
     self.getQuestion = function(id, getDone) {
         pg.connect(
@@ -277,7 +280,7 @@ var Database = function(dbName){
                     throw new Error('Error creating query');
                 }
                 client.query(
-                    'SELECT title, text, date, submitter, submitter_deleted ' +
+                    'SELECT title, text, date, last_edit_date, submitter, submitter_deleted ' +
                         'FROM user_questions WHERE id = $1;',
                     [id],
                     function(error, result) {
@@ -290,9 +293,10 @@ var Database = function(dbName){
                         if (result.rows.length <= 0) {
                             question = undefined;
                         } else {
+                            var row = result.rows[0];
                             question = new Question(
-                                id, result.rows[0].title, result.rows[0].text, result.rows[0].date,
-                                result.rows[0].submitter, result.rows[0].submitter_deleted
+                                id, row.title, row.text, row.date, row.last_edit_date,
+                                row.submitter, row.submitter_deleted
                             );
                         }
                         getDone(question);
@@ -300,7 +304,7 @@ var Database = function(dbName){
                 );
             }
         );
-    };
+    }
 
     self.findQuestions = function(options, getDone) {
         pg.connect(
@@ -323,7 +327,7 @@ var Database = function(dbName){
                         var questions = [];
                         result.rows.forEach(function(row, index, array) {
                             questions.push(new Question(
-                                row.id, row.title, row.text, row.date,
+                                row.id, row.title, row.text, row.date, row.last_edit_date,
                                 row.submitter, row.submitter_deleted
                             ));
                         });
@@ -332,7 +336,7 @@ var Database = function(dbName){
                 );
             }
         );
-    };
+    }
 
     self.editQuestion = function(id, newText, editDone) {
         if (stringEmpty(newText)) {
@@ -347,7 +351,7 @@ var Database = function(dbName){
                 }
                 client.query(
                     'UPDATE questions ' +
-                        'SET text = $2, date = now() ' +
+                        'SET text = $2, last_edit_date = now() ' +
                         'WHERE id = $1;',
                     [id, newText],
                     function(error) {
@@ -361,7 +365,7 @@ var Database = function(dbName){
                 );
             }
         );
-    };
+    }
 
     self.deleteQuestion = function(id, deleteDone) {
         pg.connect(
@@ -385,7 +389,7 @@ var Database = function(dbName){
                 );
             }
         );
-    };
+    }
 
     self.createArgument = function(questionID, type, text, submitter, createDone) {
         if (questionID === undefined) {
@@ -417,13 +421,16 @@ var Database = function(dbName){
                             console.error(error);
                             throw new Error('Could not create argument');
                         }
-                        var argument = new Argument(result.rows[0].id, type, text, result.rows[0].date, submitter, 0, 0, false);
+                        var argument = new Argument(
+                            result.rows[0].id, type, text, result.rows[0].date,
+                            null, submitter, 0, 0, false
+                        );
                         createDone(argument);
                     }
                 );
             }
         );
-    };
+    }
 
     self.getArgument = function(questionID, id, getDone) {
         if (questionID === undefined) {
@@ -437,7 +444,7 @@ var Database = function(dbName){
                     throw new Error('Error creating query');
                 }
                 client.query(
-                    'SELECT type, text, date, submitter, submitter_deleted ' +
+                    'SELECT type, text, date, last_edit_date, submitter, submitter_deleted ' +
                         'FROM user_arguments WHERE question_id = $1 AND id = $2;',
                     [questionID, id],
                     function(error, result) {
@@ -450,9 +457,10 @@ var Database = function(dbName){
                         if (result.rows.length <= 0) {
                             argument = undefined;
                         } else {
+                            var row = result.rows[0];
                             argument = new Argument(
-                                id, result.rows[0].type, result.rows[0].text, result.rows[0].date,
-                                result.rows[0].submitter, result.rows[0].submitter_deleted
+                                id, row.type, row.text, row.date, row.last_edit_date,
+                                row.submitter, row.submitter_deleted
                             );
                         }
                         getDone(argument);
@@ -460,7 +468,7 @@ var Database = function(dbName){
                 );
             }
         );
-    };
+    }
 
     self.findArguments = function (questionID, options, getDone) {
         if (questionID === undefined) {
@@ -486,7 +494,7 @@ var Database = function(dbName){
                         var args = [];
                         result.rows.forEach(function(row, index, array) {
                             args.push(new Argument(
-                                row.id, row.type, row.text, row.date,
+                                row.id, row.type, row.text, row.date, row.last_edit_date,
                                 row.submitter, row.submitter_deleted
                             ));
                         });
@@ -495,7 +503,7 @@ var Database = function(dbName){
                 );
             }
         );
-    };
+    }
 
     self.editArgument = function(questionID, id, newText, editDone) {
         if (questionID === undefined) {
@@ -513,7 +521,7 @@ var Database = function(dbName){
                 }
                 client.query(
                     'UPDATE arguments ' +
-                        'SET text = $3, date = now() ' +
+                        'SET text = $3, last_edit_date = now() ' +
                         'WHERE question_id = $1 AND id = $2;',
                     [questionID, id, newText],
                     function(error) {
@@ -527,7 +535,7 @@ var Database = function(dbName){
                 );
             }
         );
-    };
+    }
 
     self.deleteArgument = function(questionID, id, deleteDone) {
         if (questionID === undefined) {
@@ -554,7 +562,7 @@ var Database = function(dbName){
                 );
             }
         );
-    };
+    }
 
     self.getQuestionVote = function(questionID, username, getDone) {
         pg.connect(
@@ -584,7 +592,7 @@ var Database = function(dbName){
                 );
             }
         );
-    };
+    }
 
     self.setQuestionVote = function(questionID, username, vote, setDone) {
         if (questionID === undefined) {
@@ -640,7 +648,7 @@ var Database = function(dbName){
         } else {
             throw new Error('vote type is neither up, down or none');
         }
-    };
+    }
 
     self.getArgumentVote = function(questionID, argumentID, username, getDone) {
         pg.connect(
@@ -670,7 +678,7 @@ var Database = function(dbName){
                 );
             }
         );
-    };
+    }
 
     self.setArgumentVote = function(questionID, argumentID, username, vote, setDone) {
         if (questionID === undefined) {
@@ -729,7 +737,7 @@ var Database = function(dbName){
         } else {
             throw new Error('vote type is neither up, down or none');
         }
-    };
+    }
 
     self.getQuestionVoteScore = function(questionID, getDone) {
         pg.connect(
@@ -754,7 +762,7 @@ var Database = function(dbName){
                 );
             }
         );
-    };
+    }
 
     self.getArgumentVoteScore = function(questionID, argumentID, getDone) {
         pg.connect(
@@ -779,12 +787,7 @@ var Database = function(dbName){
                 );
             }
         );
-    };
-
-    // For testing only
-    self.rawQuery = function(query) {
-        pg.connect(config, query);
-    };
+    }
 };
 
 var User = function(username, salt, password, email, deleted) {
@@ -804,24 +807,28 @@ var User = function(username, salt, password, email, deleted) {
 
 };
 
-var Question = function(id, title, text, date, submitter, submitter_deleted) {
+var Question = function(id, title, text, date, lastEditDate, submitter, submitterDeleted) {
     var self = this;
     self.id = id;
     self.title = title;
     self.text = text;
     self.date = date;
-    self.submitter = submitter_deleted ? '[deleted]' : submitter;
-    self.submitter_deleted = submitter_deleted;
+    self.lastEditDate = lastEditDate;
+    self.wasEdited = lastEditDate !== null;
+    self.submitter = submitterDeleted ? '[deleted]' : submitter;
+    self.submitterDeleted = submitterDeleted;
 };
 
-var Argument = function(id, type, text, date, submitter, submitter_deleted) {
+var Argument = function(id, type, text, date, lastEditDate, submitter, submitterDeleted) {
     var self = this;
     self.id = id;
     self.type = type;
     self.text = text;
     self.date = date;
-    self.submitter = submitter_deleted ? '[deleted]' : submitter;
-    self.submitter_deleted = submitter_deleted;
+    self.lastEditDate = lastEditDate;
+    self.wasEdited = lastEditDate !== null;
+    self.submitter = submitterDeleted ? '[deleted]' : submitter;
+    self.submitterDeleted = submitterDeleted;
 };
 
 var ArgumentType = Object.freeze({
@@ -909,8 +916,8 @@ var SearchOptions = function() {
         // select clause
         var selectText = 'SELECT ' + (
             argSearch ?
-            'id, type, text, date, submitter, submitter_deleted' :
-            'id, title, text, date, submitter, submitter_deleted'
+            'id, type, text, date, last_edit_date, submitter, submitter_deleted' :
+            'id, title, text, date, last_edit_date, submitter, submitter_deleted'
         );
         // from clause
         var fromText = 'FROM ' + (argSearch ? 'user_arguments' : 'user_questions');

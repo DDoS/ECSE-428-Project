@@ -162,10 +162,10 @@ describe('Database', function() {
                     assert.equal(true, user.deleted);
                     database.getQuestion(questionID, function(question) {
                         assert.equal('[deleted]', question.submitter);
-                        assert.equal(true, question.submitter_deleted);
+                        assert.equal(true, question.submitterDeleted);
                         database.getArgument(questionID, argumentID, function(argument) {
                             assert.equal('[deleted]', argument.submitter);
-                            assert.equal(true, argument.submitter_deleted);
+                            assert.equal(true, argument.submitterDeleted);
                             database.getQuestionVote(questionID, 'Unidan', function(questionVote) {
                                 assert.equal(db.VoteType.UP, questionVote);
                                 database.getArgumentVote(questionID, argumentID, 'Unidan', function(argumentVote) {
@@ -211,7 +211,10 @@ describe('Database', function() {
                     );
                     assert(question.date >= beforeDate);
                     assert(question.date <= new Date());
+                    assert.strictEqual(null, question.lastEditDate);
+                    assert.equal(false, question.wasEdited);
                     assert.equal('Bloke', question.submitter);
+                    assert.equal(false, question.submitterDeleted);
                     // Check if the question is indeed in the db
                     database.getQuestion(question.id, function(getQuestion) {
                         assert.equal(question.id, getQuestion.id);
@@ -255,21 +258,25 @@ describe('Database', function() {
 
     describe('editQuestion(id, newText, editDone)', function() {
         var questionID = undefined;
+        var questionDate = undefined;
 
         before(function(done) {
             database.createUser('Out', 'of', 'ideas@for.content', function(user) {
                 database.createQuestion('Always use original test data', 'Even if no one reads it', 'Out', function(question) {
                     questionID = question.id;
+                    questionDate = question.date;
                     done();
                 });
             });
         });
 
-        it('Should change the text of the question', function(done) {
+        it('Should change the text of the question and update the last edit date', function(done) {
             database.editQuestion(questionID, 'Low Effort', function(editDone) {
                 database.getQuestion(questionID, function(question) {
                     assert.equal(questionID, question.id);
                     assert.equal('Low Effort', question.text);
+                    assert(question.lastEditDate > questionDate);
+                    assert.equal(true, question.wasEdited);
                     done();
                 });
             });
@@ -472,7 +479,10 @@ describe('Database', function() {
                     );
                     assert(argument.date >= beforeDate);
                     assert(argument.date <= new Date());
+                    assert.strictEqual(null, argument.lastEditDate);
+                    assert.equal(false, argument.wasEdited);
                     assert.equal('Dude', argument.submitter);
+                    assert.equal(false, argument.submitterDeleted);
                     // Check if the question is indeed in the db
                     database.getArgument(questionID, argument.id, function(getArgument) {
                         assert.equal(argument.id, getArgument.id);
@@ -526,6 +536,7 @@ describe('Database', function() {
     describe('editArgument(questionID, id, newText, editDone)', function() {
         var questionID = undefined;
         var argumentID = undefined;
+        var argumentDate = undefined;
 
         before(function(done) {
             database.createUser('Drumpf', 'cuck', 'the@dona.ld', function(user) {
@@ -533,6 +544,7 @@ describe('Database', function() {
                     questionID = question.id;
                     database.createArgument(questionID, db.ArgumentType.PRO, 'Make America great again', 'Drumpf', function(argument) {
                         argumentID = argument.id;
+                        argumentDate = argument.date;
                         done();
                     });
                 });
@@ -544,6 +556,8 @@ describe('Database', function() {
                 database.getArgument(questionID, argumentID, function(argument) {
                     assert.equal(argumentID, argument.id);
                     assert.equal('HIGH ENERGY', argument.text);
+                    assert(argument.lastEditDate > argumentDate);
+                    assert.equal(true, argument.wasEdited);
                     done();
                 });
             });
