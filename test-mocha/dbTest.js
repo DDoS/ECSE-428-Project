@@ -155,16 +155,16 @@ describe('Database', function() {
             });
         });
 
-        it('Should delete the user but not his submissions', function(done) {
+        it('Should delete the user but not his submissions or votes', function(done) {
             database.deleteUser('Unidan', function(deleteDone) {
                 database.getUser('Unidan', function(user) {
                     assert.equal('Unidan', user.username);
                     assert.equal(true, user.deleted);
                     database.getQuestion(questionID, function(question) {
-                        assert.equal('Unidan', question.submitter);
+                        assert.equal('[deleted]', question.submitter);
                         assert.equal(true, question.submitter_deleted);
                         database.getArgument(questionID, argumentID, function(argument) {
-                            assert.equal('Unidan', argument.submitter);
+                            assert.equal('[deleted]', argument.submitter);
                             assert.equal(true, argument.submitter_deleted);
                             database.getQuestionVote(questionID, 'Unidan', function(questionVote) {
                                 assert.equal(db.VoteType.UP, questionVote);

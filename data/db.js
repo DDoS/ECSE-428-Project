@@ -810,7 +810,7 @@ var Question = function(id, title, text, date, submitter, submitter_deleted) {
     self.title = title;
     self.text = text;
     self.date = date;
-    self.submitter = submitter;
+    self.submitter = submitter_deleted ? '[deleted]' : submitter;
     self.submitter_deleted = submitter_deleted;
 };
 
@@ -820,7 +820,7 @@ var Argument = function(id, type, text, date, submitter, submitter_deleted) {
     self.type = type;
     self.text = text;
     self.date = date;
-    self.submitter = submitter;
+    self.submitter = submitter_deleted ? '[deleted]' : submitter;
     self.submitter_deleted = submitter_deleted;
 };
 
