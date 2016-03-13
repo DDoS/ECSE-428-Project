@@ -338,9 +338,13 @@ var Database = function(dbName) {
         );
     }
 
-    self.editQuestion = function(id, newText, editDone) {
+    self.editQuestion = function(id, newTitle, newText, editDone) {
         if (stringEmpty(newText)) {
             throw new Error('new text is empty');
+        }
+
+        if (stringEmpty(newTitle)) {
+            throw new Error('new title is empty');
         }
         pg.connect(
             config,
@@ -351,9 +355,9 @@ var Database = function(dbName) {
                 }
                 client.query(
                     'UPDATE questions ' +
-                        'SET text = $2, last_edit_date = now() ' +
+                        'SET title = $2, text = $3, last_edit_date = now() ' +
                         'WHERE id = $1;',
-                    [id, newText],
+                    [id, newTitle, newText],
                     function(error) {
                         done();
                         if (error) {

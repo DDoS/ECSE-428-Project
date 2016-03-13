@@ -256,7 +256,7 @@ describe('Database', function() {
         });
     });
 
-    describe('editQuestion(id, newText, editDone)', function() {
+    describe('editQuestion(id, newTitle ,newText, editDone)', function() {
         var questionID = undefined;
         var questionDate = undefined;
 
@@ -270,10 +270,11 @@ describe('Database', function() {
             });
         });
 
-        it('Should change the text of the question and update the last edit date', function(done) {
-            database.editQuestion(questionID, 'Low Effort', function(editDone) {
+        it('Should change the title and text of the question and update the last edit date', function(done) {
+            database.editQuestion(questionID, 'No Effort', 'Low Effort', function(editDone) {
                 database.getQuestion(questionID, function(question) {
                     assert.equal(questionID, question.id);
+                    assert.equal('No Effort', question.title);
                     assert.equal('Low Effort', question.text);
                     assert(question.lastEditDate > questionDate);
                     assert.equal(true, question.wasEdited);
@@ -285,9 +286,18 @@ describe('Database', function() {
         it('Should not allow an empty text', function() {
             assert.throws(
                 function() {
-                    database.editQuestion(questionID, '', function() {});
+                    database.editQuestion(questionID, 'No Effort', '', function() {});
                 },
                 Error, 'new text is empty'
+            );
+        });
+
+        it('Should not allow an empty title', function() {
+            assert.throws(
+                function() {
+                    database.editQuestion(questionID, '', 'Low Effort', function() {});
+                },
+                Error, 'new title is empty'
             );
         });
     });
