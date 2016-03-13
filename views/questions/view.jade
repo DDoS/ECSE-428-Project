@@ -4,7 +4,6 @@ block content
     .page-header
         h2 Question:
             span(id='q' + id + '_title')  #{question.title}
-
     .row
         .col-md-12
             +question(question.id, question.text, question.submitter,
@@ -155,6 +154,9 @@ mixin question(id, text, submitter, date, upVoted, downVoted, count, user)
             span.text-muted(id='q' + id + '_meta')
                 | Submitted by #{submitter} on
                 | #{moment(date.toISOString()).format('YYYY-MM-DD HH:m:s')}
+            if user != undefined && user.username == submitter
+                .edit-panel.col-md
+                    a(href="/questions/edit?q=#{id}") Edit
 
 mixin argument(qid, aid, text, submitter, date, upVoted, downVoted, count)
     .panel.panel-default(id='a' + aid)

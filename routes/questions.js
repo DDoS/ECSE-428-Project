@@ -445,4 +445,61 @@ function getQuestionUserVoteStatus(req, database, question, done, error) {
     }
 }
 
+router.get('/edit', function(req, res) {
+    var database = req.app.get('db');
+    database.getQuestion(req.query.q, function(question) {
+        res.render('questions/edit', {
+            title: 'Edit Question',
+            question: question
+        });
+    });
+
+});
+
+router.post('/edit', function(req, res) {
+
+    req.assert('question', 'Title cannot be empty.').notEmpty();
+    req.assert('details', 'Details cannot be empty.').notEmpty();
+    var errors = req.validationErrors();
+    if (errors) {
+        req.flash('errors', errors);
+        return res.redirect(req.get('referer'));
+    }
+
+    var database = req.app.get('db');
+
+    database.getQuestion(req.query.q, function(question) {
+        if (req.user === undefined || req.user.username !== question.submitter) { //make sure user can only edit their own questions
+            req.flash('errors', {
+                msg: "You cannot edit other people's question."
+            });
+            return res.redirect(req.get('referer'));
+        }
+    });
+
+    switch (req.body.action){
+        case "edit" :
+            database.editQuestion(req.query.q, req.body.question, req.body.details, function() {
+                req.flash('success', {
+                    msg: 'Changes Saved.'
+                });
+                res.redirect('/questions/view?q=' + req.query.q);
+            });
+            break;
+        case "cancel" :
+            req.flash('error', {
+                msg: 'No changes made to question.'
+            });
+            res.redirect('/questions/view?q=' + req.query.q);
+            break;
+        case "delete" :
+            database.deleteQuestion(req.query.q, function() {
+                req.flash('success', {
+                    msg: 'Question deleted.'
+                });
+                res.redirect('/questions/view');
+            });break;
+    }
+});
+
 module.exports = router;
