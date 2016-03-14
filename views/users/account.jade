@@ -1,0 +1,32 @@
+extends ../layout
+
+block content
+    .page-header
+        h2 #{title}
+
+    form.form-horizontal(method='POST')
+        input(type='hidden', name='_csrf', value=csrfToken)
+        .form-group
+            label.col-sm-2.control-label Email
+            .col-sm-10
+                input.form-control(id='emailInput', name='email', type='email',
+                                   placeholder="Email", value=email)
+        .form-group
+            label.col-sm-2.control-label Password
+            .col-sm-10
+                input.form-control(id='passwordInput', name='password',
+                                   type='password', placeholder="Password")
+        .form-group
+            label.col-sm-2.control-label Confirm Password
+            .col-sm-10
+                input.form-control(id='confirmPasswordInput',
+                                   name='confirmPassword',
+                                   type='password',
+                                   placeholder="Confirm Password")
+        .form-group
+            .col-sm-offset-2.col-sm-10
+                .btn-toolbar
+                    button.btn.btn-primary(id='updateButton', name='type',
+                                           value='update', type='submit')
+                        i.fa.fa-label.fa-user
+                        | Update Account Information

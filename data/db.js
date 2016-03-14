@@ -233,6 +233,10 @@ var Database = function(dbName) {
         );
     }
 
+    self.setUser = function(username, properties, setDone) {
+        setDone();
+    };
+
     self.createQuestion = function(title, text, submitter, createDone) {
         if (stringEmpty(title)) {
             throw new Error('title is empty');
