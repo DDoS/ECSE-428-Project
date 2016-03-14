@@ -4,19 +4,48 @@ block content
     .page-header
         h2 #{title}
 
+    script(type='text/javascript').
+        function editEmail() {
+            $('#emailInput')
+                    .removeAttr('readonly')
+                    .select();
+        }
+
+        function editPassword() {
+            $('#passwordInput')
+                    .attr('placeholder', 'Password')
+                    .removeAttr('readonly')
+                    .select();
+            $('#confirmPasswordFormGroup').show();
+        }
+
     form.form-horizontal(method='POST')
         input(type='hidden', name='_csrf', value=csrfToken)
         .form-group
             label.col-sm-2.control-label Email
             .col-sm-10
-                input.form-control(id='emailInput', name='email', type='email',
-                                   placeholder="Email", value=email)
+                .input-group
+                    input.form-control(id='emailInput', name='email',
+                                       type='email', placeholder="Email",
+                                       readonly, value=email)
+                    span.input-group-btn(id='emailEditButtonGroup')
+                        button.btn.btn-default(type='button',
+                                               onclick="editEmail();")
+                            i.fa.fa-edit
+
         .form-group
             label.col-sm-2.control-label Password
             .col-sm-10
-                input.form-control(id='passwordInput', name='password',
-                                   type='password', placeholder="Password")
-        .form-group
+                .input-group
+                    input.form-control(id='passwordInput', name='password',
+                                       type='password',
+                                       placeholder="Password unchanged",
+                                       readonly)
+                    span.input-group-btn(id='passwordEditButtonGroup')
+                        button.btn.btn-default(type='button',
+                                               onclick="editPassword();")
+                            i.fa.fa-edit
+        .form-group(id='confirmPasswordFormGroup', style='display: none;')
             label.col-sm-2.control-label Confirm Password
             .col-sm-10
                 input.form-control(id='confirmPasswordInput',
