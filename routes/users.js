@@ -104,7 +104,7 @@ router.get('/account', isAuthenticated, function(req, res) {
 
 router.post('/account', isAuthenticated, function(req, res) {
     var database = req.app.get('db');
-    var updateFail = 'Failed to update account information. Please try again.'
+    var updateFail = 'Failed to update account information. Please try again.';
     var deleteFail = 'Failed to delete your account. Please try again.';
 
     // Client input validation
