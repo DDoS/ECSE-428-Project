@@ -497,7 +497,7 @@ router.post('/edit', function(req, res) {
                 req.flash('success', {
                     msg: 'Question deleted.'
                 });
-                res.redirect('/questions/view');
+                res.redirect('/questions/find');
             });break;
     }
 });
