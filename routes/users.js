@@ -104,6 +104,8 @@ router.get('/account', isAuthenticated, function(req, res) {
 
 router.post('/account', isAuthenticated, function(req, res) {
     var database = req.app.get('db');
+    var updateFail = 'Failed to update account information. Please try again.'
+    var deleteFail = 'Failed to delete your account. Please try again.';
 
     // Client input validation
     if (req.body.type === 'update') {
@@ -116,10 +118,8 @@ router.post('/account', isAuthenticated, function(req, res) {
             req.assert('confirmPassword', 'Passwords do not' +
                 ' match.').equals(req.body.password);
         }
-    } else if (req.body.type === 'delete') {
-        // TODO: Input validation for account deletion
     } else {
-        return error();
+        return error(updateFail);
     }
     var errors = req.validationErrors();
     if (errors) {
@@ -170,16 +170,27 @@ router.post('/account', isAuthenticated, function(req, res) {
             }
         ], function(err) {
             if (err) {
-                error();
+                error(updateFail);
             }
         });
-    } else {
-        // TODO: Account deletion
+    } else { //req.body.type ==='delete'
+        try {
+            database.deleteUser(req.user.username, function() {
+                req.flash('success', {
+                    msg: 'Account deleted.'
+                });
+                //user will be prevented from logging back in with a deactivated account
+                req.logout(); 
+                res.redirect('/');
+            });
+        } catch (err) {
+            error(deleteFail)
+        }
     }
 
-    function error() {
+    function error(msg) {
         req.flash('errors', {
-            msg: 'Failed to update account information. Please try again.'
+            msg: msg
         });
         res.redirect(req.get('referer'));
     }

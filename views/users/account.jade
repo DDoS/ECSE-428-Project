@@ -59,3 +59,24 @@ block content
                                            value='update', type='submit')
                         i.fa.fa-label.fa-user
                         | Update Account Information
+        .form-group
+            .col-sm-offset-2.col-sm-10
+                .btn-toolbar
+                    button.btn.btn-danger(id='deleteButton', type='button', data-toggle='modal', data-target='#deleteModal')
+                        i.fa.fa-label.fa-user
+                        | Delete Account
+
+                    #deleteModal.modal.fade(role='dialog')
+                        .modal-dialog
+                            .modal-content
+                                .modal-header
+                                    button.close(type='button', data-dismiss='modal') ×
+                                    h4.modal-title Are you sure you want to delete your account?
+                                .modal-body
+                                    p We don't want to see you go...
+                                .modal-footer
+                                    button.btn.btn-default(type='button', data-dismiss='modal')
+                                        | Cancel
+                                    button.btn.btn-danger(id='realDeleteButton', type='submit' name='type',
+                                    value='delete')
+                                        | Delete
