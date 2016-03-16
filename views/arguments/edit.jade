@@ -15,7 +15,12 @@ block content
                     button.btn.btn-success(id='submitButton', type='submit' name='action',
                         value='edit', disabled=(!user || user.username !== argument.submitter))
                         i.fa.fa-label.fa-paper-plane
-                        | Submit
+                        | Save Changes
+                    button.btn.btn-danger(id='cancelButton', type='submit' name='action',
+                        value='cancel', disabled=(!user || user.username !== argument.submitter))
+                        i.fa.fa-label.fa-paper-plane
+                        | Cancel
 
         if !user || user.username !== argument.submitter
-            | You cannot edit the argument of someone else.
+            | You cannot edit someone else's argument.
+            
