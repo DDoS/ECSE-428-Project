@@ -157,6 +157,25 @@ mixin question(id, text, submitter, date, upVoted, downVoted, count, user)
             if user != undefined && user.username == submitter
                 .edit-panel.col-md
                     a(href="/questions/edit?q=#{id}") Edit
+                    a(id='deleteButton', data-toggle='modal',
+                    data-target='#deleteModal',href="#")
+                        |  Delete
+                #deleteModal.modal.fade(role='dialog')
+                    .modal-dialog
+                        .modal-content
+                            .modal-header
+                                button.close(type='button', data-dismiss='modal') ×
+                                h4.modal-title Are you sure you want to delete the question?
+                            .modal-body
+                                p Once the question is deleted, you cannot revert this action.
+                            .modal-footer
+                                form(method='POST', action='/questions/edit?q=#{id}')
+                                    input(type='hidden', name='_csrf', value=csrfToken)
+                                    button.btn.btn-default(type='button', data-dismiss='modal')
+                                        | Cancel
+                                    button.btn.btn-danger(id='deleteButton', type='submit' name='action',
+                                    value='delete')
+                                        | Delete
 
 mixin argument(qid, aid, text, submitter, date, upVoted, downVoted, count)
     .panel.panel-default(id='a' + aid)

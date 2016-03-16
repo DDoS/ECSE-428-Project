@@ -28,24 +28,6 @@ block content
                     value='cancel', disabled=(!user || user.username !== question.submitter))
                         i.fa.fa-label.fa-paper-plane
                         | Cancel
-                    button.btn.btn-danger(id='deleteButton', type='button', data-toggle='modal',
-                    data-target='#deleteModal', disabled=(!user || user.username !== question.submitter))
-                        i.fa.fa-label.fa-paper-plane
-                        | Delete
 
-                    #deleteModal.modal.fade(role='dialog')
-                        .modal-dialog
-                            .modal-content
-                                .modal-header
-                                    button.close(type='button', data-dismiss='modal') ×
-                                    h4.modal-title Are you sure you want to delete the question?
-                                .modal-body
-                                    p Once the question is deleted, you cannot revert this action.
-                                .modal-footer
-                                    button.btn.btn-default(type='button', data-dismiss='modal')
-                                        | Cancel
-                                    button.btn.btn-danger(id='deleteButton', type='submit' name='action',
-                                    value='delete')
-                                        | Delete
 
 

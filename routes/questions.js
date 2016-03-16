@@ -458,14 +458,6 @@ router.get('/edit', function(req, res) {
 
 router.post('/edit', function(req, res) {
 
-    req.assert('question', 'Title cannot be empty.').notEmpty();
-    req.assert('details', 'Details cannot be empty.').notEmpty();
-    var errors = req.validationErrors();
-    if (errors) {
-        req.flash('errors', errors);
-        return res.redirect(req.get('referer'));
-    }
-
     var database = req.app.get('db');
 
     database.getQuestion(req.query.q, function(question) {
@@ -479,6 +471,14 @@ router.post('/edit', function(req, res) {
 
     switch (req.body.action){
         case "edit" :
+            req.assert('question', 'Title cannot be empty.').notEmpty();
+            req.assert('details', 'Details cannot be empty.').notEmpty();
+            var errors = req.validationErrors();
+            if (errors) {
+                req.flash('errors', errors);
+                return res.redirect(req.get('referer'));
+            }
+
             database.editQuestion(req.query.q, req.body.question, req.body.details, function() {
                 req.flash('success', {
                     msg: 'Changes Saved.'
@@ -498,7 +498,8 @@ router.post('/edit', function(req, res) {
                     msg: 'Question deleted.'
                 });
                 res.redirect('/questions/find');
-            });break;
+            });
+            break;
     }
 });
 
