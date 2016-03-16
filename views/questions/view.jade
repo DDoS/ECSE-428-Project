@@ -183,9 +183,42 @@ mixin argument(qid, aid, text, submitter, date, upVoted, downVoted, count)
                 each para in text.split('\n')
                     p= para
 
-            .edit-panel
-                a(href="/arguments/edit?q=#{qid}&a=#{aid}") Edit
         .panel-footer
             span.text-muted(id='a' + aid + '_meta')
                 | Submitted by #{submitter} on
                 | #{moment(date.toISOString()).format('YYYY-MM-DD HH:mm:ss')}
+            if user != undefined
+                .edit-panel
+                    a(href="/arguments/edit?q=#{qid}&a=#{aid}") Edit
+                    a(id='deleteButton', type='button', data-toggle='modal',
+                    data-target='#deleteModal'+qid+aid href="#")
+                        |  Delete
+                    if user.username == submitter
+                        .modal.fade(role='dialog' id="deleteModal"+qid+aid)
+                            .modal-dialog
+                                .modal-content
+                                    .modal-header
+                                        button.close(type='button', data-dismiss='modal') ×
+                                        h4.modal-title Are you sure you want to delete this argument?
+                                    .modal-body
+                                        p Once the argument is deleted, you cannot revert this action.
+                                    .modal-footer
+                                        form(method='POST', action='/arguments/edit?q=#{qid}&a=#{aid}')
+                                            input(type='hidden', name='_csrf', value=csrfToken)
+                                            button.btn.btn-default(type='button', data-dismiss='modal')
+                                                | Cancel
+                                            button.btn.btn-danger(id='deleteButton', type='submit' name='action',
+                                            value='delete')
+                                                | Delete
+                    else
+                        .modal.fade(role='dialog' id="deleteModal" + qid + aid)
+                            .modal-dialog
+                                .modal-content
+                                    .modal-header
+                                        button.close(type='button', data-dismiss='modal') ×
+                                        h4.modal-title You cannot delete this argument
+                                    .modal-body
+                                        p You cannot delete an argument created by someone else!
+                                    .modal-footer
+                                            button.btn.btn-default(type='button', data-dismiss='modal')
+                                                | Cancel

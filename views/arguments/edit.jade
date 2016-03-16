@@ -16,10 +16,6 @@ block content
                         value='edit', disabled=(!user || user.username !== argument.submitter))
                         i.fa.fa-label.fa-paper-plane
                         | Submit
-                    button.btn.btn-danger(id='deleteButton', type='submit' name='action',
-                        value='delete', disabled=(!user || user.username !== argument.submitter))
-                        i.fa.fa-label.fa-paper-plane
-                        | Delete
 
         if !user || user.username !== argument.submitter
             | You cannot edit the argument of someone else.
