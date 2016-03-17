@@ -53,14 +53,54 @@ describe('/users', function() {
                 // Log into test user account
                 request.post('/users/login')
                     .send({
-                        username: 'test',
-                        password: 'testpass123'
+                        username: username,
+                        password: password
                     })
                     .end(function() {
                         done();
                     });
             }
         ], done);
+    });
+
+    describe('/users/account', function() {
+        it('should successfully load the "Manage Account" page', function(done) {
+            // TODO
+        });
+
+        it('should fail to load the "Manage Account" when logged out', function(done) {
+            // TODO
+        });
+
+        it('should successfully update email', function(done) {
+            // TODO
+        });
+
+        it('should successfully update password', function(done) {
+            // TODO
+        });
+
+        it('should successfully delete an account', function(done) {
+            async.waterfall([
+                function(done) {
+                    // try to delete user
+                    request.post('/users/account/')
+                        .send({
+                            type: 'delete'
+                        })
+                        .end(function(err, res) {
+                            done(undefined, username, err, res);
+                        });
+                },
+
+                function(done, err, res) {
+                    // verify user was redirected to home page
+                    var location = res.header.location;
+                    assert.ok(res !== -1);
+                }
+            ], done);
+        });
+
     });
 
     after(function(done) {
