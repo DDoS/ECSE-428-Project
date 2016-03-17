@@ -14,21 +14,21 @@ Feature: Downvoting a Argument
         And I have created an argument in favour with username "test_username" and question ID "question1" and text "test argument 3" and ID "argument3"
         And I have downvoted the argument with username "test_username" and question ID "question1" and ID "argument3"
 
-    Scenario: Downvoting a Argument From a Question Page
+    Scenario: [Normal] Downvoting a Argument From a Question Page
         Given I open the site for the question with ID "question1"
         When I downvote the argument with ID "argument1"
         Then I expect the url to contain the url for the question with ID "question1"
         Then I expect that element ".alert.alert-success" contains the text "Downvote recorded."
         Then I expect the argument with ID "argument1" to have a score of "-1"
 
-    Scenario: Downvoting a Upvoted Argument
+    Scenario: [Alternate] Downvoting a Upvoted Argument
         Given I open the site for the question with ID "question1"
         When I downvote the argument with ID "argument2"
         Then I expect the url to contain the url for the question with ID "question1"
         Then I expect that element ".alert.alert-success" contains the text "Downvote recorded."
         Then I expect the argument with ID "argument2" to have a score of "-1"
 
-    Scenario: Downvoting an Downvoted Argument
+    Scenario: [Alternate] Downvoting an Downvoted Argument
         Given I open the site for the question with ID "question1"
         When I downvote the argument with ID "argument3"
         Then I expect the url to contain the url for the question with ID "question1"

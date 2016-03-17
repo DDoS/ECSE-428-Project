@@ -1,0 +1,83 @@
+extends ../layout
+
+block content
+    .page-header
+        h2 #{title}
+
+    script(type='text/javascript').
+        function editEmail() {
+            $('#emailInput')
+                    .removeAttr('readonly')
+                    .select();
+        }
+
+        function editPassword() {
+            $('#passwordInput')
+                    .attr('placeholder', 'Password')
+                    .removeAttr('readonly')
+                    .select();
+            $('#confirmPasswordFormGroup').show();
+        }
+
+    form.form-horizontal(method='POST')
+        input(type='hidden', name='_csrf', value=csrfToken)
+        .form-group
+            label.col-sm-2.control-label Email
+            .col-sm-10
+                .input-group
+                    input.form-control(id='emailInput', name='email',
+                                       type='email', placeholder="Email",
+                                       readonly, value=email)
+                    span.input-group-btn(id='emailEditButtonGroup')
+                        button.btn.btn-default(type='button',
+                                               onclick="editEmail();")
+                            i.fa.fa-edit
+
+        .form-group
+            label.col-sm-2.control-label Password
+            .col-sm-10
+                .input-group
+                    input.form-control(id='passwordInput', name='password',
+                                       type='password',
+                                       placeholder="Password unchanged",
+                                       readonly)
+                    span.input-group-btn(id='passwordEditButtonGroup')
+                        button.btn.btn-default(type='button',
+                                               onclick="editPassword();")
+                            i.fa.fa-edit
+        .form-group(id='confirmPasswordFormGroup', style='display: none;')
+            label.col-sm-2.control-label Confirm Password
+            .col-sm-10
+                input.form-control(id='confirmPasswordInput',
+                                   name='confirmPassword',
+                                   type='password',
+                                   placeholder="Confirm Password")
+        .form-group
+            .col-sm-offset-2.col-sm-10
+                .btn-toolbar
+                    button.btn.btn-primary(id='updateButton', name='type',
+                                           value='update', type='submit')
+                        i.fa.fa-label.fa-user
+                        | Update Account Information
+        .form-group
+            .col-sm-offset-2.col-sm-10
+                .btn-toolbar
+                    button.btn.btn-danger(id='deleteButton', type='button', data-toggle='modal', data-target='#deleteModal')
+                        i.fa.fa-label.fa-user
+                        | Delete Account
+
+                    #deleteModal.modal.fade(role='dialog')
+                        .modal-dialog
+                            .modal-content
+                                .modal-header
+                                    button.close(type='button', data-dismiss='modal') ×
+                                    h4.modal-title Are you sure you want to delete your account?
+                                .modal-body
+                                    p We don't want to see you go...
+                                .modal-footer
+                                    button.btn.btn-default(type='button', data-dismiss='modal')
+                                        | Cancel
+                                    button.btn.btn-danger(id='realDeleteButton', type='submit' name='type',
+                                    value='delete')
+                                        | Delete
+                                        

@@ -6,10 +6,10 @@ Feature: Search for a Question
     Background:
         Given the database has been cleared
         And I have a registered user account with username "test_username" and password "test_password" and email "test@example.com"
-        And I have created a question with username "test_username" and question "test question" and details "aaa bbb ccc" and ID "question1"
-        And I have created a question with username "test_username" and question "test question" and details "ddd eee fff" and ID "question2"
-        And I have created a question with username "test_username" and question "test question" and details "aaa bbb ccc ddd eee fff" and ID "question3"
-        And I have created a question with username "test_username" and question "test question" and details "bbb ggg" and ID "question4"
+        And I have created a question with username "test_username" and question "test question 1" and details "aaa bbb ccc" and ID "question1"
+        And I have created a question with username "test_username" and question "test question 2" and details "ddd eee fff" and ID "question2"
+        And I have created a question with username "test_username" and question "test question 3" and details "aaa bbb ccc ddd eee fff" and ID "question3"
+        And I have created a question with username "test_username" and question "test question 4" and details "bbb ggg" and ID "question4"
 
     Scenario: [Normal] Obtaining Question Search Results Using One Keyword
         Given I open the site "/questions/find"

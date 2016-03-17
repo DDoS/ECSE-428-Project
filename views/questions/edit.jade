@@ -1,0 +1,33 @@
+extends ../layout
+
+block content
+    if question != undefined
+        .page-header
+            h2 #{title}
+
+        form.form-horizontal(method='POST', action='/questions/edit?q=#{question.id}')
+            input(type='hidden', name='_csrf', value=csrfToken)
+            .form-group
+                label.col-sm-2.control-label Question
+                .col-sm-10
+                    input.form-control(id='questionInput', name='question',
+                    placeholder="What's your question?",value="#{question.title}",disabled=(!user || user.username !== question.submitter))
+            .form-group
+                label.col-sm-2.control-label Details
+                .col-sm-10
+                    textarea.form-control(id='detailsTextarea', name='details',
+                    rows='10',placeholder="What's the context of the question? Do you have an opinion?",disabled=(!user || user.username !== question.submitter))
+                        | #{question.text}
+            .form-group
+                .btn-group.col-sm-offset-2.col-sm-10
+                    button.btn.btn-success(id='submitButton', type='submit' name='action',
+                    value='edit', disabled=(!user || user.username !== question.submitter))
+                        i.fa.fa-label.fa-paper-plane
+                        | Save Changes
+                    button.btn.btn-danger(id='cancelButton', type='submit' name='action',
+                    value='cancel', disabled=(!user || user.username !== question.submitter))
+                        i.fa.fa-label.fa-paper-plane
+                        | Cancel
+
+
+

@@ -1,0 +1,103 @@
+CREATE TABLE IF NOT EXISTS users (
+    username VARCHAR(64) NOT NULL PRIMARY KEY,
+    salt CHAR(64) NOT NULL,
+    password CHAR(64) NOT NULL,
+    email VARCHAR(128) NOT NULL,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+-- CREATE TABLE IF NOT EXISTS moderators (
+--     username VARCHAR(64) NOT NULL PRIMARY KEY REFERENCES users
+-- );
+
+-- CREATE TABLE IF NOT EXISTS admins (
+--     username VARCHAR(64) NOT NULL PRIMARY KEY REFERENCES users
+-- );
+
+CREATE TABLE IF NOT EXISTS questions (
+    id BIGSERIAL PRIMARY KEY,
+    title VARCHAR(256) NOT NULL,
+    text VARCHAR(4096) NOT NULL,
+    date TIMESTAMP DEFAULT now(),
+    last_edit_date TIMESTAMP,
+    submitter VARCHAR(64) NOT NULL REFERENCES users
+);
+
+CREATE OR REPLACE VIEW user_questions AS
+    SELECT id, title, text, date, last_edit_date, submitter,
+        (SELECT deleted FROM users WHERE username = submitter) AS submitter_deleted
+    FROM questions;
+
+CREATE TABLE IF NOT EXISTS arguments (
+    id BIGSERIAL,
+    question_id BIGINT NOT NULL REFERENCES questions ON DELETE CASCADE,
+    type BOOLEAN NOT NULL,
+    text VARCHAR(4096) NOT NULL,
+    date TIMESTAMP DEFAULT now(),
+    last_edit_date TIMESTAMP,
+    submitter VARCHAR(64) NOT NULL REFERENCES users,
+    PRIMARY KEY (id, question_id)
+);
+
+CREATE OR REPLACE VIEW user_arguments AS
+    SELECT id, question_id, type, text, date, last_edit_date, submitter,
+        (SELECT deleted FROM users WHERE username = submitter) AS submitter_deleted
+    FROM arguments;
+
+CREATE TABLE IF NOT EXISTS question_votes (
+    question_id BIGINT NOT NULL REFERENCES questions ON DELETE CASCADE,
+    username VARCHAR(64) NOT NULL REFERENCES users,
+    vote SMALLINT NOT NULL CHECK (vote = -1 OR vote = 1),
+    PRIMARY KEY (question_id, username)
+);
+
+CREATE OR REPLACE FUNCTION
+    upsert_question_vote(qid BIGINT, usr VARCHAR(64), v SMALLINT)
+    RETURNS VOID AS
+$$
+    BEGIN
+        LOOP
+            UPDATE question_votes SET vote = v
+            WHERE question_id = qid AND username = usr;
+            IF found THEN
+                RETURN;
+            END IF;
+            BEGIN
+                INSERT INTO question_votes (question_id, username, vote)
+                    VALUES (qid, usr, v);
+                RETURN;
+                EXCEPTION WHEN unique_violation THEN
+            END;
+        END LOOP;
+    END;
+$$ LANGUAGE plpgsql;
+
+CREATE TABLE IF NOT EXISTS argument_votes (
+    question_id BIGINT NOT NULL,
+    argument_id BIGINT NOT NULL,
+    username VARCHAR(64) NOT NULL REFERENCES users,
+    vote SMALLINT NOT NULL CHECK (vote = -1 OR vote = 1),
+    FOREIGN KEY (question_id, argument_id) REFERENCES arguments (question_id, id) ON DELETE CASCADE,
+    PRIMARY KEY (question_id, argument_id, username)
+);
+
+CREATE OR REPLACE FUNCTION
+    upsert_argument_vote(qid BIGINT, aid BIGINT, usr VARCHAR(64), v SMALLINT)
+    RETURNS VOID AS
+$$
+    BEGIN
+        LOOP
+            UPDATE argument_votes SET vote = v
+            WHERE question_id = qid AND argument_id = aid AND username = usr;
+            IF found THEN
+                RETURN;
+            END IF;
+            BEGIN
+                INSERT INTO argument_votes (question_id, argument_id, username, vote)
+                    VALUES (qid, aid, usr, v);
+                RETURN;
+                EXCEPTION WHEN unique_violation THEN
+            END;
+        END LOOP;
+    END;
+$$ LANGUAGE plpgsql;

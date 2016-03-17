@@ -1,15 +1,8 @@
-/**
- * log in to site
- */
-
-var githubPage = require('../pageObjects/githubPage.js');
-
-module.exports = function (login, password, done) {
-    return this.browser
-        .pause(5000)
-        .click(githubPage.signInButton)
-        .setValue(githubPage.loginInput, login)
-        .setValue(githubPage.passwordInput, password)
-        .click(githubPage.signIn2Button)
+module.exports = function(username, password, done) {
+    this.browser
+        .url(this.baseUrl + '/users/login')
+        .setValue('#usernameInput', username)
+        .setValue('#passwordInput', password)
+        .click('#loginButton')
         .call(done);
 };

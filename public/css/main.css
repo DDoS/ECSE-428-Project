@@ -35,3 +35,8 @@ footer > .container {
 .vote-panel-text {
     overflow: hidden;
 }
+
+.edit-panel {
+    float: right;
+    margin-left: 15px;
+}

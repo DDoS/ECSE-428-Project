@@ -58,6 +58,128 @@ describe('Database', function() {
         });
     });
 
+    describe('editUserEmail(username, newEmail, editDone)', function() {
+        before(function(done) {
+            database.createUser('EditingAndLayout', 'MACHO MAN', 'eal@gifs.io', function(user) {
+                done();
+            });
+        });
+
+        it('Should update the user\'s email', function(done) {
+            database.editUserEmail('EditingAndLayout', 'highQuality@gifs.io', function(editDone) {
+                database.getUser('EditingAndLayout', function(user) {
+                    assert.equal('EditingAndLayout', user.username);
+                    assert.equal('highQuality@gifs.io', user.email);
+                    done();
+                });
+            });
+        });
+
+        it('Should not allow an empty email', function() {
+            assert.throws(
+                function() {
+                    database.editUserEmail('EditingAndLayout', '', function() {});
+                },
+                Error, 'new email is empty'
+            );
+        });
+    });
+
+    describe('editUserPassword(username, newPasswordText, editDone)', function() {
+        before(function(done) {
+            database.createUser('pepsi_next', 'NSFW', 'I@warned.you', function(user) {
+                done();
+            });
+        });
+
+        it('Should update the user\'s password', function(done) {
+            database.editUserPassword('pepsi_next', 'SO MUCH KARMA', function(editDone) {
+                database.getUser('pepsi_next', function(user) {
+                    assert.equal('pepsi_next', user.username);
+                    assert(user.authenticate('SO MUCH KARMA'));
+                    assert(!user.authenticate('NSFW'));
+                    done();
+                });
+            });
+        });
+
+        it('Should not allow an empty password', function() {
+            assert.throws(
+                function() {
+                    database.editUserEmail('pepsi_next', '', function() {});
+                },
+                Error, 'new password is empty'
+            );
+        });
+    });
+
+    describe('deleteUser(username, deleteDone)', function() {
+        var questionID = undefined;
+        var argumentID = undefined;
+        var copyPasta =
+            'Here\'s the thing. You said a "jackdaw is a crow."\n' +
+            'Is it in the same family? Yes. No one\'s arguing that.\n' +
+            'As someone who is a scientist who studies crows, I am telling you, ' +
+            'specifically, in science, no one calls jackdaws crows. If you want ' +
+            'to be "specific" like you said, then you shouldn\'t either. They\'re not the same thing.\n' +
+            'If you\'re saying "crow family" you\'re referring to the taxonomic ' +
+            'grouping of Corvidae, which includes things from nutcrackers to blue jays to ravens.\n' +
+            'So your reasoning for calling a jackdaw a crow is because random people ' +
+            '"call the black ones crows?" Let\'s get grackles and blackbirds in there, then, too.\n' +
+            'Also, calling someone a human or an ape? It\'s not one or the other, ' +
+            'that\'s not how taxonomy works. They\'re both. A jackdaw is a jackdaw ' +
+            'and a member of the crow family. But that\'s not what you said. You said ' +
+            'a jackdaw is a crow, which is not true unless you\'re okay with calling all ' +
+            'members of the crow family crows, which means you\'d call blue jays, ravens, ' +
+            'and other birds crows, too. Which you said you don\'t.\n' +
+            'It\'s okay to just admit you\'re wrong, you know?';
+
+        before(function(done) {
+            database.createUser('Unidan', 'Jackdaw', 'uni@ban.ned', function(user) {
+                database.createQuestion(
+                    'Is a jackdaw a crow?',
+                    'WHAT IF I TOLD YOU\nTHE CROW HE\'S REFERRING TO IS ACTUALLY A JACKDAW?',
+                    'Unidan',
+                    function(question) {
+                        questionID = question.id;
+                        database.createArgument(questionID, db.ArgumentType.CON, copyPasta, 'Unidan', function(argument) {
+                            argumentID = argument.id;
+                            database.setQuestionVote(questionID, 'Unidan', db.VoteType.UP, function() {
+                                database.setArgumentVote(questionID, argumentID, 'Unidan', db.VoteType.DOWN, function() {
+                                    done();
+                                });
+                            });
+                        });
+                    }
+                );
+            });
+        });
+
+        it('Should delete the user but not his submissions or votes', function(done) {
+            database.deleteUser('Unidan', function(deleteDone) {
+                database.getUser('Unidan', function(user) {
+                    assert.equal('Unidan', user.username);
+                    assert.equal(true, user.deleted);
+                    database.getQuestion(questionID, function(question) {
+                        assert.equal('[deleted]', question.submitter);
+                        assert.equal(true, question.submitterDeleted);
+                        database.getArgument(questionID, argumentID, function(argument) {
+                            assert.equal('[deleted]', argument.submitter);
+                            assert.equal(true, argument.submitterDeleted);
+                            database.getQuestionVote(questionID, 'Unidan', function(questionVote) {
+                                assert.equal(db.VoteType.UP, questionVote);
+                                database.getArgumentVote(questionID, argumentID, 'Unidan', function(argumentVote) {
+                                    assert.equal(db.VoteType.DOWN, argumentVote);
+                                    done();
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+
     describe('createQuestion(title, text, submitter, createDone)', function() {
         before(function(done) {
             database.createUser('Bloke', 'badSecurity', 'bloke@shadymail.so', function(user) {
@@ -89,7 +211,10 @@ describe('Database', function() {
                     );
                     assert(question.date >= beforeDate);
                     assert(question.date <= new Date());
+                    assert.strictEqual(null, question.lastEditDate);
+                    assert.equal(false, question.wasEdited);
                     assert.equal('Bloke', question.submitter);
+                    assert.equal(false, question.submitterDeleted);
                     // Check if the question is indeed in the db
                     database.getQuestion(question.id, function(getQuestion) {
                         assert.equal(question.id, getQuestion.id);
@@ -131,7 +256,77 @@ describe('Database', function() {
         });
     });
 
-    describe('getNewQuestions(since, limit, offset, keywords, getDone)', function() {
+    describe('editQuestion(id, newTitle ,newText, editDone)', function() {
+        var questionID = undefined;
+        var questionDate = undefined;
+
+        before(function(done) {
+            database.createUser('Out', 'of', 'ideas@for.content', function(user) {
+                database.createQuestion('Always use original test data', 'Even if no one reads it', 'Out', function(question) {
+                    questionID = question.id;
+                    questionDate = question.date;
+                    done();
+                });
+            });
+        });
+
+        it('Should change the title and text of the question and update the last edit date', function(done) {
+            database.editQuestion(questionID, 'No Effort', 'Low Effort', function(editDone) {
+                database.getQuestion(questionID, function(question) {
+                    assert.equal(questionID, question.id);
+                    assert.equal('No Effort', question.title);
+                    assert.equal('Low Effort', question.text);
+                    assert(question.lastEditDate > questionDate);
+                    assert.equal(true, question.wasEdited);
+                    done();
+                });
+            });
+        });
+
+        it('Should not allow an empty text', function() {
+            assert.throws(
+                function() {
+                    database.editQuestion(questionID, 'No Effort', '', function() {});
+                },
+                Error, 'new text is empty'
+            );
+        });
+
+        it('Should not allow an empty title', function() {
+            assert.throws(
+                function() {
+                    database.editQuestion(questionID, '', 'Low Effort', function() {});
+                },
+                Error, 'new title is empty'
+            );
+        });
+    });
+
+    describe('deleteQuestion(id, deleteDone)', function() {
+        var questionID = undefined;
+
+        before(function(done) {
+            database.createUser('Voat', 'is', 'just@absolute.garbage', function(user) {
+                database.createQuestion('It\'s all the trash reddit banned', 'and worse', 'Voat', function(question) {
+                    questionID = question.id;
+                    database.createArgument(questionID, db.ArgumentType.CON, 'But I want to hate on fat people :(', 'Voat', function(argument) {
+                        done();
+                    });
+                });
+            });
+        });
+
+        it('Should delete the question', function(done) {
+            database.deleteQuestion(questionID, function(deleteDone) {
+                database.getQuestion(questionID, function(question) {
+                    assert.strictEqual(undefined, question);
+                    done();
+                });
+            });
+        });
+    });
+
+    describe('findQuestions(options, getDone)', function() {
         var someDate = undefined;
         var numberAfterThatDate = 0;
 
@@ -142,19 +337,21 @@ describe('Database', function() {
                 questions = [];
                 var j = 0;
                 for (var i = 0; i < 20; i++) {
-                    database.createQuestion('Title', 'Text', 'Spammer', function(question) {
-                        questions.push(question);
-                        if (++j >= 20) {
-                            // Find the date of the question in the middle
-                            someDate = questions[10].date;
-                            // Count the number of questions made after it
-                            questions.forEach(function(question, index, array) {
-                                if (question.date >= someDate) {
-                                    numberAfterThatDate++;
-                                }
-                            });
-                            done();
-                        }
+                    database.createQuestion('Title' + i, 'Text' + i, 'Spammer', function(question) {
+                        database.setQuestionVote(question.id, 'Spammer', question.id % 2 == 0 ? -1 : 1, function() {
+                            questions.push(question);
+                            if (++j >= 20) {
+                                // Find the date of the question in the middle
+                                someDate = questions[10].date;
+                                // Count the number of questions made after it
+                                questions.forEach(function(question, index, array) {
+                                    if (question.date >= someDate) {
+                                        numberAfterThatDate++;
+                                    }
+                                });
+                                done();
+                            }
+                        });
                     });
                 }
             });
@@ -162,9 +359,10 @@ describe('Database', function() {
 
         it('Should return at most the 10 newest questions in descending date, when no date, limit or offset is defined',
             function(done) {
-                database.getNewQuestions(undefined, undefined, undefined, undefined, function(questions) {
+                var options = new db.SearchOptions().orderAscending();
+                database.findQuestions(options, function(questions) {
                     assert.equal(10, questions.length);
-                    assert(isSorted(questions));
+                    assert(isSorted(questions, 'date'));
                     done();
                 });
             }
@@ -172,9 +370,10 @@ describe('Database', function() {
 
         it('Should return the newest questions in descending date, up to a given limit, when no date or offset is defined',
             function(done) {
-                database.getNewQuestions(undefined, 5, undefined, undefined, function(questions) {
+                var options = new db.SearchOptions().withLimit(5).orderAscending();
+                database.findQuestions(options, function(questions) {
                     assert.equal(5, questions.length);
-                    assert(isSorted(questions));
+                    assert(isSorted(questions, 'date'));
                     done();
                 });
             }
@@ -182,9 +381,10 @@ describe('Database', function() {
 
         it('Should return the newest questions in descending date, before the given date, up to a given limit when no offset is given',
             function(done) {
-                database.getNewQuestions(someDate, 20, undefined, undefined, function(questions) {
+                var options = new db.SearchOptions().withLimit(20).withSince(someDate).orderAscending();
+                database.findQuestions(options, function(questions) {
                     assert.equal(numberAfterThatDate, questions.length);
-                    assert(isSorted(questions));
+                    assert(isSorted(questions, 'date'));
                     questions.forEach(function(question, index, array) {
                         assert(question.date >= someDate);
                     });
@@ -195,18 +395,20 @@ describe('Database', function() {
 
         it('Should return the newest questions in descending date, up to a given limit, starting at a given offset, when no date is defined',
             function(done) {
-                database.getNewQuestions(undefined, 10, 0, undefined, function(questions) {
+                var options1 = new db.SearchOptions().withLimit(10).withOffset(0).orderAscending();
+                database.findQuestions(options1, function(questions) {
                     // Get the first 10 questions
                     assert.equal(10, questions.length);
-                    assert(isSorted(questions));
+                    assert(isSorted(questions, 'date'));
                     // Get the other 10
-                    database.getNewQuestions(undefined, 10, 10, undefined, function(restOfQuestions) {
+                    var options2 = new db.SearchOptions().withLimit(10).withOffset(10).orderAscending();
+                    database.findQuestions(options2, function(restOfQuestions) {
                         assert.equal(10, restOfQuestions.length);
                         // Append both question arrays
                         questions.forEach(function(question, index, array) {
                             array.push(restOfQuestions[index]);
                         });
-                        assert(isSorted(questions));
+                        assert(isSorted(questions, 'date'));
                         // Assert no duplicates, all questions have been returned once
                         questions.sort().forEach(function(question, index, array) {
                             assert(index == 0 || question != array[index - 1]);
@@ -217,13 +419,36 @@ describe('Database', function() {
             }
         );
 
-        it('Should not allow since dates in the future', function() {
-            assert.throws(
-                function() {
-                    database.getNewQuestions(new Date('2018-01-01'), undefined, undefined, undefined, function() {});
-                },
-                Error, 'Since date is in the future'
-            );
+        it('Should return the questions with given keywords', function(done) {
+            var options = new db.SearchOptions().withKeywords('text1');
+            database.findQuestions(options, function (questions) {
+                assert.equal(1, questions.length);
+                assert.equal('Title1', questions[0].title);
+                assert.equal('Text1', questions[0].text);
+                options.withKeywords('title3');
+                database.findQuestions(options, function (questions) {
+                    assert.equal(1, questions.length);
+                    assert.equal('Title3', questions[0].title);
+                    assert.equal('Text3', questions[0].text);
+                    done();
+                });
+            });
+        });
+
+        it('Should optionally return the questions sorted by score', function(done) {
+            var options = new db.SearchOptions().withLimit(20).orderByScore().orderAscending();
+            database.findQuestions(options, function(questions) {
+                var i = 0;
+                questions.forEach(function(question, index, array) {
+                    database.getQuestionVoteScore(question.id, function(score) {
+                        question.score = score;
+                        if (++i === array.length) {
+                            assert(isSorted(array, 'score'));
+                            done();
+                        }
+                    });
+                });
+            });
         });
     });
 
@@ -254,7 +479,6 @@ describe('Database', function() {
                     'Small loan of a million dollars.',
                 'Dude',
                 function(argument) {
-                    assert.equal(1, argument.id);
                     assert.strictEqual(db.ArgumentType.CON, argument.type);
                     assert.equal(
                         'Can\'t stump the Trump!\n' +
@@ -265,7 +489,10 @@ describe('Database', function() {
                     );
                     assert(argument.date >= beforeDate);
                     assert(argument.date <= new Date());
+                    assert.strictEqual(null, argument.lastEditDate);
+                    assert.equal(false, argument.wasEdited);
                     assert.equal('Dude', argument.submitter);
+                    assert.equal(false, argument.submitterDeleted);
                     // Check if the question is indeed in the db
                     database.getArgument(questionID, argument.id, function(getArgument) {
                         assert.equal(argument.id, getArgument.id);
@@ -316,7 +543,73 @@ describe('Database', function() {
         });
     });
 
-    describe('getNewArguments(questionID, type, since, limit, offset, getDone)', function() {
+    describe('editArgument(questionID, id, newText, editDone)', function() {
+        var questionID = undefined;
+        var argumentID = undefined;
+        var argumentDate = undefined;
+
+        before(function(done) {
+            database.createUser('Drumpf', 'cuck', 'the@dona.ld', function(user) {
+                database.createQuestion('Climate change is a chinese invention', 'to sabottage American industries', 'Drumpf', function(question) {
+                    questionID = question.id;
+                    database.createArgument(questionID, db.ArgumentType.PRO, 'Make America great again', 'Drumpf', function(argument) {
+                        argumentID = argument.id;
+                        argumentDate = argument.date;
+                        done();
+                    });
+                });
+            });
+        });
+
+        it('Should change the text of the argument', function(done) {
+            database.editArgument(questionID, argumentID, 'HIGH ENERGY', function(editDone) {
+                database.getArgument(questionID, argumentID, function(argument) {
+                    assert.equal(argumentID, argument.id);
+                    assert.equal('HIGH ENERGY', argument.text);
+                    assert(argument.lastEditDate > argumentDate);
+                    assert.equal(true, argument.wasEdited);
+                    done();
+                });
+            });
+        });
+
+        it('Should not allow an empty text', function() {
+            assert.throws(
+                function() {
+                    database.editArgument(questionID, argumentID, '', function() {});
+                },
+                Error, 'new text is empty'
+            );
+        });
+    });
+
+    describe('deleteArgument(questionID, id, deleteDone)', function() {
+        var questionID = undefined;
+        var argumentID = undefined;
+
+        before(function(done) {
+            database.createUser('Sanders', 'communist', 'bernie@br.os', function(user) {
+                database.createQuestion('It\'s Wall Street\'s fault', 'and WalMart too', 'Sanders', function(question) {
+                    questionID = question.id;
+                    database.createArgument(questionID, db.ArgumentType.PRO, 'YUUUUGE', 'Sanders', function(argument) {
+                        argumentID = argument.id;
+                        done();
+                    });
+                });
+            });
+        });
+
+        it('Should delete the argument', function(done) {
+            database.deleteArgument(questionID, argumentID, function(deleteDone) {
+                database.getArgument(questionID, argumentID, function(argument) {
+                    assert.strictEqual(undefined, argument);
+                    done();
+                });
+            });
+        });
+    });
+
+    describe('findArguments(questionID, options, getDone)', function() {
         var questionID = undefined;
         var someDate = undefined;
         var numberAfterThatDate = 0;
@@ -329,19 +622,21 @@ describe('Database', function() {
                     args = [];
                     var j = 0;
                     for (var i = 0; i < 20; i++) {
-                        database.createArgument(questionID, i % 2 == 0, 'Text', 'Scammer', function(argument) {
-                            args.push(argument);
-                            if (++j >= 20) {
-                                // Find the date of the argument in the middle
-                                someDate = args[10].date;
-                                // Count the number of arguments made after it
-                                args.forEach(function(argument, index, array) {
-                                    if (argument.date >= someDate) {
-                                        numberAfterThatDate++;
-                                    }
-                                });
-                                done();
-                            }
+                        database.createArgument(questionID, i % 2 == 0, 'Text' + i, 'Scammer', function(argument) {
+                            database.setArgumentVote(questionID, argument.id, 'Scammer', argument.id % 2 == 0 ? -1 : 1, function() {
+                                args.push(argument);
+                                if (++j >= 20) {
+                                    // Find the date of the argument in the middle
+                                    someDate = args[10].date;
+                                    // Count the number of arguments made after it
+                                    args.forEach(function(argument, index, array) {
+                                        if (argument.date >= someDate) {
+                                            numberAfterThatDate++;
+                                        }
+                                    });
+                                    done();
+                                }
+                            });
                         });
                     }
                 });
@@ -350,9 +645,10 @@ describe('Database', function() {
 
         it('Should return at most the 10 newest arguments in descending date, when no type, date, limit or offset is defined',
             function(done) {
-                database.getNewArguments(questionID, undefined, undefined, undefined, undefined, undefined, function (args) {
+                var options = new db.SearchOptions().orderAscending();
+                database.findArguments(questionID, options, function (args) {
                     assert.equal(10, args.length);
-                    assert(isSorted(args));
+                    assert(isSorted(args, 'date'));
                     done();
                 });
             }
@@ -360,9 +656,10 @@ describe('Database', function() {
 
         it('Should return the newest arguments in descending date, up to a given limit, when no type, date or offset is defined',
             function(done) {
-                database.getNewArguments(questionID, undefined, undefined, 5, undefined, undefined, function (args) {
+                var options = new db.SearchOptions().withLimit(5).orderAscending();
+                database.findArguments(questionID, options, function (args) {
                     assert.equal(5, args.length);
-                    assert(isSorted(args));
+                    assert(isSorted(args, 'date'));
                     done();
                 });
             }
@@ -370,9 +667,10 @@ describe('Database', function() {
 
         it('Should return the newest arguments in descending date, before the given date, up to a given limit when no type or offset is given',
             function(done) {
-                database.getNewArguments(questionID, undefined, someDate, 20, undefined, undefined, function (args) {
+                var options = new db.SearchOptions().withSince(someDate).withLimit(20).orderAscending();
+                database.findArguments(questionID, options, function (args) {
                     assert.equal(numberAfterThatDate, args.length);
-                    assert(isSorted(args));
+                    assert(isSorted(args, 'date'));
                     args.forEach(function (argument, index, array) {
                         assert(argument.date >= someDate);
                     });
@@ -383,18 +681,20 @@ describe('Database', function() {
 
         it('Should return the newest arguments in descending date, up to a given limit, starting at a given offset, when no type or date is defined',
             function(done) {
-                database.getNewArguments(questionID, undefined, undefined, 10, 0, undefined, function (args) {
+                var options = new db.SearchOptions().withLimit(10).withOffset(0).orderAscending();
+                database.findArguments(questionID, options, function (args) {
                     // Get the first 10 arguments
                     assert.equal(10, args.length);
-                    assert(isSorted(args));
+                    assert(isSorted(args, 'date'));
                     // Get the other 10
-                    database.getNewArguments(questionID, undefined, undefined, 10, 10, undefined, function (restOfArguments) {
+                    var options = new db.SearchOptions().withLimit(10).withOffset(10).orderAscending();
+                    database.findArguments(questionID, options, function (restOfArguments) {
                         assert.equal(10, restOfArguments.length);
                         // Append both argument arrays
                         args.forEach(function (argument, index, array) {
                             array.push(restOfArguments[index]);
                         });
-                        assert(isSorted(args));
+                        assert(isSorted(args, 'date'));
                         // Assert no duplicates, all arguments have been returned once
                         args.forEach(function (argument, index, array) {
                             assert(index == 0 || argument != array[index - 1]);
@@ -407,16 +707,18 @@ describe('Database', function() {
 
         it('Should return at most the 10 newest arguments in descending date for the given type, when no date, limit or offset is defined',
             function(done) {
-                database.getNewArguments(questionID, db.ArgumentType.PRO, undefined, undefined, undefined, undefined, function (proArgs) {
+                var options = new db.SearchOptions().withType(db.ArgumentType.PRO).orderAscending();
+                database.findArguments(questionID, options, function (proArgs) {
                     assert.equal(10, proArgs.length);
-                    assert(isSorted(proArgs));
+                    assert(isSorted(proArgs, 'date'));
                     proArgs.forEach(function (argument, index, array) {
                         assert.strictEqual(db.ArgumentType.PRO, argument.type);
                     });
                     // Now check the con args
-                    database.getNewArguments(questionID, db.ArgumentType.CON, undefined, undefined, undefined, undefined, function (conArgs) {
+                    var options = new db.SearchOptions().withType(db.ArgumentType.CON).orderAscending();
+                    database.findArguments(questionID, options, function (conArgs) {
                         assert.equal(10, conArgs.length);
-                        assert(isSorted(conArgs));
+                        assert(isSorted(conArgs, 'date'));
                         conArgs.forEach(function (argument, index, array) {
                             assert.strictEqual(db.ArgumentType.CON, argument.type);
                         });
@@ -434,13 +736,29 @@ describe('Database', function() {
             }
         );
 
-        it('Should not allow since dates in the future', function() {
-            assert.throws(
-                function() {
-                    database.getNewQuestions(new Date('2018-01-01'), undefined, undefined, undefined, function() {});
-                },
-                Error, 'Since date is in the future'
-            );
+        it('Should return the arguments with given keywords', function(done) {
+            var options = new db.SearchOptions().withKeywords('text1');
+            database.findArguments(questionID, options, function (args) {
+                assert.equal(1, args.length);
+                assert.equal('Text1', args[0].text);
+                done();
+            });
+        });
+
+        it('Should optionally return the arguments sorted by score', function(done) {
+            var options = new db.SearchOptions().withLimit(20).orderByScore().orderAscending();
+            database.findArguments(questionID, options, function(arguments) {
+                var i = 0;
+                arguments.forEach(function(argument, index, array) {
+                    database.getArgumentVoteScore(questionID, argument.id, function(score) {
+                        argument.score = score;
+                        if (++i === array.length) {
+                            assert(isSorted(array, 'score'));
+                            done();
+                        }
+                    });
+                });
+            });
         });
     });
 
@@ -696,8 +1014,11 @@ describe('Database', function() {
     });
 });
 
-function isSorted(array) {
+function isSorted(array, field) {
     return array.every(function(value, index, array) {
-      return index === 0 || array[index - 1] <= value;
+        if (index === 0) {
+            return true
+        }
+        return array[index - 1][field] <= value[field];
     });
 }
