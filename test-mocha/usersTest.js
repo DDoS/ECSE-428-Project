@@ -64,21 +64,14 @@ describe('/users', function() {
     });
 
     describe('/users/account', function() {
-        it('should successfully load the "Manage Account" page', function(done) {
-            // TODO
-        });
+        // TODO 
+        it('should successfully load the "Manage Account" page');
 
-        it('should fail to load the "Manage Account" when logged out', function(done) {
-            // TODO
-        });
+        it('should fail to load the "Manage Account" when logged out');
 
-        it('should successfully update email', function(done) {
-            // TODO
-        });
+        it('should successfully update email');
 
-        it('should successfully update password', function(done) {
-            // TODO
-        });
+        it('should successfully update password');
 
         it('should successfully delete an account', function(done) {
             async.waterfall([
@@ -89,14 +82,16 @@ describe('/users', function() {
                             type: 'delete'
                         })
                         .end(function(err, res) {
-                            done(undefined, username, err, res);
+                            done(undefined,err,res);
                         });
                 },
-
-                function(done, err, res) {
-                    // verify user was redirected to home page
+                function(err, res, done) {
+                    // verify user is redirected to home page
+                    // and that no errors occurred
                     var location = res.header.location;
-                    assert.ok(res !== -1);
+                    assert.ok(location === '/');
+                    assert.ok(err === null);
+                    done();
                 }
             ], done);
         });

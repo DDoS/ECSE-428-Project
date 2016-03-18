@@ -118,9 +118,10 @@ router.post('/account', isAuthenticated, function(req, res) {
             req.assert('confirmPassword', 'Passwords do not' +
                 ' match.').equals(req.body.password);
         }
-    } else {
+    } else if (req.body.type !== 'delete') {
         return error(updateFail);
     }
+
     var errors = req.validationErrors();
     if (errors) {
         req.flash('errors', errors);
