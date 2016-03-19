@@ -22,7 +22,7 @@
   },
   "scripts": {
     "start": "node ./bin/www",
-    "test": "./node_modules/.bin/mocha test-mocha -u tdd --reporter spec",
+    "test": "./node_modules/.bin/mocha test-mocha -u tdd --reporter spec --timeout 5000",
     "test-cucumber": "node ./test-cucumber/run.js"
   },
   "dependencies": {
