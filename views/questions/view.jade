@@ -171,7 +171,7 @@ mixin question(id, text, submitter, date, upVoted, downVoted, count, user)
                             .modal-footer
                                 form(method='POST', action='/questions/edit?q=#{id}')
                                     input(type='hidden', name='_csrf', value=csrfToken)
-                                    button.btn.btn-default(type='button', data-dismiss='modal')
+                                    button.btn.btn-default(id='cancelButton', type='button', data-dismiss='modal')
                                         | Cancel
                                     button.btn.btn-danger(id='deleteButton', type='submit' name='action',
                                     value='delete')
