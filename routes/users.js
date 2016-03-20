@@ -109,10 +109,10 @@ router.post('/account', isAuthenticated, function(req, res) {
 
     // Client input validation
     if (req.body.type === 'update') {
-        if (req.body.email !== '') {
+        if (req.body.email) {
             req.assert('email', 'Email is invalid.').isEmail();
         }
-        if (req.body.password !== '' || req.body.confirmPassword !== '') {
+        if (req.body.password || req.body.confirmPassword) {
             req.assert('password', 'Password must be at least 4 characters' +
                 ' in length.').len(4);
             req.assert('confirmPassword', 'Passwords do not' +
