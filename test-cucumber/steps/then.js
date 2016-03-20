@@ -111,5 +111,8 @@ module.exports = function (dict) {
             require('../support/custom/pageContainsArgumentAgainstFirst'))
 
         .then(/^I expect the argument with ID "$string" to( not)* have a score of "$string"$/,
-            require('../support/custom/argumentScore'));
+            require('../support/custom/argumentScore'))
+
+        .then(/^I expect that the( css)* attribute "$string" from element "$string" does( not)* exist$/,
+            require('../support/custom/checkPropertyExists'));
 };
