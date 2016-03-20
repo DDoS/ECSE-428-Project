@@ -43,7 +43,8 @@ block content
                                        placeholder="Password unchanged",
                                        readonly)
                     span.input-group-btn(id='passwordEditButtonGroup')
-                        button.btn.btn-default(type='button',
+                        button.btn.btn-default(id='passwordEditButton',
+                                               type='button',
                                                onclick="editPassword();")
                             i.fa.fa-edit
         .form-group(id='confirmPasswordFormGroup', style='display: none;')
