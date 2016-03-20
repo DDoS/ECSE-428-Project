@@ -487,7 +487,7 @@ router.post('/edit', function(req, res) {
             });
             break;
         case "cancel" :
-            req.flash('error', {
+            req.flash('errors', {
                 msg: 'No changes made to question.'
             });
             res.redirect('/questions/view?q=' + req.query.q);

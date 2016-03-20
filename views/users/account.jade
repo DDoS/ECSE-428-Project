@@ -29,7 +29,8 @@ block content
                                        type='email', placeholder="Email",
                                        readonly, value=email)
                     span.input-group-btn(id='emailEditButtonGroup')
-                        button.btn.btn-default(type='button',
+                        button.btn.btn-default(id='emailEditButton',
+                                               type='button',
                                                onclick="editEmail();")
                             i.fa.fa-edit
 
@@ -42,7 +43,8 @@ block content
                                        placeholder="Password unchanged",
                                        readonly)
                     span.input-group-btn(id='passwordEditButtonGroup')
-                        button.btn.btn-default(type='button',
+                        button.btn.btn-default(id='passwordEditButton',
+                                               type='button',
                                                onclick="editPassword();")
                             i.fa.fa-edit
         .form-group(id='confirmPasswordFormGroup', style='display: none;')
@@ -75,7 +77,7 @@ block content
                                 .modal-body
                                     p We don't want to see you go...
                                 .modal-footer
-                                    button.btn.btn-default(type='button', data-dismiss='modal')
+                                    button.btn.btn-default(id='cancelDeleteButton', type='button', data-dismiss='modal')
                                         | Cancel
                                     button.btn.btn-danger(id='realDeleteButton', type='submit' name='type',
                                     value='delete')

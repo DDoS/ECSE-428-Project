@@ -156,7 +156,7 @@ mixin question(id, text, submitter, date, upVoted, downVoted, count, user)
                 | #{moment(date.toISOString()).format('YYYY-MM-DD HH:m:s')}
             if user != undefined && user.username == submitter
                 .edit-panel.col-md
-                    a(href="/questions/edit?q=#{id}") Edit
+                    a(id='editButton', href="/questions/edit?q=#{id}") Edit
                     a(id='deleteButton', data-toggle='modal',
                     data-target='#deleteModal',href="#")
                         |  Delete
@@ -171,9 +171,9 @@ mixin question(id, text, submitter, date, upVoted, downVoted, count, user)
                             .modal-footer
                                 form(method='POST', action='/questions/edit?q=#{id}')
                                     input(type='hidden', name='_csrf', value=csrfToken)
-                                    button.btn.btn-default(type='button', data-dismiss='modal')
+                                    button.btn.btn-default(id='cancelDeleteButton', type='button', data-dismiss='modal')
                                         | Cancel
-                                    button.btn.btn-danger(id='deleteButton', type='submit' name='action',
+                                    button.btn.btn-danger(id='realDeleteButton', type='submit' name='action',
                                     value='delete')
                                         | Delete
 
