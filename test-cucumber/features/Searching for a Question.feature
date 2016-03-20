@@ -21,7 +21,7 @@ Feature: Search for a Question
         Then I expect the page to contain the question with ID "question3"
         Then I expect the page to not contain the question with ID "question4"
 
-    Scenario: [Alternate] Obtaining Question Search Results Using Miltiple Keywords
+    Scenario: [Alternate] Obtaining Question Search Results Using Multiple Keywords
         Given I open the site "/questions/find"
         When I set "aaa bbb ccc" to the inputfield "#searchInput"
         And I click on the button "#searchButton"
@@ -29,7 +29,7 @@ Feature: Search for a Question
         Then I expect the page to contain the question with ID "question1"
         Then I expect the page to not contain the question with ID "question2"
         Then I expect the page to contain the question with ID "question3"
-        Then I expect the page to contain the question with ID "question4"
+        Then I expect the page to not contain the question with ID "question4"
 
     Scenario: [Error] Attempting to Obtain Question Search Results Using No Keywords
         Given I open the site "/questions/find"

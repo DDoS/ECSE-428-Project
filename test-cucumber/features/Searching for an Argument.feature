@@ -38,11 +38,11 @@ Feature: Search for an Argument
         Then I expect the page to contain the argument with ID "argument1"
         Then I expect the page to not contain the argument with ID "argument2"
         Then I expect the page to contain the argument with ID "argument3"
-        Then I expect the page to contain the argument with ID "argument4"
+        Then I expect the page to not contain the argument with ID "argument4"
         Then I expect the page to contain the argument with ID "argument5"
         Then I expect the page to not contain the argument with ID "argument6"
         Then I expect the page to contain the argument with ID "argument7"
-        Then I expect the page to contain the argument with ID "argument8"
+        Then I expect the page to not contain the argument with ID "argument8"
 
     Scenario: [Error] Attempting to Obtain Argument Search Results Using No Keywords
         Given I open the site for the question with ID "question1"
