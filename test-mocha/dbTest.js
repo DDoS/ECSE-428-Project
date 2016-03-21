@@ -572,15 +572,6 @@ describe('Database', function() {
                 });
             });
         });
-
-        it('Should not allow an empty text', function() {
-            assert.throws(
-                function() {
-                    database.editArgument(questionID, argumentID, '', function() {});
-                },
-                Error, 'new text is empty'
-            );
-        });
     });
 
     describe('deleteArgument(questionID, id, deleteDone)', function() {

@@ -5,6 +5,7 @@ Feature: Deleting an Argument
 
   Background:
     Given the database has been cleared
+    And I have a registered user account with username "test_username" and password "test_password" and email "test@example.com"
     And I have a registered user account with username "test_username2" and password "test_password2" and email "test2@example.com"
     And I am logged into the account with username "test_username2" and password "test_password2"
     And I have created a question with username "test_username2" and question "test question" and details "test details" and ID "question1"
@@ -22,7 +23,6 @@ Feature: Deleting an Argument
 
   Scenario: [Error] Attempt to delete someone else's argument
     Given I open the site "/users/logout"
-    And I have a registered user account with username "test_username" and password "test_password" and email "test@example.com"
     And I am logged into the account with username "test_username" and password "test_password"
     And a prompt is not opened
     And I open the site for the question with ID "question1"
