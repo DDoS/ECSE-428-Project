@@ -53,7 +53,7 @@ exports.config = {
      * - baseUrl: sets base url for `Given I open the site "/some/url.html"`
      */
     env: {
-        baseUrl: 'localhost:8080'
+        baseUrl: 'http://127.0.0.1:8080'
     },
 
     /**
