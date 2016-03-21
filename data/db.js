@@ -513,9 +513,6 @@ var Database = function(dbName) {
         if (questionID === undefined) {
             throw new Error('question ID is undefined');
         }
-        if (stringEmpty(newText)) {
-            throw new Error('new text is empty');
-        }
         pg.connect(
             config,
             function(error, client, done) {

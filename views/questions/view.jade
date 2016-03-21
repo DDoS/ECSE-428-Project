@@ -200,7 +200,7 @@ mixin argument(qid, aid, text, submitter, date, upVoted, downVoted, count)
                     input(type='hidden', name='_csrf', value=csrfToken)
             .vote-panel-text(id='a' + aid + '_text')
                 each para in text.split('\n')
-                    p= para
+                    p(class="vote-panel-text-paragraph")= para
 
         .panel-footer
             span.text-muted(id='a' + aid + '_meta')
@@ -208,12 +208,12 @@ mixin argument(qid, aid, text, submitter, date, upVoted, downVoted, count)
                 | #{moment(date.toISOString()).format('YYYY-MM-DD HH:mm:ss')}
             if user != undefined
                 .edit-panel
-                    a(href="/arguments/edit?q=#{qid}&a=#{aid}") Edit
-                    a(id='deleteButton', type='button', data-toggle='modal',
+                    a(href="/arguments/edit?q=#{qid}&a=#{aid}" class="argumentEditButton") Edit
+                    a(id='argumentDeleteButton', type='button', data-toggle='modal',
                     data-target='#deleteModal'+qid+aid href="#")
                         |  Delete
                     if user.username == submitter
-                        .modal.fade(role='dialog' id="deleteModal"+qid+aid)
+                        .modal.fade(role='dialog' id="deleteModal"+qid+aid class="deleteModal")
                             .modal-dialog
                                 .modal-content
                                     .modal-header
@@ -226,11 +226,11 @@ mixin argument(qid, aid, text, submitter, date, upVoted, downVoted, count)
                                             input(type='hidden', name='_csrf', value=csrfToken)
                                             button.btn.btn-default(type='button', data-dismiss='modal')
                                                 | Cancel
-                                            button.btn.btn-danger(id='deleteButton', type='submit' name='action',
+                                            button.btn.btn-danger(id='realArgumentDeleteButton', type='submit' name='action',
                                             value='delete')
                                                 | Delete
                     else
-                        .modal.fade(role='dialog' id="deleteModal" + qid + aid)
+                        .modal.fade(role='dialog' id="deleteModal" + qid + aid class="deleteModal")
                             .modal-dialog
                                 .modal-content
                                     .modal-header
