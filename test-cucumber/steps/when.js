@@ -72,4 +72,7 @@ module.exports = function () {
 
         .when(/^I downvote the argument with ID "$string"$/,
             require('../support/custom/downvoteArgument'));
+
+	.when(/^I select argument "$string" of question "$string" to edit it$/,
+	    require('../support/custom/editArgument'))
 };

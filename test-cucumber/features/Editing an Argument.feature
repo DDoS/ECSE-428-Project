@@ -1,5 +1,5 @@
 edit_argument.feature
-#Gherkin Acceptance Test for Editing Arguments
+# Gherkin Acceptance Test for Editing Arguments
 
     Background:
         Given the database has been cleared
@@ -15,7 +15,7 @@ edit_argument.feature
 
     Scenario: [Normal] Change the text in argument
 	Given I open the site for the question with ID "question1"
-        When I click on the link "/arguments/edit?q=#"question1"&a=#"argument2""
+        When I select argument with ID "argument2" of question with ID "question1" to edit it
 	And I set "This is a test" to inputfield "argumentTextArea"
 	And I click on the button "#submitButton"
 	Then I expect that element ".alert.alert-success" contains the text "Argument edited."
@@ -23,14 +23,14 @@ edit_argument.feature
 
     Scenario: [Alternative] No change in argument
 	Given I open the site for the question with ID "question1"
-        When I click on the link "/arguments/edit?q=#"question1"&a=#"argument3""
+        When I select argument with ID "argument3" of question with ID "question1" to edit it
 	And I set "test argument 3" to inputfield "argumentTextArea"
 	Then I expect that element ".alert.alert-success" contains the text "Argument edited."
         And I expect the url to contain the url for the question with ID "question1"
 
     Scenario: [Error] Start to edit argument but cancel
 	Given I open the site for the question with ID "question1"
-        When I click on the link "/arguments/edit?q=#"question1"&a=#"argument3""
+        When I select argument with ID "argument3" of question with ID "question1" to edit it
         And I set "This is a test" to inputfield "argumentTextArea"
 	And I click on the button "#cancelButton"
 	Then I expect that element ".alert.alert-danger" contains the text No changes made to argument."
@@ -38,14 +38,14 @@ edit_argument.feature
 
     Scenario: [Error] Remove text in argument
 	Given I open the site for the question with ID "question1"
-        When I click on the link "/arguments/edit?q=#"question1"&a=#"argument3""
+        When I select argument with ID "argument3" of question with ID "question1" to edit it
 	And I click on the button "#submitButton"
 	Then I expect that element ".alert.alert-danger" contains the text "new text is empty"
         And I expect the url to contain the url for the question with ID "question1"
 
     Scenario: [Error] Attempt to edit someone else's argument
 	Given I open the site for the question with ID "question1"
-        When I click on the link "/arguments/edit?q=#"question1"&a=#"argument1""
+        When I select argument with ID "argument1" of question with ID "question1" to edit it
 	When I set "This is a test" to inputfield "argumentInput"
 	And I click on the button "#submitButton"
 	Then I expect that element ".alert.alert-danger" contains the text "You cannot edit other people's arguments."
